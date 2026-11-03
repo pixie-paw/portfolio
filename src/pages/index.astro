@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro';
+
+const skills = ['Visual design', 'Digital collage', 'Motion', 'Front-end development', 'UX'];
+---
+
+<Base title="Irina Moldovan · Portfolio">
+  <main>
+    <section class="hero">
+      <h1 data-split>I cut, paste and code.</h1>
+      <p class="bio" data-reveal>
+        I'm a third-year Digital Design and Development student at Howest, who collects textures
+        the way some people collect stamps. I turn simple images into bold digital collages, then
+        make sure the result actually works for the people using them. Sketching it, designing it,
+        coding it: I like having my hands on every step.
+      </p>
+    </section>
+
+    <ul class="skills" data-reveal>
+      {skills.map((skill) => <li>{skill}</li>)}
+    </ul>
+
+    <section class="work">
+      <h2 data-reveal>Selected work</h2>
+      <article class="card" data-reveal>
+        <div class="card__media" data-parallax="0.15"></div>
+        <h3>Marina Yee</h3>
+        <p>A Woman, Fashion Designer and Artist in One</p>
+      </article>
+      <article class="card" data-reveal>
+        <div class="card__media" data-parallax="0.15"></div>
+        <h3>Visit Antwerp</h3>
+        <p>Case study coming soon</p>
+      </article>
+    </section>
+  </main>
+</Base>
+
+<style>
+  main {
+    padding: 0 var(--gutter);
+  }
+
+  .hero {
+    min-height: 90svh;
+    display: grid;
+    align-content: center;
+    gap: 2rem;
+  }
+
+  h1 {
+    font-size: clamp(3rem, 11vw, 10rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+
+  .bio {
+    max-width: 38rem;
+    font-size: 1.125rem;
+    margin: 0;
+  }
+
+  .skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    list-style: none;
+    padding: 1.5rem 0;
+    margin: 0;
+    border-block: 1px solid currentColor;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+  }
+
+  .work {
+    padding: 6rem 0;
+    display: grid;
+    gap: 4rem;
+  }
+
+  .card__media {
+    aspect-ratio: 16 / 10;
+    background: repeating-linear-gradient(45deg, #ddd6c8 0 12px, #e8e2d6 12px 24px);
+  }
+
+  .card h3 {
+    margin: 1rem 0 0.25rem;
+    font-size: 1.5rem;
+  }
+
+  .card p {
+    margin: 0;
+    color: var(--muted);
+  }
+</style>

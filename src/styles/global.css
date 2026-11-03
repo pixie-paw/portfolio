@@ -1,0 +1,35 @@
+/* Placeholder styling. Real colours and type come after the design phase. */
+:root {
+  --bg: #f4f1ea;
+  --fg: #141414;
+  --muted: #6b6760;
+  --accent: #d9442b;
+  --gutter: clamp(1rem, 4vw, 3rem);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+}
