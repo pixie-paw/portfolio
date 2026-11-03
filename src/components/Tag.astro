@@ -1,0 +1,113 @@
+---
+/**
+ * A typewriter "{ tag }" sticker: pink paper strip + text + four corner brackets.
+ * Every part is its own element so each can be animated separately later.
+ *
+ * x / y  = centre of the tag in Figma pixels, relative to its parent.
+ * w / h  = size of the paper strip in Figma pixels.
+ */
+interface Props {
+  text: string;
+  x: number;
+  y: number;
+  w: number;
+  h?: number;
+  rotate?: number;
+  size?: 'sm' | 'lg';
+  name?: string;
+  class?: string;
+}
+
+const { text, x, y, w, h = 31.91, rotate = 0, size = 'sm', name, class: className } = Astro.props;
+---
+
+<span
+  class:list={['tag', `tag--${size}`, className]}
+  data-layer={name ?? 'tag'}
+  style={`--x:${x};--y:${y};--w:${w};--h:${h};--r:${rotate}deg`}
+>
+  <span class="tag__paper" data-layer="tag-paper"></span>
+  <span class="tag__text" data-layer="tag-text">{text}</span>
+  <span class="tag__corner tag__corner--tl" data-layer="tag-corner"></span>
+  <span class="tag__corner tag__corner--tr" data-layer="tag-corner"></span>
+  <span class="tag__corner tag__corner--bl" data-layer="tag-corner"></span>
+  <span class="tag__corner tag__corner--br" data-layer="tag-corner"></span>
+</span>
+
+<style>
+  .tag {
+    --k: var(--u);
+    position: absolute;
+    /* position always follows the page scale (--u); size can be scaled up with --k */
+    left: calc(var(--x) * var(--u));
+    top: calc(var(--y) * var(--u));
+    width: max-content;
+    min-width: calc(var(--w) * var(--k));
+    height: calc(var(--h) * var(--k));
+    padding-inline: calc(14 * var(--k));
+    translate: -50% -50%;
+    rotate: var(--r);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .tag__paper {
+    position: absolute;
+    inset: 0;
+    background: var(--c-tag);
+  }
+
+  .tag__text {
+    position: relative;
+    font-family: var(--f-type);
+    font-size: calc(14 * var(--k));
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--c-ink);
+  }
+
+  .tag--lg .tag__text {
+    font-size: calc(20 * var(--k));
+  }
+
+  .tag__corner {
+    position: absolute;
+    width: calc(12 * var(--k));
+    height: calc(14 * var(--k));
+    border: 0 solid var(--c-ink);
+    --stroke: max(1.5px, calc(2.5 * var(--k)));
+  }
+
+  .tag--sm .tag__corner {
+    --stroke: max(1px, calc(1.5 * var(--k)));
+  }
+
+  .tag__corner--tl {
+    top: 0;
+    left: 0;
+    border-top-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .tag__corner--tr {
+    top: 0;
+    right: 0;
+    border-top-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  .tag__corner--bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .tag__corner--br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+</style>

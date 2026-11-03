@@ -1,10 +1,30 @@
-/* Placeholder styling. Real colours and type come after the design phase. */
+@import '@fontsource/boldonse/latin-400.css';
+@import '@fontsource/bona-nova/latin-400.css';
+
+/*
+  Design tokens from the Figma home page (1440px frame).
+  --u is "one Figma pixel": it scales the collage with the screen width,
+  so desktop layouts keep the exact proportions of the design.
+*/
 :root {
-  --bg: #f4f1ea;
-  --fg: #141414;
-  --muted: #6b6760;
-  --accent: #d9442b;
-  --gutter: clamp(1rem, 4vw, 3rem);
+  --c-paper: #faf6f6;
+  --c-ink: #333232;
+  --c-ink-soft: #727070;
+  --c-light: #f6f5f5;
+  --c-tag: #fcf4f6;
+  --c-pink: #ffd1d9;
+  --c-yellow: #f3ce29;
+  --c-green: #00bf72;
+  --c-blue: #006fdc;
+
+  /* Akzidenz-Grotesk Next comes from Adobe Fonts; Bulletin Typewriter is pending licence check. */
+  --f-display: 'Boldonse', 'Arial Black', sans-serif;
+  --f-serif: 'Bona Nova', Georgia, serif;
+  --f-sans: 'akzidenz-grotesk-next', 'Helvetica Neue', Arial, sans-serif;
+  --f-type: 'Bulletin Typewriter', 'Courier New', Courier, monospace;
+
+  --u: calc(min(100vw, 1440px) / 1440);
+  --gutter: 16px;
 }
 
 *,
@@ -15,21 +35,50 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
+  background-color: var(--c-paper);
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  line-height: 1.5;
+  color: var(--c-ink);
+  font-family: var(--f-sans);
+  line-height: 1.4;
+  overflow-x: clip;
+  position: relative;
+  min-height: 100vh;
 }
 
-img {
-  max-width: 100%;
+/* Grid paper background: rotated tiles at 43% like the Figma "math_page" layers. */
+body::before {
+  content: '';
+  position: absolute;
+  inset: -200px;
+  z-index: -1;
+  background-image: var(--paper-url);
+  background-size: calc(758 * var(--u)) auto;
+  background-repeat: repeat;
+  opacity: 0.43;
+  rotate: -2.22deg;
+  pointer-events: none;
+}
+
+img,
+svg {
   display: block;
+  max-width: none;
 }
 
 a {
   color: inherit;
+  text-decoration: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

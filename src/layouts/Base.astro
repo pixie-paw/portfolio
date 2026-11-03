@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import gridPaper from '../assets/home/grid-paper.webp';
 
 interface Props {
   title: string;
@@ -8,7 +9,7 @@ interface Props {
 
 const {
   title,
-  description = 'Irina Moldovan, Digital Design and Development student at Howest.',
+  description = 'Irina Moldovan, Digital Designer and Developer, studying Digital Design and Development at Howest.',
 } = Astro.props;
 ---
 
@@ -20,7 +21,7 @@ const {
     <meta name="description" content={description} />
     <title>{title}</title>
   </head>
-  <body>
+  <body style={`--paper-url: url(${gridPaper.src})`}>
     <slot />
     <script>
       import { initAnimations } from '../scripts/animations';

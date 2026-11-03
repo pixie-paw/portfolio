@@ -1,0 +1,153 @@
+---
+import Logo from '../assets/home/svg/logo-flower.svg';
+import NavUnderline from '../assets/home/svg/nav-underline.svg';
+import Arrow from '../assets/home/svg/arrow.svg';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<header class="site-header" data-layer="header">
+  <a class="site-header__logo" href={`${base}/`} aria-label="Irina Moldovan, home" data-layer="logo">
+    <Logo aria-hidden="true" />
+  </a>
+
+  <nav class="site-header__nav" aria-label="Main">
+    <a class="site-header__link is-active" href={`${base}/#work`} data-layer="nav-projects">
+      Projects
+      <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
+    </a>
+    <a class="site-header__link" href={`${base}/#about`} data-layer="nav-about">About me</a>
+  </nav>
+
+  <a class="button site-header__cta" href={`${base}/#contact`} data-layer="cta">
+    <span>Get in touch</span>
+    <Arrow class="button__arrow" aria-hidden="true" />
+  </a>
+</header>
+
+<style>
+  /*
+    Desktop: one grid row, placed by named areas.
+    Figma: logo at x45, nav at x841, button at x1124 (1440 frame).
+  */
+  .site-header {
+    grid-area: header;
+    display: grid;
+    grid-template-columns:
+      calc(45 * var(--u)) calc(149 * var(--u)) 1fr auto calc(50 * var(--u)) calc(216 * var(--u))
+      calc(100 * var(--u));
+    grid-template-areas: '. logo . nav . cta .';
+    align-items: start;
+    padding-top: calc(15 * var(--u));
+    position: relative;
+    z-index: 10;
+  }
+
+  .site-header__logo {
+    grid-area: logo;
+    width: calc(149 * var(--u));
+  }
+
+  .site-header__logo :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .site-header__nav {
+    grid-area: nav;
+    display: flex;
+    gap: calc(53 * var(--u));
+    margin-top: calc(47 * var(--u));
+  }
+
+  .site-header__link {
+    position: relative;
+    font-size: calc(24 * var(--u));
+    color: var(--c-ink-soft);
+    line-height: 1.2;
+  }
+
+  .site-header__link.is-active {
+    color: var(--c-ink);
+  }
+
+  .site-header__underline {
+    position: absolute;
+    left: calc(-9 * var(--u));
+    top: calc(32 * var(--u));
+    width: calc(100 * var(--u));
+    height: auto;
+  }
+
+  .site-header__cta {
+    grid-area: cta;
+    margin-top: calc(33 * var(--u));
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(10 * var(--u));
+    height: calc(52 * var(--u));
+    width: calc(216 * var(--u));
+    background: var(--c-green);
+    border: 2px solid var(--c-ink);
+    font-family: var(--f-display);
+    font-size: calc(16 * var(--u));
+    text-transform: uppercase;
+    color: var(--c-ink);
+  }
+
+  .button__arrow {
+    width: calc(18 * var(--u));
+    height: auto;
+  }
+
+  /* Mobile suggestion: small logo left, button right, nav links under them. */
+  @media (max-width: 899px) {
+    .site-header {
+      grid-template-columns: var(--gutter) auto 1fr auto var(--gutter);
+      grid-template-areas:
+        '. logo . cta .'
+        '. nav nav nav .';
+      row-gap: 12px;
+      padding-top: 12px;
+    }
+
+    .site-header__logo {
+      width: 64px;
+    }
+
+    .site-header__nav {
+      margin-top: 0;
+      gap: 24px;
+    }
+
+    .site-header__link {
+      font-size: 18px;
+    }
+
+    .site-header__underline {
+      left: -6px;
+      top: 24px;
+      width: 76px;
+    }
+
+    .site-header__cta {
+      margin-top: 12px;
+    }
+
+    .button {
+      height: 44px;
+      width: auto;
+      padding: 0 16px;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .button__arrow {
+      width: 14px;
+    }
+  }
+</style>
