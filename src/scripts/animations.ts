@@ -63,6 +63,17 @@ const FLOAT_MIN_S = 3;
 const FLOAT_MAX_S = 5;
 const TAG_DEPTH_PX = 8; // the other layers set their depth with data-depth
 
+// About section
+const MARKER_S = 0.6; // each yellow highlighter bar is drawn in this long
+const TYPE_CHAR_S = 0.025; // time between two typed letters on the skills paper
+const TYPE_HEADING_CHAR_S = 0.06; // headings are typed a little slower
+const TYPE_HEADING_PAUSE_S = 0.35; // and the typist pauses after each one
+const PAPER_FEED_S = 0.28; // the paper moves up one line
+const WAVE_DRAW_S = 2.2;
+const WAVE_FLOW_PX_S = 40; // the wave text's normal speed along the curve
+const WAVE_SCROLL_BOOST = 15; // extra px/s for each px/frame of scroll speed
+const WAVE_SEPARATOR = '   ·   ';
+
 // Don't keep the page hidden for long if a web font is slow
 const FONT_WAIT_MS = 1500;
 
@@ -172,8 +183,11 @@ const createRollButton = ($button: HTMLElement, reduceMotion: boolean): Cleanup 
 };
 
 /* ---------- Smooth scrolling (Lenis) and the hero drifting apart on scroll ---------- */
+let smoothScroll: Lenis | null = null;
+
 const createSmoothScroll = (): Cleanup => {
   const lenis = new Lenis({ anchors: true });
+  smoothScroll = lenis;
   const tick = (time: number) => lenis.raf(time * 1000);
 
   lenis.on('scroll', ScrollTrigger.update);
@@ -184,6 +198,7 @@ const createSmoothScroll = (): Cleanup => {
     gsap.ticker.remove(tick);
     gsap.ticker.lagSmoothing(500, 33);
     lenis.destroy();
+    smoothScroll = null;
   };
 };
 
@@ -270,6 +285,182 @@ const createInternshipSwing = ($body: HTMLElement): Cleanup => {
   const play = () => swing.restart();
   $body.addEventListener('mouseenter', play);
   return () => $body.removeEventListener('mouseenter', play);
+};
+
+/* ---------- About: the wave text flows along the curve forever ---------- */
+const startWaveFlow = ($about: Element): Cleanup | undefined => {
+  const $wave = getLayer<SVGSVGElement>('wave', $about);
+  const $text = getLayer<SVGTextElement>('wave-text', $about);
+  const $textPath = getLayer<SVGTextPathElement>('wave-text-path', $about);
+  const $curve = $about.querySelector<SVGPathElement>('#about-wave-text-path');
+  if (!$wave || !$text || !$textPath || !$curve) return;
+
+  const originalText = $textPath.textContent ?? '';
+  const originalOffset = $textPath.getAttribute('startOffset') ?? '0';
+
+  // Measure one round of the words, then repeat it until it covers the whole curve plus
+  // one more round, so moving it by one round at a time never shows a gap
+  const phrase = originalText + WAVE_SEPARATOR;
+  $textPath.textContent = phrase;
+  $textPath.setAttribute('startOffset', '0');
+  const round = $text.getComputedTextLength();
+  if (!round) {
+    $textPath.textContent = originalText;
+    $textPath.setAttribute('startOffset', originalOffset);
+    return;
+  }
+  $textPath.textContent = phrase.repeat(Math.ceil($curve.getTotalLength() / round) + 2);
+
+  let offset = -round;
+  let speed = WAVE_FLOW_PX_S;
+
+  const tick = (_time: number, deltaMs: number) => {
+    // Scrolling down speeds it up, scrolling up turns it right to left, then it eases back
+    const scrollSpeed = smoothScroll?.velocity ?? 0;
+    const target = WAVE_FLOW_PX_S + scrollSpeed * WAVE_SCROLL_BOOST;
+    speed += (target - speed) * 0.08;
+    offset += (speed * deltaMs) / 1000;
+    if (offset > 0) offset -= round;
+    if (offset < -round) offset += round;
+    $textPath.setAttribute('startOffset', offset.toFixed(2));
+  };
+
+  // Only runs while the wave is on screen
+  const trigger = ScrollTrigger.create({
+    trigger: $wave,
+    start: 'top bottom',
+    end: 'bottom top',
+    onToggle: (self) => (self.isActive ? gsap.ticker.add(tick) : gsap.ticker.remove(tick)),
+  });
+
+  return () => {
+    gsap.ticker.remove(tick);
+    trigger.kill();
+    $textPath.textContent = originalText;
+    $textPath.setAttribute('startOffset', originalOffset);
+  };
+};
+
+/* ---------- About section ---------- */
+const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
+  const $about = document.querySelector('[data-section="about"]');
+  if (!$about) return;
+
+  const getSvgs = (names: string[]) =>
+    getLayers(names)
+      .map(($layer) => $layer.querySelector<SVGElement>('svg'))
+      .filter(($svg): $svg is SVGElement => $svg !== null);
+
+  // Title: the text itself is left alone here. On the first scroll the yellow bars are drawn
+  // in from left to right like a highlighter, and the stars pop in.
+  const $markers = getAll('[data-layer="title-marker"]', $about);
+  const starNames = ['about-sparkle-big', 'about-sparkle-small', 'about-star-low', 'about-star-high'];
+  const $stars = getSvgs(starNames);
+  const $starOutlines = getSvgs(starNames.map((name) => `${name}-outline`));
+
+  gsap.set($markers, { clipPath: 'inset(0% 100% 0% 0%)' });
+  gsap.set($stars, { scale: 0, autoAlpha: 0 });
+  gsap.set($starOutlines, { x: (i: number) => (i % 2 ? 6 : -6), y: (i: number) => (i % 2 ? -6 : 6), autoAlpha: 0 });
+
+  const firstScroll = gsap
+    .timeline({ paused: true })
+    .to($markers, { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut', stagger: MARKER_S * 0.9 })
+    .to($stars, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2.2)', stagger: 0.1 }, 0.2)
+    .to($starOutlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out', stagger: 0.1 }, 0.3);
+
+  // start: 1 = as soon as the page has scrolled 1px
+  ScrollTrigger.create({ start: 1, once: true, onEnter: () => firstScroll.play() });
+
+  // Text card: the corners clamp in, then the text appears line by line
+  const $card = getLayer('about-card', $about);
+  const $cardText = getLayer('about-text', $about);
+  const $corners = getAll('[data-layer="about-corner"]', $about);
+  if ($card && $cardText) {
+    gsap.set($cardText, { autoAlpha: 0 });
+    gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
+
+    ScrollTrigger.create({
+      trigger: $card,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        context.add(() => {
+          // Split into lines only now, once the fonts are in, so the lines are right
+          const lines = SplitText.create($cardText, { type: 'lines' }).lines;
+          gsap.set($cardText, { autoAlpha: 1 });
+          gsap
+            .timeline()
+            .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 })
+            .fromTo(
+              lines,
+              { y: 12, autoAlpha: 0 },
+              { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 },
+              0.2,
+            );
+        }),
+    });
+  }
+
+  // Wave line: draws itself in from left to right, once
+  const $wave = getLayer('wave', $about);
+  const $waveLine = getLayer<SVGPathElement>('wave-line', $about);
+  if ($wave && $waveLine) {
+    const length = $waveLine.getTotalLength();
+    gsap.set($waveLine, { strokeDasharray: length, strokeDashoffset: length });
+    gsap.to($waveLine, {
+      strokeDashoffset: 0,
+      duration: WAVE_DRAW_S,
+      ease: 'power2.inOut',
+      scrollTrigger: { trigger: $wave, start: 'top 75%', once: true },
+    });
+  }
+
+  // Skills paper: typed letter by letter while it feeds up out of the typewriter
+  const $paper = getLayer('skills-paper', $about);
+  const $sheet = getLayer('skills-sheet', $about);
+  const $typewriter = getLayer('typewriter', $about);
+  if ($paper && $sheet && $typewriter) {
+    const $rows = getAll('[data-layer="skills-heading"], [data-layer="skills-line"]', $sheet);
+    const rowChars = $rows.map(($row) => SplitText.create($row, { type: 'chars', charsClass: 'about__char' }).chars);
+    const $marks = getAll('[data-layer="skills-mark"]', $sheet);
+
+    // Each row is typed at the same spot, just above the roller, where the last row ends up.
+    // So while row k is typed, the paper sits lower by the distance from row k to the last row.
+    const lastTop = $rows[$rows.length - 1]?.offsetTop ?? 0;
+    const paperY = $rows.map(($row) => lastTop - $row.offsetTop);
+
+    gsap.set(rowChars.flat(), { autoAlpha: 0 });
+    gsap.set($marks, { '--mark-w': '0%' });
+    gsap.set($paper, { y: paperY[0] ?? 0 });
+
+    const typing = gsap.timeline({ paused: true });
+    $rows.forEach(($row, k) => {
+      const isHeading = $row.dataset.layer === 'skills-heading';
+      if (isHeading) {
+        const $mark = getLayer('skills-mark', $row);
+        if ($mark) typing.to($mark, { '--mark-w': '100%', duration: 0.3, ease: 'power2.out' });
+      }
+      typing.to(rowChars[k], {
+        autoAlpha: 1,
+        duration: 0.01,
+        ease: 'none',
+        stagger: isHeading ? TYPE_HEADING_CHAR_S : TYPE_CHAR_S,
+      });
+      if (isHeading) typing.to({}, { duration: TYPE_HEADING_PAUSE_S });
+
+      // End of the line: a small knock of the machine, and the paper moves up one row
+      if (k < $rows.length - 1) {
+        typing
+          .to($typewriter, { y: 1, duration: 0.05, ease: 'power1.out', yoyo: true, repeat: 1 })
+          .to($paper, { y: paperY[k + 1], duration: PAPER_FEED_S, ease: 'power2.inOut' }, '<');
+      }
+    });
+
+    ScrollTrigger.create({ trigger: $typewriter, start: 'top 80%', once: true, onEnter: () => typing.play() });
+  }
+
+  // The wave text needs Inter loaded before it can be measured
+  waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($about))));
 };
 
 /* ---------- Page load: the hero comes into register ---------- */
@@ -546,6 +737,7 @@ export const initAnimations = () => {
         addCleanup(createLogo());
         addCleanup(createSmoothScroll());
         createScrollDrift();
+        createAboutAnimations(context, addCleanup);
         waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
       }
 
