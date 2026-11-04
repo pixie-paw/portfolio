@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import Button from './Button.astro';
+import { WAVE_POINTS, WAVE_TEXT, smoothPath, shiftPoints, lengthUpTo } from '../data/wave';
 
 import typewriter from '../assets/home/typewriter.png';
 
@@ -20,56 +21,20 @@ const SECTION_TOP = 720;
 const layer = (x: number, y: number, w: number, r = 0) =>
   `--x:${x};--y:${y - SECTION_TOP};--w:${w};--r:${r}deg`;
 
-/*
-  The blue wave, measured from the Figma render (the centre of the 60px line, every
-  40px). Under the typewriter it's hidden, so those points only keep the curve smooth.
-  Both ends run on past the frame, so on wide screens the line still goes edge to edge.
-*/
-const WAVE_POINTS: [number, number][] = [
-  [-800, 1850], [-500, 1830], [-195, 1690], [-100, 1615], [0, 1499.5], [40, 1442.5],
-  [80, 1398], [120, 1369.5], [160, 1357], [200, 1361], [240, 1377], [280, 1398],
-  [320, 1418.5], [360, 1431.5], [400, 1434], [440, 1425.5], [480, 1401.5], [520, 1358],
-  [560, 1306.5], [600, 1266.5], [640, 1248], [700, 1238], [780, 1262], [860, 1310],
-  [940, 1352], [1000, 1374], [1040, 1386], [1080, 1396], [1120, 1402], [1160, 1404.5],
-  [1200, 1404], [1240, 1400], [1280, 1392.5], [1320, 1381], [1360, 1367], [1400, 1347.5],
-  [1440, 1325], [1542, 1270], [1800, 1190], [2240, 1160],
-];
-// In Figma the text runs along the same curve, 146.5px lower, starting at x -195
+// The blue wave and its words, shared with the About me page (src/data/wave.ts).
+// In Figma the text runs along the same curve, 146.5px lower, starting at x -195.
 const TEXT_OFFSET_Y = 146.5;
 const TEXT_START_X = -195;
 
-// A smooth line through the points (Catmull-Rom turned into cubic Béziers)
-const smoothPath = (points: [number, number][]) => {
-  const p = points.map(([x, y]) => [x, y - SECTION_TOP]);
-  let d = `M${p[0][0]} ${p[0][1]}`;
-  for (let i = 0; i < p.length - 1; i++) {
-    const [x0, y0] = p[i - 1] ?? p[i];
-    const [x1, y1] = p[i];
-    const [x2, y2] = p[i + 1];
-    const [x3, y3] = p[i + 2] ?? p[i + 1];
-    const c1 = [x1 + (x2 - x0) / 6, y1 + (y2 - y0) / 6];
-    const c2 = [x2 - (x3 - x1) / 6, y2 - (y3 - y1) / 6];
-    d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${x2} ${y2}`;
-  }
-  return d;
-};
-
-const wavePath = smoothPath(WAVE_POINTS);
+const wavePath = smoothPath(WAVE_POINTS, SECTION_TOP);
 // The text path covers the whole wave, so the flowing text fills wide screens too
-const textPath = smoothPath(WAVE_POINTS.map(([x, y]) => [x, y + TEXT_OFFSET_Y]));
-
+const textPath = smoothPath(shiftPoints(WAVE_POINTS, 0, TEXT_OFFSET_Y), SECTION_TOP);
 // Without the script, the text starts where it does in Figma (x -195): about this far along the path
-const textStartOffset = WAVE_POINTS.filter(([x]) => x <= TEXT_START_X).reduce(
-  (length, [x, y], i, points) => (i === 0 ? 0 : length + Math.hypot(x - points[i - 1][0], y - points[i - 1][1])),
-  0,
-);
+const textStartOffset = lengthUpTo(WAVE_POINTS, TEXT_START_X);
 
 // The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
 const WAVE_BOX = { x: -800, y: 380, w: 3040, h: 1000 };
 
-// Irina's approved copy, word for word
-const WAVE_TEXT =
-  'Test   ·   Design   ·   Iterate   ·   Code   ·   Create   ·   Test   ·   Design   ·   Iterate   ·   Code   ·   Create   ·   Test   ·   Design   ·   Iterate   ·   Code   ·   Test   ·   Create   ·   Design   ·   Iterate   ·   Code   ·   Create';
 
 const SKILLS = [
   { heading: 'Design tools', lines: ['Photoshop · Illustrator · Figma', 'After Effects · Blender'] },
