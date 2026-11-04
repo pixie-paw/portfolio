@@ -1,10 +1,11 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin);
 
 /**
  * Site animations, written from the official docs:
@@ -13,11 +14,12 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
  * - GSAP keyframes: https://gsap.com/resources/keyframes
  * - GSAP quickTo: https://gsap.com/docs/v3/GSAP/gsap.quickTo()
  * - SplitText: https://gsap.com/docs/v3/Plugins/SplitText/
+ * - ScrambleText: https://gsap.com/docs/v3/Plugins/ScrambleTextPlugin/
  * - ScrollTrigger: https://gsap.com/docs/v3/Plugins/ScrollTrigger/
  * - Lenis with ScrollTrigger: https://github.com/darkroomengineering/lenis#gsap-scrolltrigger
  *
  * The idea: the hero is a print coming into register. Colour layers start out of
- * place and slide onto each other, tape and stamps are pressed down by hand.
+ * place and slide onto each other, and the tape and stickers are pressed down by hand.
  *
  * Elements are found through data-* attributes, never through classes.
  * Only transform and opacity are animated.
@@ -38,19 +40,21 @@ const CTA_DURATION_S = 0.4;
 const CTA_STAGGER_S = 0.03;
 
 // Hero load sequence
-const TITLE_STAMP_S = 0.28;
-const TITLE_STAGGER_S = 0.04;
-const SUBTITLE_TYPE_S = 0.045; // time between two typed letters
+const TITLE_STAND_S = 0.9; // each title letter stands up from flat
+const TITLE_STAGGER_S = 0.05;
+const SUBTITLE_OPEN_AT_S = 0.9; // the subtitle's < > appear together, rest a moment, then open
+const SUBTITLE_OPEN_S = 2;
+const SUBTITLE_EASE = 'sine.inOut'; // starts and stops gently, like the tag is pulled open by hand
 const INTERNSHIP_AT_S = 2.3;
-const INTERNSHIP_TYPE_S = 0.035;
-const SHAKE_PX = 1.5;
+const SIGN_DROP_S = 0.55; // the sign flips down from its top edge
+const SIGN_DECODE_S = 1.2; // then its text decodes from random letters
+const SCRAMBLE_CHARS = 'abcdefghijklmnopqrstuvwxyz';
 
 // Hero, once everything has arrived
 const FLOAT_Y_PX = 4;
 const FLOAT_TILT_DEG = 1;
 const FLOAT_MIN_S = 3;
 const FLOAT_MAX_S = 5;
-const WIGGLE_DEG = 2;
 const TAG_DEPTH_PX = 8; // the other layers set their depth with data-depth
 
 // Don't keep the page hidden for long if a web font is slow
@@ -246,20 +250,19 @@ const startFloat = ($tag: Element) => {
   });
 };
 
-/* ---------- Internship tag: the cursor keeps blinking, and it wiggles on every hover ---------- */
-const startCursorBlink = ($cursor: HTMLElement | null) => {
-  if ($cursor) gsap.to($cursor, { autoAlpha: 0, duration: 0.5, ease: 'steps(1)', repeat: -1, yoyo: true });
-};
+/* ---------- Internship tag: a sign hanging from a nail, it swings on hover ---------- */
 
-const createInternshipWiggle = ($body: HTMLElement): Cleanup => {
-  const wiggle = gsap
-    .timeline({ paused: true, defaults: { ease: 'sine.inOut' } })
-    .to($body, { rotation: WIGGLE_DEG, duration: 0.08 })
-    .to($body, { rotation: -WIGGLE_DEG, duration: 0.12 })
-    .to($body, { rotation: WIGGLE_DEG, duration: 0.12 })
-    .to($body, { rotation: 0, duration: 0.1 });
+// Side to side from its top centre, each swing smaller than the last
+const SIGN_SWING_DEG = [0, 7, -4.5, 2.5, -1, 0];
+const SIGN_HOVER_SWING_DEG = [0, 5, -3, 1.5, 0];
 
-  const play = () => wiggle.restart();
+const createInternshipSwing = ($body: HTMLElement): Cleanup => {
+  const swing = gsap.timeline({ paused: true }).to($body, {
+    keyframes: { rotation: SIGN_HOVER_SWING_DEG, easeEach: 'sine.inOut' },
+    duration: 1.2,
+  });
+
+  const play = () => swing.restart();
   $body.addEventListener('mouseenter', play);
   return () => $body.removeEventListener('mouseenter', play);
 };
@@ -272,21 +275,27 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   const $platePaper = getLayer('title-plate-paper');
   const $title = getLayer('title');
   const $subtitle = getLayer('subtitle');
+  const $subtitleOpen = getLayer('subtitle-open');
+  const $subtitleClose = getLayer('subtitle-close');
+  const $subtitleText = getLayer('subtitle-text');
   const $camera = getLayer('camera');
   const $cameraImage = getLayer('camera-image');
   const $photo = getLayer('photo');
   const $photoFill = getLayer('photo-yellow');
   const $outlineFront = getLayer('photo-outline-front');
   const $outlineBack = getLayer('photo-outline-back');
-  const $internship = document.querySelector<HTMLElement>('[data-tag-intro="stamp"]');
+  const $internship = document.querySelector<HTMLElement>('[data-tag-intro="hang"]');
   const $internshipBody = $internship && getLayer('tag-body', $internship);
-  const $internshipText = $internship && getLayer('tag-text', $internship);
+  const $internshipLabel = $internship && getLayer('tag-label', $internship);
   if (
     !$band ||
     !$plate ||
     !$platePaper ||
     !$title ||
     !$subtitle ||
+    !$subtitleOpen ||
+    !$subtitleClose ||
+    !$subtitleText ||
     !$camera ||
     !$cameraImage ||
     !$photo ||
@@ -295,7 +304,7 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     !$outlineBack ||
     !$internship ||
     !$internshipBody ||
-    !$internshipText
+    !$internshipLabel
   ) {
     delete $html.dataset.intro;
     return;
@@ -315,14 +324,11 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   const getBody = ($tag: HTMLElement) => getLayer('tag-body', $tag) ?? $tag;
   const $travelBodies = $travelTags.map(getBody);
   const $growBodies = $growTags.map(getBody);
-  const $shakeParts = getAll('[data-shake]');
-  const $corners = getAll('[data-layer="tag-corner"]', $internshipBody);
-  const $cursor = getLayer('tag-cursor', $internship);
 
   // No masks: Boldonse letters are taller than their box, so a mask cuts them off
   const titleSplit = SplitText.create($title, { type: 'chars' });
-  const subtitleSplit = SplitText.create($subtitle, { type: 'chars' });
-  const internshipSplit = SplitText.create($internshipText, { type: 'chars' });
+  // The < and > start side by side in the middle of the text, then move out to their places
+  const subtitleHalf = $subtitleText.offsetWidth / 2;
 
   // Where each title tag starts: the centre of the plate, hidden under it.
   // GSAP's x/y move the tag along its own tilt (the CSS `rotate`), so the
@@ -340,11 +346,10 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     };
   });
 
-  // The typing cursor sits after the text (left: 100%), so its x is measured from the text's end
-  const textWidth = $internshipText.offsetWidth;
-  const moveCursorAfter = ($char: HTMLElement) => {
-    if ($cursor) gsap.set($cursor, { x: $char.offsetLeft + $char.offsetWidth - textWidth });
-  };
+  // The sign starts with random letters in place of its text (same length, so its width
+  // never changes), then decodes into the real words
+  const internshipText = $internshipLabel.textContent ?? '';
+  const scrambledText = internshipText.replace(/[a-z]/g, () => gsap.utils.random(SCRAMBLE_CHARS.split('')));
 
   const floatWhenDone = {
     onComplete(this: gsap.core.Tween) {
@@ -353,10 +358,7 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     },
   };
 
-  const titleLandsAt = 0.4 + (titleSplit.chars.length - 1) * TITLE_STAGGER_S + TITLE_STAMP_S;
-  const internshipLandsAt = INTERNSHIP_AT_S + 0.3;
-  const internshipTypedAt =
-    internshipLandsAt + 0.15 + internshipSplit.chars.length * INTERNSHIP_TYPE_S;
+  const signHangsAt = INTERNSHIP_AT_S + SIGN_DROP_S;
 
   const intro = gsap.timeline({
     paused: true,
@@ -384,21 +386,29 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     .fromTo($platePaper, { scaleX: 0, transformOrigin: 'left center' }, { scaleX: 1, duration: 0.8 }, 0.15)
     .fromTo($platePaper, { rotation: 4 }, { rotation: 0, duration: 0.6, ease: 'power3.out', immediateRender: false }, 0.15)
 
-    // 0.4s: each letter is stamped onto the plate, then the plate gives a tiny thud
+    // 0.4s: each letter stands up from lying flat on the plate, like cards flipped upright,
+    // with a little overshoot. Hinged on its bottom edge, one after another.
     .fromTo(
       titleSplit.chars,
-      { scale: 1.4, autoAlpha: 0 },
-      { scale: 1, autoAlpha: 1, duration: TITLE_STAMP_S, ease: 'power3.in', stagger: TITLE_STAGGER_S },
+      { rotationX: -100, autoAlpha: 0, transformOrigin: '50% 100%', transformPerspective: 500 },
+      { rotationX: 0, autoAlpha: 1, duration: TITLE_STAND_S, ease: 'back.out(1.7)', stagger: TITLE_STAGGER_S },
       0.4,
     )
-    .to([$platePaper, ...titleSplit.chars], { y: 2, duration: 0.06, ease: 'power1.out', yoyo: true, repeat: 1 }, titleLandsAt)
 
-    // 0.6s: the subtitle is typed out, one letter at a time
+    // 0.5s: the subtitle's < > appear side by side in the middle, then open like an HTML tag,
+    // and the text shows between them as they move apart
     .fromTo(
-      subtitleSplit.chars,
-      { autoAlpha: 0 },
-      { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: SUBTITLE_TYPE_S },
-      0.6,
+      [$subtitleOpen, $subtitleClose],
+      { autoAlpha: 0, x: (i: number) => (i === 0 ? subtitleHalf : -subtitleHalf) },
+      { autoAlpha: 1, duration: 0.4, ease: 'power1.out' },
+      0.5,
+    )
+    .to([$subtitleOpen, $subtitleClose], { x: 0, duration: SUBTITLE_OPEN_S, ease: SUBTITLE_EASE }, SUBTITLE_OPEN_AT_S)
+    .fromTo(
+      $subtitleText,
+      { clipPath: 'inset(-20% 50% -20% 50%)' },
+      { clipPath: 'inset(-20% 0% -20% 0%)', duration: SUBTITLE_OPEN_S, ease: SUBTITLE_EASE },
+      SUBTITLE_OPEN_AT_S,
     )
 
     // 0.7s: the photo is pressed down like a sticker, and its fill and outlines
@@ -451,60 +461,36 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
       1.6,
     )
 
-    // 2.3s: the internship tag is stamped down, the band gives a light knock, the corners clamp it
+    // 2.3s: the internship sign flips down from its top edge, like a sign hung on a nail
     .fromTo(
       $internshipBody,
-      { scale: 1.6, rotation: -8, autoAlpha: 0 },
-      { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.3, ease: 'power4.in' },
+      { rotationX: -95, autoAlpha: 0 },
+      { rotationX: 0, autoAlpha: 1, duration: SIGN_DROP_S, ease: 'power3.in' },
       INTERNSHIP_AT_S,
     )
+    // it swings side to side and settles
     .to(
-      $shakeParts,
+      $internshipBody,
+      { keyframes: { rotation: SIGN_SWING_DEG, easeEach: 'sine.inOut' }, duration: 1.8 },
+      signHangsAt,
+    )
+    // and its text decodes from random letters into the real words, left to right
+    .to(
+      $internshipLabel,
       {
-        // a light knock, only on the band and the tag's own area
-        keyframes: { y: [0, SHAKE_PX, -SHAKE_PX / 2, 0] },
-        duration: 0.18,
+        duration: SIGN_DECODE_S,
         ease: 'none',
-        clearProps: 'transform',
+        scrambleText: { text: internshipText, chars: SCRAMBLE_CHARS, revealDelay: 0.2, speed: 0.6 },
       },
-      internshipLandsAt,
+      signHangsAt,
     )
-    .fromTo(
-      $corners,
-      { x: (i: number) => (i % 2 ? 6 : -6), y: (i: number) => (i < 2 ? -6 : 6), autoAlpha: 0 },
-      { x: 0, y: 0, autoAlpha: 1, duration: 0.3, ease: 'back.out(3)', stagger: 0.03 },
-      internshipLandsAt + 0.02,
-    )
-    // then its text is typed, the cursor moving along
-    .fromTo(
-      internshipSplit.chars,
-      { autoAlpha: 0 },
-      {
-        autoAlpha: 1,
-        duration: 0.01,
-        ease: 'none',
-        stagger: {
-          each: INTERNSHIP_TYPE_S,
-          onStart(this: gsap.core.Tween) {
-            moveCursorAfter(this.targets()[0] as HTMLElement);
-          },
-        },
-      },
-      internshipLandsAt + 0.15,
-    )
-    .call(
-      () =>
-        context.add(() => {
-          startCursorBlink($cursor);
-          addCleanup(createInternshipWiggle($internshipBody));
-        }),
-      [],
-      internshipTypedAt,
-    );
+    .call(() => context.add(() => addCleanup(createInternshipSwing($internshipBody))), [], signHangsAt + SIGN_DECODE_S);
 
   // Every layer now has its start state, so the CSS that hid them can go
   gsap.set($travelBodies, { autoAlpha: 0 });
-  if ($cursor) gsap.set($cursor, { x: -textWidth });
+  // It hangs from its top centre, with some depth for the flip
+  gsap.set($internshipBody, { transformOrigin: '50% 0%', transformPerspective: 600 });
+  $internshipLabel.textContent = scrambledText;
   delete $html.dataset.intro;
   intro.play();
 };
@@ -530,7 +516,6 @@ export const initAnimations = () => {
       if (reduceMotion) {
         // No spinning, floating, smooth scrolling or page-load sequence: everything is simply there
         delete document.documentElement.dataset.intro;
-        gsap.set('[data-layer="tag-cursor"]', { autoAlpha: 0 });
       } else {
         addCleanup(createLogo());
         addCleanup(createSmoothScroll());
