@@ -55,8 +55,13 @@ const smoothPath = (points: [number, number][]) => {
 };
 
 const wavePath = smoothPath(WAVE_POINTS);
-const textPath = smoothPath(
-  WAVE_POINTS.filter(([x]) => x >= TEXT_START_X).map(([x, y]) => [x, y + TEXT_OFFSET_Y]),
+// The text path covers the whole wave, so the flowing text fills wide screens too
+const textPath = smoothPath(WAVE_POINTS.map(([x, y]) => [x, y + TEXT_OFFSET_Y]));
+
+// Without the script, the text starts where it does in Figma (x -195): about this far along the path
+const textStartOffset = WAVE_POINTS.filter(([x]) => x <= TEXT_START_X).reduce(
+  (length, [x, y], i, points) => (i === 0 ? 0 : length + Math.hypot(x - points[i - 1][0], y - points[i - 1][1])),
+  0,
 );
 
 // The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
@@ -93,49 +98,53 @@ const SKILLS = [
     <path class="about__wave-line" data-layer="wave-line" d={wavePath} />
     <path id="about-wave-text-path" d={textPath} fill="none" />
     <text class="about__wave-text" data-layer="wave-text" xml:space="preserve">
-      <textPath href="#about-wave-text-path">{WAVE_TEXT}</textPath>
+      <textPath href="#about-wave-text-path" data-layer="wave-text-path" startOffset={textStartOffset.toFixed(1)}>{WAVE_TEXT}</textPath>
     </text>
   </svg>
 
   <div class="about__frame">
     <!-- Title with the yellow highlighter bars behind each line -->
-    <span class="about__marker about__marker--first" data-layer="title-marker-first"></span>
-    <span class="about__marker about__marker--second" data-layer="title-marker-second"></span>
+    <span class="about__marker about__marker--first" data-layer="title-marker" data-intro></span>
+    <span class="about__marker about__marker--second" data-layer="title-marker" data-intro></span>
     <h2 class="about__title" id="about-title" data-layer="about-title">Good looks and good experiences</h2>
 
-    <span class="about__star" data-layer="about-sparkle-big" style={layer(642.2, 794.8, 56.35)}><StarPinkLg /></span>
-    <span class="about__star" data-layer="about-sparkle-big-outline" style={layer(644, 793.2, 56.35)}><StarOutlineLg /></span>
-    <span class="about__star" data-layer="about-sparkle-small" style={layer(662.4, 774, 22.62)}><StarPinkSm /></span>
-    <span class="about__star" data-layer="about-sparkle-small-outline" style={layer(663.1, 773.3, 22.62)}><StarOutlineSm /></span>
+    <span class="about__star" data-layer="about-sparkle-big" data-intro style={layer(642.2, 794.8, 56.35)}><StarPinkLg /></span>
+    <span class="about__star" data-layer="about-sparkle-big-outline" data-intro style={layer(644, 793.2, 56.35)}><StarOutlineLg /></span>
+    <span class="about__star" data-layer="about-sparkle-small" data-intro style={layer(662.4, 774, 22.62)}><StarPinkSm /></span>
+    <span class="about__star" data-layer="about-sparkle-small-outline" data-intro style={layer(663.1, 773.3, 22.62)}><StarOutlineSm /></span>
 
-    <span class="about__star" data-layer="about-star-low" style={layer(1229.6, 927.3, 21.27)}><StarPinkSm /></span>
-    <span class="about__star" data-layer="about-star-low-outline" style={layer(1230.3, 926.6, 21.27)}><StarOutlineSm /></span>
-    <span class="about__star" data-layer="about-star-high" style={layer(1289.7, 760.7, 17.4)}><StarPinkSm /></span>
-    <span class="about__star" data-layer="about-star-high-outline" style={layer(1290.3, 760.7, 17.4)}><StarOutlineSm /></span>
+    <span class="about__star" data-layer="about-star-low" data-intro style={layer(1229.6, 927.3, 21.27)}><StarPinkSm /></span>
+    <span class="about__star" data-layer="about-star-low-outline" data-intro style={layer(1230.3, 926.6, 21.27)}><StarOutlineSm /></span>
+    <span class="about__star" data-layer="about-star-high" data-intro style={layer(1289.7, 760.7, 17.4)}><StarPinkSm /></span>
+    <span class="about__star" data-layer="about-star-high-outline" data-intro style={layer(1290.3, 760.7, 17.4)}><StarOutlineSm /></span>
 
     <!-- Text card with corner brackets and the About me button -->
     <div class="about__card" data-layer="about-card">
-      <p class="about__text" data-layer="about-text">
+      <p class="about__text" data-layer="about-text" data-intro>
         <strong>I love the visual side of design</strong>: the colours, the details, and the little things that
         make you stop scrolling. But I care just as much about what happens next:
-        <strong>how an experience works, feels, and makes sense to the people</strong> using it. And when an idea
+        <strong> how an experience works, feels, and makes sense to the people</strong> using it. And when an idea
         needs a little code to come to life, I’m happy to get my hands dirty.
       </p>
       <Button href={`${base}/#about`} text="About me" w={177} name="about-button" class="about__button" />
-      <span class="about__corner about__corner--tl" data-layer="about-corner"></span>
-      <span class="about__corner about__corner--tr" data-layer="about-corner"></span>
-      <span class="about__corner about__corner--bl" data-layer="about-corner"></span>
-      <span class="about__corner about__corner--br" data-layer="about-corner"></span>
+      <span class="about__corner about__corner--tl" data-layer="about-corner" data-intro></span>
+      <span class="about__corner about__corner--tr" data-layer="about-corner" data-intro></span>
+      <span class="about__corner about__corner--bl" data-layer="about-corner" data-intro></span>
+      <span class="about__corner about__corner--br" data-layer="about-corner" data-intro></span>
     </div>
 
-    <!-- The skills paper comes out of the typewriter. Its bottom is tucked into the machine. -->
+    <!--
+      The skills paper comes out of the typewriter. Its bottom is tucked into the machine.
+      The window hides whatever part of the paper is still inside the typewriter while it feeds up.
+    -->
+    <div class="about__paper-window">
     <div class="about__paper" data-layer="skills-paper">
-      <div class="about__sheet" data-layer="skills-sheet">
+      <div class="about__sheet" data-layer="skills-sheet" data-intro>
         {
           SKILLS.map(({ heading, lines }) => (
             <div class="about__skills" data-layer="skills-group">
               <h3 class="about__skills-heading" data-layer="skills-heading">
-                <span class="about__skills-mark"><span class="about__skills-name">{heading}</span>:</span>
+                <span class="about__skills-mark" data-layer="skills-mark"><span class="about__skills-name">{heading}</span>:</span>
               </h3>
               {lines.map((line) => (
                 <p class="about__skills-line" data-layer="skills-line">
@@ -146,6 +155,7 @@ const SKILLS = [
           ))
         }
       </div>
+    </div>
     </div>
 
     <div class="about__typewriter" data-layer="typewriter">
@@ -330,11 +340,26 @@ const SKILLS = [
     The paper keeps its Figma left edge (x 688), its Figma width (287px) and its
     bottom inside the typewriter (y 1185). It grows upwards to fit the full list.
   */
+  /*
+    A window around the paper with its bottom edge at the roller (y 1185). Whatever is
+    below it is "inside the typewriter", so the paper can start low and feed up.
+    It's wider than the paper so the shadow and the tilt are never cut.
+  */
+  .about__paper-window {
+    position: absolute;
+    left: calc((688 - 40) * var(--u));
+    bottom: calc((720 + 980 - 1185) * var(--u));
+    width: calc((287 + 80) * var(--u));
+    height: calc(700 * var(--u));
+    overflow: hidden;
+    z-index: 5;
+    pointer-events: none;
+  }
+
   .about__paper {
     position: absolute;
-    left: calc(688 * var(--u));
-    bottom: calc((720 + 980 - 1185) * var(--u));
-    z-index: 5;
+    left: calc(40 * var(--u));
+    bottom: 0;
   }
 
   .about__sheet {
@@ -360,12 +385,24 @@ const SKILLS = [
     line-height: calc(20.8 * var(--u));
   }
 
-  /* the grey highlight behind each heading (18px tall, a little wider than the text) */
+  /*
+    The grey highlight behind each heading (18px tall, a little wider than the text).
+    --mark-w lets the script wipe it in from the left before the heading is typed.
+  */
   .about__skills-mark {
     display: inline-block;
     margin-left: calc(-4 * var(--u));
     padding: 0 calc(5.5 * var(--u)) 0 calc(4 * var(--u));
-    background: linear-gradient(var(--c-grey), var(--c-grey)) center / 100% calc(18 * var(--u)) no-repeat;
+    background: linear-gradient(var(--c-grey), var(--c-grey)) left center / var(--mark-w, 100%) calc(18 * var(--u))
+      no-repeat;
+  }
+
+  /*
+    The typed letters stay inline (SplitText makes them inline-block), so the
+    underline under each heading's name keeps running under them.
+  */
+  .about__sheet :global(.about__char) {
+    display: inline !important;
   }
 
   /* the heading's name is underlined, the colon isn't */
