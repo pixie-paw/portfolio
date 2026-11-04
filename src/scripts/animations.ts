@@ -74,10 +74,23 @@ const WAVE_FLOW_PX_S = 40; // the wave text's normal speed along the curve
 const WAVE_SCROLL_BOOST = 15; // extra px/s for each px/frame of scroll speed
 const WAVE_SEPARATOR = '   ·   ';
 
+// If someone scrolls while the hero is still loading, the rest of the load plays this much faster
+const INTRO_HURRY_SPEED = 4;
+
 // Don't keep the page hidden for long if a web font is slow
 const FONT_WAIT_MS = 1500;
 
 type Cleanup = () => void;
+
+/*
+  The About section's animations wait for this: it resolves once the About title has been
+  typed at the end of the hero load (or straight away when there's no load sequence).
+  So the yellow bars, the card, the wave line and the paper never play before their title.
+*/
+let markAboutTitleTyped: () => void = () => {};
+const aboutTitleTyped = new Promise<void>((resolve) => {
+  markAboutTitleTyped = resolve;
+});
 
 const getLayer = <T extends Element = HTMLElement>(name: string, $root: ParentNode = document) =>
   $root.querySelector<T>(`[data-layer="${name}"]`);
@@ -369,7 +382,7 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
     .to($starOutlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out', stagger: 0.1 }, 0.3);
 
   // start: 1 = as soon as the page has scrolled 1px
-  ScrollTrigger.create({ start: 1, once: true, onEnter: () => firstScroll.play() });
+  ScrollTrigger.create({ start: 1, once: true, onEnter: () => aboutTitleTyped.then(() => firstScroll.play()) });
 
   // Text card: the corners clamp in, then the text appears line by line
   const $card = getLayer('about-card', $about);
@@ -384,7 +397,8 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       start: 'top 85%',
       once: true,
       onEnter: () =>
-        context.add(() => {
+        aboutTitleTyped.then(() =>
+          context.add(() => {
           // Split into lines only now, once the fonts are in, so the lines are right
           const lines = SplitText.create($cardText, { type: 'lines' }).lines;
           gsap.set($cardText, { autoAlpha: 1 });
@@ -397,7 +411,8 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
               { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 },
               0.2,
             );
-        }),
+          }),
+        ),
     });
   }
 
@@ -407,11 +422,12 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   if ($wave && $waveLine) {
     const length = $waveLine.getTotalLength();
     gsap.set($waveLine, { strokeDasharray: length, strokeDashoffset: length });
-    gsap.to($waveLine, {
-      strokeDashoffset: 0,
-      duration: WAVE_DRAW_S,
-      ease: 'power2.inOut',
-      scrollTrigger: { trigger: $wave, start: 'top 75%', once: true },
+    const draw = gsap.to($waveLine, { strokeDashoffset: 0, duration: WAVE_DRAW_S, ease: 'power2.inOut', paused: true });
+    ScrollTrigger.create({
+      trigger: $wave,
+      start: 'top 75%',
+      once: true,
+      onEnter: () => aboutTitleTyped.then(() => draw.play()),
     });
   }
 
@@ -456,7 +472,12 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       }
     });
 
-    ScrollTrigger.create({ trigger: $typewriter, start: 'top 80%', once: true, onEnter: () => typing.play() });
+    ScrollTrigger.create({
+      trigger: $typewriter,
+      start: 'top 80%',
+      once: true,
+      onEnter: () => aboutTitleTyped.then(() => typing.play()),
+    });
   }
 
   // The wave text needs Inter loaded before it can be measured
@@ -503,6 +524,7 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     !$internshipLabel
   ) {
     delete $html.dataset.intro;
+    markAboutTitleTyped();
     return;
   }
 
@@ -627,6 +649,7 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
       { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S },
       ABOUT_TITLE_AT_S,
     )
+    .call(() => markAboutTitleTyped(), [], ABOUT_TITLE_AT_S + aboutTitleChars.length * ABOUT_TITLE_TYPE_S)
 
     // 0.7s: the photo is pressed down like a sticker, and its fill and outlines
     // slide in from out of place until the print is in register
@@ -710,6 +733,16 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   $internshipLabel.textContent = scrambledText;
   delete $html.dataset.intro;
   intro.play();
+
+  // Scrolling while the hero still loads: everything still arrives in order, just faster.
+  // start: 1 = as soon as the page has scrolled 1px (also true if it loads already scrolled).
+  ScrollTrigger.create({
+    start: 1,
+    once: true,
+    onEnter: () => {
+      if (intro.progress() < 1) gsap.to(intro, { timeScale: INTRO_HURRY_SPEED, duration: 0.3, ease: 'power1.in' });
+    },
+  });
 };
 
 export const initAnimations = () => {
@@ -733,6 +766,7 @@ export const initAnimations = () => {
       if (reduceMotion) {
         // No spinning, floating, smooth scrolling or page-load sequence: everything is simply there
         delete document.documentElement.dataset.intro;
+        markAboutTitleTyped();
       } else {
         addCleanup(createLogo());
         addCleanup(createSmoothScroll());
