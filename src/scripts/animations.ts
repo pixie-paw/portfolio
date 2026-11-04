@@ -1174,7 +1174,7 @@ const createFooter = (context: gsap.Context) => {
   outlines slide into register, the title is typed and its yellow bars are drawn right after,
   and the card wipes in once the title is typed. On top: Kiki runs in from off the left edge, the stems grow
   slowly out from behind the photo and their flowers open and float, and the hat drops onto
-  Irina's head. The phone always bobs on its cord. Hovering the hat tips it, like saying howdy.
+  Irina's head and stays there. The phone always bobs on its cord. Hovering the hat tips it, like saying howdy.
 */
 const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $intro = document.querySelector('[data-section="about-intro"]');
@@ -1337,12 +1337,9 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
         if ($head) load.to($head, { scale: 1, duration: 0.9, ease: 'back.out(1.6)' }, at + INTRO_STEM_S * 0.85);
       });
 
-      // The hat drops onto Irina's head, squashes as it lands and springs back
+      // The hat drops onto Irina's head and stays put once it lands (only the hover moves it)
       if ($hat) {
-        load
-          .to($hat, { y: 0, rotation: 0, autoAlpha: 1, duration: 0.45, ease: 'power3.in' }, INTRO_HAT_DROP_AT_S)
-          .to($hat, { scaleX: 1.12, scaleY: 0.82, duration: 0.1, ease: 'power2.out' })
-          .to($hat, { scaleX: 1, scaleY: 1, duration: 0.6, ease: 'elastic.out(1, 0.4)' });
+        load.to($hat, { y: 0, rotation: 0, autoAlpha: 1, duration: 0.45, ease: 'power3.in' }, INTRO_HAT_DROP_AT_S);
       }
     }),
   );
