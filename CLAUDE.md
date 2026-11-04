@@ -43,13 +43,17 @@ For PR descriptions, commit messages, docs and code comments:
 - **Scale:** `--u` in `src/styles/global.css` is one Figma pixel, so desktop layouts keep the exact proportions. Sizes are written as `calc(N * var(--u))`.
 - **Wide screens:** above 1440px the design looks exactly as it does at 1440, centred. `--u` stops growing at 1440. Each section's content sits in the 1440 frame, with a `1fr` column on each side of its grid, as in `Hero.astro`. Only the parts that run edge to edge in Figma (bands, marquees, backgrounds) keep running edge to edge.
 - **Check every section** against Figma at 1440px, then at 1920px and 2560px.
-- **Layout:** each section is a CSS grid with named areas. Overlapping collage layers sit in the same grid area and are positioned inside it.
+- **Layout:** each section is a CSS grid with named areas (`grid-template-areas`). Overlapping collage layers sit in the same grid area and are positioned inside it.
+- **Placement by area, never by number:** place every element by its named area (`grid-area: title`). When an element has to overlap another area, use that area's lines (`grid-row: title-start / tag-end`). Never use column or row numbers like `grid-column: 2 / 3`, because they break as soon as a column or row is added.
 - **Layers:** every visual element (tags, stars, outlines, photo, camera) is its own element with a `data-layer` name, so it can be animated on its own.
 
 ## Background: grid paper and texture
 
-- **Grid paper** (`body::before`): covers every page from top to bottom, behind everything.
-- **Texture** (`body::after`): covers every page and every section from top to bottom, on top of everything (z-index 100, `mix-blend-mode: lighten`, no pointer events). In Figma the texture is only on the hero. That's a mistake in the Figma file, so don't copy it.
+Both are one layer the size of the screen, fixed in place (`position: fixed` in `src/styles/global.css`). The page scrolls over the grid paper and under the texture, so they cover every page and every section from top to bottom, however long the page gets. Don't add them again per section.
+
+- **Grid paper** (`body::before`): fixed behind everything, rotated -2.22deg, 100px bigger than the screen on every side so the rotation never shows its corners.
+- **Texture** (`body::after`): fixed on top of everything (z-index 100, `mix-blend-mode: lighten`, no pointer events). In Figma the texture is only on the hero. That's a mistake in the Figma file, so don't copy it.
+- **Use `position: fixed`, not `background-attachment: fixed`**, which iPhones ignore. Heights use `100lvh`, so no gap shows when the phone's toolbar slides away.
 - **Never put a background colour on `body`**, because it paints over the grid paper. The paper colour sits on `html`.
 
 ## Animation code
