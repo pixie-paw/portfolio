@@ -1,0 +1,287 @@
+---
+import { Image } from 'astro:assets';
+import Header from './Header.astro';
+
+import irina from '../assets/about-page/irina-cowboy.webp';
+import hat from '../assets/about-page/cowboy-hat.webp';
+import kiki from '../assets/about-page/kiki.webp';
+import phone from '../assets/about-page/phone.webp';
+
+import ArchFill from '../assets/about-page/arch-fill.svg';
+import ArchOutlineBack from '../assets/about-page/arch-outline-back.svg';
+import ArchOutlineFront from '../assets/about-page/arch-outline-front.svg';
+import FlowerRedTop from '../assets/about-page/flower-red-top.svg';
+import FlowerRedLow from '../assets/about-page/flower-red-low.svg';
+import FlowerBlueLeft from '../assets/about-page/flower-blue-left.svg';
+import FlowerBlueRight from '../assets/about-page/flower-blue-right.svg';
+import Star18 from '../assets/about-page/star-18.svg';
+import Star22 from '../assets/about-page/star-22.svg';
+
+/*
+  The About me page, section 1: "A few more things about this human". The header sits at
+  the top of this section, so every layer is placed in Figma pixels from the top-left of the
+  1440px "3.0 About page" frame. x / y = the layer's top-left corner, w = its width.
+  Layers are stacked like in Figma: the arch, the flowers (their stems run behind the photo),
+  the photo, Kiki, then the hat.
+*/
+const place = (x: number, y: number, w: number) => `--x:${x};--y:${y};--w:${w}`;
+---
+
+<section class="about-intro" aria-labelledby="about-intro-title" data-section="about-intro">
+  <div class="about-intro__frame">
+    <div class="about-intro__header">
+      <Header active="about" />
+    </div>
+
+    <!-- The phone hangs from a cord behind the Get in touch button -->
+    <Image
+      class="about-intro__layer about-intro__phone"
+      data-layer="intro-phone"
+      src={phone}
+      alt=""
+      widths={[72, 144]}
+      sizes="72px"
+      loading="eager"
+      style={place(1162, 92, 71.86)}
+    />
+
+    <!-- The arch around the photo: the yellow shape and two hand-drawn outlines -->
+    <span class="about-intro__layer about-intro__arch" data-layer="intro-arch-fill" data-intro style={place(81, 289.24, 404)}><ArchFill /></span>
+    <span class="about-intro__layer about-intro__arch" data-layer="intro-arch-back" data-intro style={place(64.56, 274.72, 432)}><ArchOutlineBack /></span>
+    <span class="about-intro__layer about-intro__arch" data-layer="intro-arch-front" data-intro style={place(84.57, 290.72, 402)}><ArchOutlineFront /></span>
+
+    <!--
+      Flowers on stems that grow out from behind the photo. data-grow says which end of the
+      stem is at the photo, so the stem is drawn from there out to its flower.
+    -->
+    <span class="about-intro__layer about-intro__flower" data-layer="intro-flower-red-top" data-intro data-grow="end" style={place(15, 194, 348)}><FlowerRedTop /></span>
+    <span class="about-intro__layer about-intro__flower" data-layer="intro-flower-red-low" data-intro data-grow="end" style={place(29, 323, 178)}><FlowerRedLow /></span>
+    <span class="about-intro__layer about-intro__flower" data-layer="intro-flower-blue-left" data-intro data-grow="start" style={place(0, 608.37, 128)}><FlowerBlueLeft /></span>
+    <span class="about-intro__layer about-intro__flower" data-layer="intro-flower-blue-right" data-intro data-grow="start" style={place(322, 312.01, 308)}><FlowerBlueRight /></span>
+
+    <Image
+      class="about-intro__layer about-intro__photo"
+      data-layer="intro-photo"
+      data-intro
+      src={irina}
+      alt="Irina in a pink cowboy hat, making a face and holding up a peace sign"
+      widths={[369, 738]}
+      sizes="369px"
+      loading="eager"
+      style={place(100, 306, 369)}
+    />
+    <Image
+      class="about-intro__layer about-intro__kiki"
+      data-layer="intro-kiki"
+      data-intro
+      src={kiki}
+      alt="Kiki, Irina’s long-haired cat, sitting next to a scratching post"
+      widths={[219, 437]}
+      sizes="219px"
+      loading="eager"
+      style={place(289, 613, 218.49)}
+    />
+    <Image
+      class="about-intro__layer about-intro__hat"
+      data-layer="intro-hat"
+      data-intro
+      src={hat}
+      alt=""
+      widths={[228, 456]}
+      sizes="228px"
+      loading="eager"
+      style={place(200, 270, 228)}
+    />
+
+    <!-- Title, with the yellow highlighter bars behind each line -->
+    <span class="about-intro__marker about-intro__marker--first" data-layer="intro-marker" data-intro></span>
+    <span class="about-intro__marker about-intro__marker--second" data-layer="intro-marker" data-intro></span>
+    <h1 class="about-intro__title" id="about-intro-title" data-layer="intro-title" data-intro>
+      <span class="about-intro__title-line" data-layer="intro-title-line">A FEW MORE THINGS</span>
+      <span class="about-intro__title-line" data-layer="intro-title-line">about this human</span>
+    </h1>
+
+    <span class="about-intro__layer about-intro__star" data-layer="intro-star" data-intro style={place(1054, 426, 17.95)}><Star18 /></span>
+    <span class="about-intro__layer about-intro__star" data-layer="intro-star" data-intro style={place(1159, 476, 21.95)}><Star22 /></span>
+
+    <!-- Text card with corner brackets -->
+    <div class="about-intro__card" data-layer="intro-card" data-intro>
+      <p class="about-intro__text" data-layer="intro-text">
+        I’m a <strong>third-year Digital Design and Development student at Howest</strong>, where I get to explore what
+        happens when design meets technology → from
+        <strong> visual design and UX to creative coding and interactive installations</strong>.
+      </p>
+      <span class="about-intro__corner about-intro__corner--tl" data-layer="intro-corner"></span>
+      <span class="about-intro__corner about-intro__corner--tr" data-layer="intro-corner"></span>
+      <span class="about-intro__corner about-intro__corner--bl" data-layer="intro-corner"></span>
+      <span class="about-intro__corner about-intro__corner--br" data-layer="intro-corner"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it.
+  */
+  .about-intro {
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-rows: [content-start] calc(1000 * var(--u)) [content-end];
+  }
+
+  .about-intro__frame {
+    grid-column: frame;
+    grid-row: content;
+    position: relative;
+  }
+
+  .about-intro__header {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ---------- Collage layers (top-left corner in Figma px) ---------- */
+  .about-intro__layer {
+    position: absolute;
+    left: calc(var(--x) * var(--u));
+    top: calc(var(--y) * var(--u));
+    width: calc(var(--w) * var(--u));
+    height: auto;
+  }
+
+  .about-intro__layer :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .about-intro__arch {
+    z-index: 1;
+  }
+
+  .about-intro__flower {
+    z-index: 2;
+  }
+
+  .about-intro__photo {
+    z-index: 3;
+  }
+
+  .about-intro__kiki {
+    z-index: 4;
+  }
+
+  .about-intro__hat {
+    z-index: 5;
+  }
+
+  /* Under the header, so its cord starts behind the Get in touch button */
+  .about-intro__phone {
+    z-index: 5;
+  }
+
+  .about-intro__star {
+    z-index: 6;
+  }
+
+  /* ---------- Title ---------- */
+  .about-intro__title {
+    position: absolute;
+    left: calc(568 * var(--u));
+    top: calc(332 * var(--u));
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(48 * var(--u));
+    line-height: 1.4;
+    color: var(--c-ink);
+    z-index: 2;
+  }
+
+  /* The two lines are 84px apart in Figma (y 332 and y 416) */
+  .about-intro__title-line {
+    display: block;
+    height: calc(84 * var(--u));
+    white-space: nowrap;
+  }
+
+  .about-intro__marker {
+    position: absolute;
+    left: calc(555 * var(--u));
+    height: calc(23 * var(--u));
+    background: var(--c-marker);
+    z-index: 1;
+  }
+
+  .about-intro__marker--first {
+    top: calc((393 - 11.5) * var(--u));
+    width: calc(596 * var(--u));
+  }
+
+  .about-intro__marker--second {
+    top: calc((476 - 11.5) * var(--u));
+    width: calc(508 * var(--u));
+  }
+
+  /* ---------- Text card ---------- */
+  .about-intro__card {
+    position: absolute;
+    left: calc(514 * var(--u));
+    top: calc(518 * var(--u));
+    width: calc(702 * var(--u));
+    height: calc(179 * var(--u));
+    padding: calc(37 * var(--u)) calc(41 * var(--u)) 0 calc(42 * var(--u));
+    background: var(--c-light);
+    z-index: 2;
+  }
+
+  .about-intro__text {
+    margin: 0;
+    font-family: var(--f-sans);
+    font-size: calc(20 * var(--u));
+    line-height: 1.2;
+    color: var(--c-ink);
+  }
+
+  .about-intro__text strong {
+    font-weight: 500;
+  }
+
+  .about-intro__corner {
+    position: absolute;
+    width: calc(12 * var(--u));
+    height: calc(14 * var(--u));
+    border: 0 solid var(--c-ink);
+    --stroke: max(1.5px, calc(2.5 * var(--u)));
+  }
+
+  .about-intro__corner--tl {
+    top: 0;
+    left: 0;
+    border-top-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .about-intro__corner--tr {
+    top: 0;
+    right: 0;
+    border-top-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  .about-intro__corner--bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .about-intro__corner--br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+</style>
