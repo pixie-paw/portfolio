@@ -20,7 +20,8 @@
   /* Akzidenz-Grotesk Next and Bulletin Typewriter MN come from Irina's Adobe Fonts kit (uit2fga). */
   --f-display: 'Boldonse', 'Arial Black', sans-serif;
   --f-serif: 'Bona Nova', Georgia, serif;
-  --f-sans: 'akzidenz-grotesk-next', 'Helvetica Neue', Arial, sans-serif;
+  /* Adobe serves Akzidenz-Grotesk Next Regular/Medium under the "-pro" family name */
+  --f-sans: 'akzidenz-grotesk-next-pro', 'akzidenz-grotesk-next', 'Helvetica Neue', Arial, sans-serif;
   --f-type: 'bulletin-typewriter-mn', 'Courier New', Courier, monospace;
 
   --u: calc(min(100vw, 1440px) / 1440);
