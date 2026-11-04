@@ -452,13 +452,19 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   // start: 1 = as soon as the page has scrolled 1px
   ScrollTrigger.create({ start: 1, once: true, onEnter: () => aboutTitleTyped.then(() => firstScroll.play()) });
 
-  // Text card: the corners clamp in, then the text appears line by line
+  // Text card: the white card wipes in from left to right (like the hero's plate), the corners
+  // clamp in, the text appears line by line, then the About me button pops in like a sticker
   const $card = getLayer('about-card', $about);
   const $cardText = getLayer('about-text', $about);
   const $corners = getAll('[data-layer="about-corner"]', $about);
+  const $aboutButton = getLayer('about-button', $about);
+  // A little wider than the card, so the corners aren't cut while they clamp in from outside
+  const CARD_SHOWN = 'inset(-5% -5% -5% -5%)';
   if ($card && $cardText) {
+    gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
     gsap.set($cardText, { autoAlpha: 0 });
     gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
+    if ($aboutButton) gsap.set($aboutButton, { scale: 0.8, autoAlpha: 0 });
 
     ScrollTrigger.create({
       trigger: $card,
@@ -470,15 +476,19 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
           // Split into lines only now, once the fonts are in, so the lines are right
           const lines = SplitText.create($cardText, { type: 'lines' }).lines;
           gsap.set($cardText, { autoAlpha: 1 });
-          gsap
+          const card = gsap
             .timeline()
-            .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 })
+            .to($card, { clipPath: CARD_SHOWN, duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
+            .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
             .fromTo(
               lines,
               { y: 12, autoAlpha: 0 },
               { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 },
-              0.2,
+              '<0.2',
             );
+          if ($aboutButton) {
+            card.to($aboutButton, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2)' }, '-=0.2');
+          }
           }),
         ),
     });
@@ -516,6 +526,9 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
     gsap.set(rowChars.flat(), { autoAlpha: 0 });
     gsap.set($marks, { '--mark-w': '0%' });
     gsap.set($paper, { y: paperY[0] ?? 0 });
+    // The typewriter is set down on the desk first. Until it has landed, the paper is hidden too.
+    gsap.set($typewriter, { y: 40, autoAlpha: 0 });
+    gsap.set($paper, { autoAlpha: 0 });
 
     const typing = gsap.timeline({ paused: true });
     $rows.forEach(($row, k) => {
@@ -544,7 +557,16 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       trigger: $typewriter,
       start: 'top 80%',
       once: true,
-      onEnter: () => aboutTitleTyped.then(() => typing.play()),
+      onEnter: () =>
+        aboutTitleTyped.then(() =>
+          context.add(() => {
+            gsap
+              .timeline()
+              .to($typewriter, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.4)' })
+              .set($paper, { autoAlpha: 1 })
+              .add(() => typing.play());
+          }),
+        ),
     });
   }
 
