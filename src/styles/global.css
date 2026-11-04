@@ -44,7 +44,8 @@ body {
   color: var(--c-ink);
   font-family: var(--f-sans);
   line-height: 1.4;
-  overflow-x: clip;
+  /* clip (not hidden) so the oversized rotated grid never causes scrolling */
+  overflow: clip;
   position: relative;
   min-height: 100vh;
 }
@@ -60,6 +61,19 @@ body::before {
   background-repeat: repeat;
   opacity: 0.43;
   rotate: -2.22deg;
+  pointer-events: none;
+}
+
+/* Texture over every page, top to bottom (Figma "texture" layer, lighten blend). */
+body::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background-image: var(--texture-url);
+  background-size: max(calc(488 * var(--u)), 320px) auto;
+  background-repeat: repeat;
+  mix-blend-mode: lighten;
   pointer-events: none;
 }
 

@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import gridPaper from '../assets/home/grid-paper.webp';
+import texture from '../assets/home/texture.webp';
 
 interface Props {
   title: string;
@@ -20,8 +21,11 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <!-- Akzidenz-Grotesk Next from Irina's Adobe Fonts web project -->
+    <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+    <link rel="stylesheet" href="https://use.typekit.net/uit2fga.css" />
   </head>
-  <body style={`--paper-url: url(${gridPaper.src})`}>
+  <body style={`--paper-url: url(${gridPaper.src}); --texture-url: url(${texture.src})`}>
     <slot />
     <script>
       import { initAnimations } from '../scripts/animations';
