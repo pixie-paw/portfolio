@@ -121,6 +121,11 @@ const INTRO_PHONE_SWAY_DEG = 3;
 const HOW_STEM_AFTER_S = 0.3; // the stem starts growing this long after section 1's text is in
 const HOW_STEM_S = 3.2; // longer than section 1's stems, so it grows as slowly
 
+// About me page, section 3
+const GOING_BRANCH_S = 1.2; // the short branch down to the blue flower
+const GOING_BUBBLE_GROW = 0.12; // the bubble gum grows this much bigger, and never smaller than in Figma
+const GOING_BUBBLE_S = 1.8; // one grow (and the same again to shrink back)
+
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
 
@@ -146,6 +151,12 @@ const aboutTitleTyped = new Promise<void>((resolve) => {
 let markIntroTextShown: () => void = () => {};
 const introTextShown = new Promise<void>((resolve) => {
   markIntroTextShown = resolve;
+});
+
+// The same for section 2's card text: section 3's long stem waits for it
+let markHowTextShown: () => void = () => {};
+const howTextShown = new Promise<void>((resolve) => {
+  markHowTextShown = resolve;
 });
 
 const getLayer = <T extends Element = HTMLElement>(name: string, $root: ParentNode = document) =>
@@ -1437,8 +1448,11 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
             const chars = SplitText.create($title, { type: 'words,chars' }).chars;
             gsap.set(chars, { autoAlpha: 0 });
             gsap.set($title, { autoAlpha: 1 });
-            const typed = gsap.timeline();
+            const typed = gsap.timeline({ onComplete: () => markHowTextShown() });
             typed.to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S });
+            // The camera comes in with the title, so it never shows before it (even after a reload
+            // further down the page, when every trigger above fires at once)
+            if ($camera) playCamera();
 
             // Once the title is typed, the card wipes in, its corners clamp, and the lines appear
             if ($card && $cardText) {
@@ -1461,42 +1475,210 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
   // from a line across their middle, out to the top and the bottom.
   const $pictures = [$photo, $strip].filter(($el): $el is HTMLElement => $el !== null);
   if ($camera) gsap.set($camera, { autoAlpha: 0, y: 16, transformOrigin: '50% 100%' });
+  // It plays when the title starts typing (see the title above)
   gsap.set($pictures, { clipPath: 'inset(50% 0% 50% 0%)', autoAlpha: 1 });
 
-  if ($camera) {
-    ScrollTrigger.create({
-      trigger: $title ?? $camera,
-      start: 'top 85%',
-      once: true,
-      onEnter: () =>
-        context.add(() => {
-          gsap
-            .timeline()
-            .to($camera, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' })
-            // a quick tilt and back, like pressing the shutter
-            .to($camera, {
-              keyframes: [
-                { rotation: -5, duration: 0.25, ease: 'power2.out' },
-                { rotation: 0, duration: 0.7, ease: 'elastic.out(1, 0.5)' },
-              ],
-            })
-            .to(
-              $pictures,
-              {
-                clipPath: 'inset(0% 0% 0% 0%)',
-                duration: 0.9,
-                ease: 'power3.inOut',
-                stagger: 0.2,
-                clearProps: 'clipPath',
-              },
-              0.9, // just after the tilt starts
-            );
-        }),
-    });
-  }
+  const playCamera = () => {
+    gsap
+      .timeline()
+      .to($camera, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' })
+      // a quick tilt and back, like pressing the shutter
+      .to($camera, {
+        keyframes: [
+          { rotation: -5, duration: 0.25, ease: 'power2.out' },
+          { rotation: 0, duration: 0.7, ease: 'elastic.out(1, 0.5)' },
+        ],
+      })
+      .to(
+        $pictures,
+        {
+          clipPath: 'inset(0% 0% 0% 0%)',
+          duration: 0.9,
+          ease: 'power3.inOut',
+          stagger: 0.2,
+          clearProps: 'clipPath',
+        },
+        0.9, // just after the tilt starts
+      );
+  };
 
   // ---------- The words flow along the wave, like on the home page ----------
   waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($section, 'how-started-wave'))));
+};
+
+/*
+  ---------- About me page, section 3: "How it's going" ----------
+  The same style as the first two sections. Once section 2's text is in, the long stem grows down
+  from under its card into this card, the red flower opens, then the short branch grows to the
+  blue flower. The title is typed and the card wipes in. The statue is pressed down like
+  section 1's photo, its eyes are pressed on, and the bubble gum pops and keeps growing and
+  shrinking (never smaller than in Figma, so the real gum stays covered). The disco ball's circle
+  and outlines slide into place like section 1's arch, and the statue's stems grow out of it.
+*/
+const createAboutHowItsGoing = (context: gsap.Context) => {
+  const $section = document.querySelector('[data-section="how-going"]');
+  if (!$section) return;
+
+  const $longStem = getLayer('going-stem-long', $section);
+  const $branch = getLayer('going-stem-branch', $section);
+  const $flowerRed = getLayer('going-flower-red', $section);
+  const $flowerBlue = getLayer('going-flower-blue', $section);
+  const $statueFlowers = [getLayer('going-statue-flower-red', $section), getLayer('going-statue-flower-blue', $section)].filter(
+    ($el): $el is HTMLElement => $el !== null,
+  );
+  const $title = getLayer('going-title', $section);
+  const $card = getLayer('going-card', $section);
+  const $cardText = getLayer('going-text', $section);
+  const $corners = getAll('[data-layer="going-corner"]', $section);
+  const $statue = getLayer('going-statue', $section);
+  const $eyes = [getLayer('going-eye-left', $section), getLayer('going-eye-right', $section)].filter(
+    ($el): $el is HTMLElement => $el !== null,
+  );
+  const $bubble = getLayer('going-bubble', $section);
+  const $bubbleOutlines = getAll('[data-layer="going-bubble-outline"]', $section);
+  const $discoFill = getLayer('going-disco-fill', $section);
+  const $discoOutlines = getAll('[data-layer="going-disco-outline"]', $section);
+  const $discoBall = getLayer('going-disco-ball', $section);
+
+  // A stem starts hidden, drawn from the end data-grow names; its flower starts closed
+  const prepStem = ($wrap: HTMLElement | null) => {
+    const $stem = $wrap?.querySelector<SVGPathElement>('[data-layer="flower-stem"]') ?? null;
+    if ($wrap && $stem) {
+      const length = $stem.getTotalLength();
+      gsap.set($stem, { strokeDasharray: length, strokeDashoffset: $wrap.dataset.grow === 'end' ? -length : length });
+    }
+    return $stem;
+  };
+  const prepHead = ($wrap: HTMLElement | null) => {
+    const $head = $wrap?.querySelector<SVGGElement>('[data-layer="flower-head"]') ?? null;
+    if ($head) gsap.set($head, { scale: 0, transformOrigin: '50% 50%' });
+    return $head;
+  };
+  const openHead = { scale: 1, duration: 0.9, ease: 'back.out(1.6)' };
+
+  // ---------- The long stem, its red flower, the branch and the blue flower ----------
+  const $longPath = prepStem($longStem);
+  const $branchPath = prepStem($branch);
+  const $redHead = prepHead($flowerRed);
+  const $blueHead = prepHead($flowerBlue);
+
+  if ($longPath) {
+    // They float together once open, so the flowers never leave their stems
+    const cardFlowers = [$longStem, $branch, $flowerRed, $flowerBlue].filter(Boolean);
+    const float = gsap.to(cardFlowers, { y: -INTRO_FLOAT_PX, duration: 2.8, ease: 'sine.inOut', yoyo: true, repeat: -1, paused: true });
+
+    howTextShown.then(() => context.add(() => {
+      const grow = gsap.timeline({ delay: HOW_STEM_AFTER_S, onComplete: () => float.play() });
+      grow.to($longPath, { strokeDashoffset: 0, duration: HOW_STEM_S, ease: 'sine.inOut' });
+      if ($redHead) grow.to($redHead, openHead, HOW_STEM_S * 0.9);
+      // The branch leaves the long stem just before it reaches the card
+      if ($branchPath) grow.to($branchPath, { strokeDashoffset: 0, duration: GOING_BRANCH_S, ease: 'sine.inOut' }, HOW_STEM_S * 0.8);
+      if ($blueHead) grow.to($blueHead, openHead, HOW_STEM_S * 0.8 + GOING_BRANCH_S * 0.85);
+    }));
+  }
+
+  // ---------- Title, typed like the other titles, then the card ----------
+  if ($cardText) gsap.set($cardText, { autoAlpha: 0 });
+  if ($card) gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
+  gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
+  if ($title) gsap.set($title, { autoAlpha: 0 });
+
+  if ($title) {
+    ScrollTrigger.create({
+      trigger: $title,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        waitForFonts().then(() => context.add(() => {
+          const chars = SplitText.create($title, { type: 'words,chars' }).chars;
+          gsap.set(chars, { autoAlpha: 0 });
+          gsap.set($title, { autoAlpha: 1 });
+          const typed = gsap.timeline();
+          typed.to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S });
+          // The statue comes in with the title, so nothing shows before it (even after a reload
+          // further down the page, when every trigger above fires at once)
+          playStatue();
+
+          // Once the title is typed, the card wipes in, its corners clamp, and the lines appear
+          if ($card && $cardText) {
+            // Each paragraph is split on its own, so the empty line between them stays
+            const lines = SplitText.create($cardText.querySelectorAll('p'), { type: 'lines' }).lines;
+            gsap.set($cardText, { autoAlpha: 1 });
+            gsap.set(lines, { y: 12, autoAlpha: 0 });
+            typed
+              .to($card, { clipPath: 'inset(-5% -5% -5% -5%)', duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
+              .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
+              .to(lines, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, '<0.2');
+          }
+        })),
+    });
+  }
+
+  // ---------- The statue, its eyes, the bubble gum, the disco ball and the statue's stems ----------
+  const statueStems = $statueFlowers.map(($wrap) => ({ $wrap, $stem: prepStem($wrap), $head: prepHead($wrap) }));
+
+  if ($statue) gsap.set($statue, { scale: 1.06, rotation: 3, autoAlpha: 0 });
+  gsap.set($eyes, { scale: 1.15, rotation: -4, autoAlpha: 0 });
+  if ($discoBall) gsap.set($discoBall, { scale: 1.06, rotation: -3, autoAlpha: 0 });
+  // Like section 1's arch: the yellow circle and its outlines start out of place
+  if ($discoFill) gsap.set($discoFill, { x: -20, y: 14, autoAlpha: 0 });
+  if ($discoOutlines[0]) gsap.set($discoOutlines[0], { x: 18, y: -12, autoAlpha: 0 });
+  if ($discoOutlines[1]) gsap.set($discoOutlines[1], { x: -16, y: 18, autoAlpha: 0 });
+
+  // The bubble and its outlines all grow from the same point: the left of the bubble, at the
+  // mouth. Growing from there keeps the whole of the real bubble gum covered.
+  const $bubbleParts = [$bubble, ...$bubbleOutlines].filter(($el): $el is HTMLElement => $el !== null);
+  if ($bubble) {
+    const mouth = $bubble.getBoundingClientRect();
+    const mouthX = mouth.left;
+    const mouthY = mouth.top + mouth.height / 2;
+    $bubbleParts.forEach(($part) => {
+      const box = $part.getBoundingClientRect();
+      gsap.set($part, {
+        transformOrigin: `${((mouthX - box.left) / box.width) * 100}% ${((mouthY - box.top) / box.height) * 100}%`,
+        scale: 0,
+      });
+    });
+  }
+
+  const playStatue = () => {
+    if (!$statue) return;
+    const statueIn = gsap.timeline({
+      onComplete: () => {
+        // The open flowers float, and the bubble keeps growing and shrinking back
+        statueStems.forEach(({ $wrap }) => {
+          gsap.to($wrap, {
+            y: -INTRO_FLOAT_PX,
+            duration: gsap.utils.random(2.4, 3.2),
+            delay: gsap.utils.random(0, 0.6),
+            ease: 'sine.inOut',
+            yoyo: true,
+            repeat: -1,
+          });
+        });
+        gsap.to($bubbleParts, { scale: 1 + GOING_BUBBLE_GROW, duration: GOING_BUBBLE_S, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+      },
+    });
+
+    statueIn
+      // The statue is pressed down like section 1's photo
+      .to($statue, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.4)' }, 0)
+      // The disco ball is pressed down while its circle and outlines slide into place
+      .to($discoBall ?? [], { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.4)' }, 0.2)
+      .to($discoFill ?? [], { x: 0, y: 0, autoAlpha: 1, duration: 1.1, ease: 'expo.out' }, 0.25)
+      .to($discoOutlines, { x: 0, y: 0, autoAlpha: 1, duration: 1.1, ease: 'expo.out', stagger: 0.05 }, 0.3)
+      // The eyes are pressed on, one after the other
+      .to($eyes, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.5, ease: 'back.out(2)', stagger: 0.15 }, 0.5)
+      // The bubble gum pops out of the mouth
+      .to($bubbleParts, { scale: 1, duration: 0.7, ease: 'back.out(2)', stagger: 0.06 }, 0.8);
+
+    // The statue's stems grow slowly out of it, one after the other, and their flowers open
+    statueStems.forEach(({ $stem, $head }, i) => {
+      const at = 0.9 + i * INTRO_FLOWER_GAP_S;
+      if ($stem) statueIn.to($stem, { strokeDashoffset: 0, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
+      if ($head) statueIn.to($head, openHead, at + INTRO_STEM_S * 0.85);
+    });
+  };
 };
 
 /* ---------- Page load: the hero comes into register ---------- */
@@ -1797,6 +1979,7 @@ export const initAnimations = () => {
         createFooter(context);
         createAboutIntro(context, addCleanup);
         createAboutHowItStarted(context, addCleanup);
+        createAboutHowItsGoing(context);
         if (document.querySelector('[data-section="hero"]')) {
           waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
         } else {
