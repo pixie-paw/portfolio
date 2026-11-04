@@ -6,6 +6,8 @@
  * x / y  = centre of the tag in Figma pixels, relative to its parent.
  * w / h  = size of the paper strip in Figma pixels.
  * paper  = colour of the paper strip. Pink (--c-tag) unless a tag sets its own.
+ * font   = 'type' (Bulletin Typewriter, the default) or 'sans' (Akzidenz).
+ * flow   = sits in the normal flow of its parent (for rows of tags) instead of at x / y.
  * intro  = how the tag arrives on page load, then floats (see animations.ts):
  *          'travel' = grows while travelling out from under the title plate,
  *          'grow'   = grows where it is,
@@ -21,6 +23,8 @@ interface Props {
   h?: number;
   rotate?: number;
   size?: 'sm' | 'lg';
+  font?: 'type' | 'sans';
+  flow?: boolean;
   paper?: string;
   intro?: 'travel' | 'grow' | 'hang';
   name?: string;
@@ -35,6 +39,8 @@ const {
   h = 31.91,
   rotate = 0,
   size = 'sm',
+  font = 'type',
+  flow = false,
   paper = 'var(--c-tag)',
   intro,
   name,
@@ -43,7 +49,7 @@ const {
 ---
 
 <span
-  class:list={['tag', `tag--${size}`, className]}
+  class:list={['tag', `tag--${size}`, font === 'sans' && 'tag--sans', flow && 'tag--flow', className]}
   data-layer={name ?? 'tag'}
   data-tag-intro={intro}
   data-intro={intro ? '' : undefined}
@@ -104,6 +110,19 @@ const {
 
   .tag--lg .tag__text {
     font-size: calc(20 * var(--k));
+  }
+
+  .tag--sans .tag__text {
+    font-family: var(--f-sans);
+  }
+
+  /* In a row of tags: takes its own width, so the gap between tags is always real */
+  .tag--flow {
+    position: relative;
+    left: auto;
+    top: auto;
+    translate: none;
+    display: block;
   }
 
 
