@@ -107,6 +107,16 @@ const MARQUEE_LINE_DRAW_S = 1.6;
 const FOOTER_ARROW_NUDGE_EVERY_S = 3; // the arrows nudge towards "CV" this often
 const FOOTER_ARROW_NUDGE_PX = 6;
 
+// About me page, section 1
+const INTRO_TITLE_AT_S = 0.3; // the title is typed letter by letter, like the home page's About title
+const INTRO_FLOWER_AT_S = 1; // the first stem starts growing
+const INTRO_FLOWER_GAP_S = 0.5; // and the next ones follow this far apart
+const INTRO_STEM_S = 2.2; // a slow, calm grow
+const INTRO_HAT_DROP_AT_S = 1.4;
+const INTRO_FLOAT_PX = 7; // the open flowers float up and down this much
+const INTRO_PHONE_STRETCH = 0.06; // the phone bobs as its cord stretches this much
+const INTRO_PHONE_SWAY_DEG = 3;
+
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
 
@@ -1158,6 +1168,186 @@ const createFooter = (context: gsap.Context) => {
   }
 };
 
+/*
+  ---------- About me page, section 1: "A few more things about this human" ----------
+  It reuses the home page's motion: the photo is pressed down while the yellow fill and the
+  outlines slide into register, the title is typed and its yellow bars are drawn right after,
+  and the card wipes in once the title is typed. On top: Kiki runs in from off the left edge, the stems grow
+  slowly out from behind the photo and their flowers open and float, and the hat drops onto
+  Irina's head. The phone always bobs on its cord. Hovering the hat tips it, like saying howdy.
+*/
+const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
+  const $intro = document.querySelector('[data-section="about-intro"]');
+  if (!$intro) return;
+
+  const $phone = getLayer('intro-phone', $intro);
+  const $archFill = getLayer('intro-arch-fill', $intro);
+  const $archBack = getLayer('intro-arch-back', $intro);
+  const $archFront = getLayer('intro-arch-front', $intro);
+  const $photo = getLayer('intro-photo', $intro);
+  const $kiki = getLayer('intro-kiki', $intro);
+  const $hat = getLayer('intro-hat', $intro);
+  const $flowers = getAll('[data-grow]', $intro);
+  const $title = getLayer('intro-title', $intro);
+  const $markers = getAll('[data-layer="intro-marker"]', $intro);
+  const $stars = getAll('[data-layer="intro-star"]', $intro)
+    .map(($star) => $star.querySelector<SVGElement>('svg'))
+    .filter(($svg): $svg is SVGElement => $svg !== null);
+  const $card = getLayer('intro-card', $intro);
+  const $cardText = getLayer('intro-text', $intro);
+  const $corners = getAll('[data-layer="intro-corner"]', $intro);
+
+  // The phone hangs from the top of its cord: it bobs as the cord stretches, and sways
+  if ($phone) {
+    gsap.set($phone, { transformOrigin: '50% 0%' });
+    gsap.to($phone, { scaleY: 1 + INTRO_PHONE_STRETCH, duration: 1.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+    gsap.fromTo(
+      $phone,
+      { rotation: -INTRO_PHONE_SWAY_DEG },
+      { rotation: INTRO_PHONE_SWAY_DEG, duration: 2.3, ease: 'sine.inOut', yoyo: true, repeat: -1 },
+    );
+  }
+
+  // ---------- Start states, set before the page appears ----------
+  // The photo and its arch, like the home page photo: fill and outlines start out of place
+  if ($photo) gsap.set($photo, { scale: 1.06, rotation: 3, autoAlpha: 0 });
+  if ($archFill) gsap.set($archFill, { x: -20, y: 14, autoAlpha: 0 });
+  if ($archFront) gsap.set($archFront, { x: 18, y: -12, autoAlpha: 0 });
+  if ($archBack) gsap.set($archBack, { x: -16, y: 18, autoAlpha: 0 });
+  // Kiki starts just past the left edge of the screen, wherever the page is
+  if ($kiki) gsap.set($kiki, { x: -($kiki.getBoundingClientRect().right + 40), rotation: -12, transformOrigin: '50% 100%' });
+  if ($hat) gsap.set($hat, { y: -360, rotation: -20, autoAlpha: 0, transformOrigin: '50% 100%' });
+
+  // Each stem is drawn from the end at the photo; data-grow says which end that is
+  const flowers = $flowers.map(($flower) => {
+    const $stem = $flower.querySelector<SVGPathElement>('[data-layer="flower-stem"]');
+    const $head = $flower.querySelector<SVGGElement>('[data-layer="flower-head"]');
+    const length = $stem?.getTotalLength() ?? 0;
+    const fromEnd = $flower.dataset.grow === 'end';
+    if ($stem) gsap.set($stem, { strokeDasharray: length, strokeDashoffset: fromEnd ? -length : length });
+    if ($head) gsap.set($head, { scale: 0, transformOrigin: '50% 50%' });
+    return { $flower, $stem, $head };
+  });
+
+  // Hidden until its letters are split, so it never flashes in full before the typing
+  if ($title) gsap.set($title, { autoAlpha: 0 });
+  gsap.set($markers, { clipPath: 'inset(0% 100% 0% 0%)' });
+  gsap.set($stars, { scale: 0, rotation: -90, autoAlpha: 0 });
+  if ($cardText) gsap.set($cardText, { autoAlpha: 0 });
+  if ($card) gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
+  gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
+
+  // The title is typed first; the bars and the card wait for it, like on the home page
+  let markTitleTyped: () => void = () => {};
+  const titleTyped = new Promise<void>((resolve) => {
+    markTitleTyped = resolve;
+  });
+
+  // ---------- Hover: the hat tips up like saying howdy, then drops back on ----------
+  const tipHat = () => {
+    if (!$hat || gsap.isTweening($hat)) return;
+    gsap
+      .timeline()
+      .to($hat, { y: -28, rotation: -14, duration: 0.28, ease: 'power2.out' })
+      .to($hat, { y: 0, rotation: 0, duration: 0.5, ease: 'bounce.out' }, '+=0.2');
+  };
+
+  // ---------- Card: wipes in when it's on screen, once the title is typed ----------
+  if ($card && $cardText) {
+    ScrollTrigger.create({
+      trigger: $card,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        titleTyped.then(() =>
+          context.add(() => {
+            const lines = SplitText.create($cardText, { type: 'lines' }).lines;
+            gsap.set($cardText, { autoAlpha: 1 });
+            gsap
+              .timeline()
+              .to($card, { clipPath: 'inset(-5% -5% -5% -5%)', duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
+              .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
+              .fromTo(
+                lines,
+                { y: 12, autoAlpha: 0 },
+                { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 },
+                '<0.2',
+              );
+          }),
+        ),
+    });
+  }
+
+  // ---------- The load sequence (the title needs the fonts in first) ----------
+  waitForFonts().then(() =>
+    context.add(() => {
+      // Words too, so the title still breaks between words, never inside one
+      const titleChars = $title ? SplitText.create($title, { type: 'words,chars' }).chars : [];
+      gsap.set(titleChars, { autoAlpha: 0 });
+      if ($title) gsap.set($title, { autoAlpha: 1 });
+
+      const load = gsap.timeline({
+        onComplete: () => {
+          context.add(() => {
+            // The open flowers float up and down, each at its own pace
+            flowers.forEach(({ $flower }) => {
+              gsap.to($flower, {
+                y: -INTRO_FLOAT_PX,
+                duration: gsap.utils.random(2.2, 3.2),
+                delay: gsap.utils.random(0, 0.8),
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1,
+              });
+            });
+          });
+          if ($hat) {
+            $hat.addEventListener('mouseenter', tipHat);
+            addCleanup(() => $hat.removeEventListener('mouseenter', tipHat));
+          }
+        },
+      });
+
+      load
+        // 0.3s: the title is typed letter by letter
+        .to(titleChars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S }, INTRO_TITLE_AT_S)
+        .call(() => markTitleTyped(), [], INTRO_TITLE_AT_S + titleChars.length * ABOUT_TITLE_TYPE_S)
+        // Right after the typing, the yellow bars are drawn in from left to right behind the title
+        .to(
+          $markers,
+          { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut', stagger: MARKER_S * 0.9 },
+          INTRO_TITLE_AT_S + titleChars.length * ABOUT_TITLE_TYPE_S,
+        )
+        // 0.4s: the photo is pressed down, its fill and outlines slide into register behind it
+        .to($photo ?? [], { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.4)' }, 0.4)
+        .to($archFill ?? [], { x: 0, y: 0, autoAlpha: 1, duration: 1.1, ease: 'expo.out' }, 0.45)
+        .to($archFront ?? [], { x: 0, y: 0, autoAlpha: 1, duration: 1.1, ease: 'expo.out' }, 0.5)
+        .to($archBack ?? [], { x: 0, y: 0, autoAlpha: 1, duration: 1.1, ease: 'expo.out' }, 0.55)
+        // 0.8s: Kiki runs in from off the left edge, squashes as she stops and springs back, like the hat
+        .to($kiki ?? [], { x: 0, rotation: 0, duration: 0.6, ease: 'power3.in' }, 0.8)
+        .to($kiki ?? [], { scaleX: 0.86, scaleY: 1.1, duration: 0.1, ease: 'power2.out' }, 1.4)
+        .to($kiki ?? [], { scaleX: 1, scaleY: 1, duration: 0.6, ease: 'elastic.out(1, 0.4)' }, 1.5)
+        // 1.4s: the stars pop
+        .to($stars, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.12 }, 1.4);
+
+      // The stems grow slowly out from behind the photo, one after another, and each flower opens
+      flowers.forEach(({ $stem, $head }, i) => {
+        const at = INTRO_FLOWER_AT_S + i * INTRO_FLOWER_GAP_S;
+        if ($stem) load.to($stem, { strokeDashoffset: 0, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
+        if ($head) load.to($head, { scale: 1, duration: 0.9, ease: 'back.out(1.6)' }, at + INTRO_STEM_S * 0.85);
+      });
+
+      // The hat drops onto Irina's head, squashes as it lands and springs back
+      if ($hat) {
+        load
+          .to($hat, { y: 0, rotation: 0, autoAlpha: 1, duration: 0.45, ease: 'power3.in' }, INTRO_HAT_DROP_AT_S)
+          .to($hat, { scaleX: 1.12, scaleY: 0.82, duration: 0.1, ease: 'power2.out' })
+          .to($hat, { scaleX: 1, scaleY: 1, duration: 0.6, ease: 'elastic.out(1, 0.4)' });
+      }
+    }),
+  );
+};
+
 /* ---------- Page load: the hero comes into register ---------- */
 const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $html = document.documentElement;
@@ -1454,7 +1644,14 @@ export const initAnimations = () => {
         createFilmStrip(context);
         createMarquee(context, addCleanup);
         createFooter(context);
-        waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
+        createAboutIntro(context, addCleanup);
+        if (document.querySelector('[data-section="hero"]')) {
+          waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
+        } else {
+          // A page without the hero (like About me): nothing to wait for, show the page at once
+          delete document.documentElement.dataset.intro;
+          markAboutTitleTyped();
+        }
       }
 
       return () => cleanups.forEach((cleanup) => cleanup());
