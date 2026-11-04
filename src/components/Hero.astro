@@ -104,16 +104,24 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
 
 <style>
   /* ---------- Desktop (≥ 900px): grid areas on the 1440 Figma frame ---------- */
+  /*
+    The middle four columns are the 1440 Figma frame (94 + 699 + 528 + 119).
+    The outer 1fr columns are 0 up to 1440px and split the extra width above it,
+    so on wide screens the design stays exactly as it is at 1440, centred.
+    Only the dark band runs edge to edge, like it does in the Figma frame.
+  */
   .hero {
     position: relative;
     display: grid;
-    grid-template-columns: calc(94 * var(--u)) calc(699 * var(--u)) calc(528 * var(--u)) 1fr;
+    grid-template-columns:
+      1fr calc(94 * var(--u)) calc(699 * var(--u)) calc(528 * var(--u))
+      minmax(0, calc(119 * var(--u))) 1fr;
     grid-template-rows: auto calc(368 * var(--u)) calc(115 * var(--u)) calc(72 * var(--u));
     grid-template-areas:
-      'header header header header'
-      '.      title  visual .'
-      'band   band   band   band'
-      '.      tag    .      .';
+      '.    header header header header .'
+      '.    .      title  visual .      .'
+      'band band   band   band   band   band'
+      '.    .      tag    .      .      .';
   }
 
   .hero :global(.site-header) {
@@ -134,7 +142,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
 
   .hero__subtitle {
     grid-row: band;
-    grid-column: 2 / 3;
+    grid-column: title;
     align-self: center;
     margin: 0;
     font-family: var(--f-serif);
