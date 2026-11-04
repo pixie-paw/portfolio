@@ -1,0 +1,115 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+import momu from '../assets/film/momu.webp';
+import milesMeals from '../assets/film/miles-meals.webp';
+import chocolate from '../assets/film/chocolate.webp';
+import typeOne from '../assets/film/type-one.webp';
+import thrive from '../assets/film/thrive.webp';
+import offTheGrid from '../assets/film/off-the-grid.webp';
+
+/*
+  A strip of film with six designs Irina liked from unfinished projects. Purely decorative,
+  so it's hidden from screen readers. Sizes are Figma pixels from the 1440px home page frame.
+*/
+const FRAMES: { image: ImageMetadata; w: number }[] = [
+  { image: momu, w: 227.96 },
+  { image: milesMeals, w: 223.8 },
+  { image: chocolate, w: 227.68 },
+  { image: typeOne, w: 222.92 },
+  { image: thrive, w: 222.86 },
+  { image: offTheGrid, w: 225 },
+];
+
+/*
+  The frames are repeated three times, so the strip stays full on wide screens
+  and the endless scroll can loop by exactly one round without a gap.
+*/
+const ROUNDS = 3;
+
+// The sprocket holes: one 23.4px wide tile with a hole near the top and one near the bottom
+const HOLE = { w: 14.89, h: 20.56, r: 3.55, top: 7.09, bottom: 192.17, every: 23.4, first: 7.09 };
+const STRIP_H = 221;
+const holesTile = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='${HOLE.every}' height='${STRIP_H}'>` +
+    `<path fill-rule='evenodd' d='M0 0H${HOLE.every}V${STRIP_H}H0Z ` +
+    `M${HOLE.r} ${HOLE.top}h${HOLE.w - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 ${HOLE.r} ${HOLE.r}v${HOLE.h - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 -${HOLE.r} ${HOLE.r}h-${HOLE.w - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 -${HOLE.r} -${HOLE.r}v-${HOLE.h - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 ${HOLE.r} -${HOLE.r}Z ` +
+    `M${HOLE.r} ${HOLE.bottom}h${HOLE.w - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 ${HOLE.r} ${HOLE.r}v${HOLE.h - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 -${HOLE.r} ${HOLE.r}h-${HOLE.w - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 -${HOLE.r} -${HOLE.r}v-${HOLE.h - 2 * HOLE.r}a${HOLE.r} ${HOLE.r} 0 0 1 ${HOLE.r} -${HOLE.r}Z'/>` +
+    `</svg>`,
+)}")`;
+---
+
+<div class="film" data-section="film" aria-hidden="true">
+  <div
+    class="film__strip"
+    data-layer="film-strip"
+    data-intro
+    style={`--holes:${holesTile};--hole-every:${HOLE.every};--hole-first:${HOLE.first};--strip-h:${STRIP_H}`}
+  >
+    <div class="film__track" data-layer="film-track">
+      {
+        Array.from({ length: ROUNDS }, (_, round) => (
+          <div class="film__round" data-layer="film-round">
+            {FRAMES.map(({ image, w }) => (
+              <Image
+                class="film__frame"
+                src={image}
+                alt=""
+                widths={[Math.round(w), image.width]}
+                sizes="(min-width: 1440px) 228px, 16vw"
+                loading={round === 0 ? 'eager' : 'lazy'}
+                style={`--fw:${w}`}
+              />
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  /* The strip runs edge to edge, like in Figma, where it's wider than the frame */
+  .film {
+    position: relative;
+    overflow-x: clip;
+  }
+
+  /*
+    The dark film, 221px tall. The sprocket holes are real holes (a mask), so the
+    grid paper shows through them. In Figma they're filled with the paper colour.
+  */
+  .film__strip {
+    position: relative;
+    height: calc(var(--strip-h) * var(--u));
+    background: var(--c-ink);
+    overflow: hidden;
+    mask-image: var(--holes);
+    mask-size: calc(var(--hole-every) * var(--u)) 100%;
+    mask-repeat: repeat-x;
+    mask-position: calc(var(--hole-first) * var(--u)) 0;
+  }
+
+  /* The frames, 35.45px from the top of the strip and 8.5px apart */
+  .film__track {
+    position: absolute;
+    left: calc(7.09 * var(--u));
+    top: calc(35.45 * var(--u));
+    display: flex;
+    gap: calc(8.5 * var(--u));
+    width: max-content;
+  }
+
+  .film__round {
+    display: flex;
+    gap: calc(8.5 * var(--u));
+  }
+
+  .film__frame {
+    display: block;
+    width: calc(var(--fw) * var(--u));
+    height: calc(148.91 * var(--u));
+    object-fit: cover;
+  }
+</style>

@@ -87,6 +87,11 @@ const WORK_ARROW_NUDGE_PX = 4;
 const WORK_CARD_SCALE = 0.7;
 const WORK_CARD_OPACITY = 0.75;
 
+// Film strip
+const FILM_ENTER_S = 1.2; // the strip slides in from the right
+const FILM_FLOW_PX_S = 40; // then the images inside scroll right to left at this pace
+const FILM_FLOW_DIRECTION = -1; // -1 = right to left, 1 = left to right
+
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
 
@@ -766,6 +771,68 @@ const createWorkAnimations = (context: gsap.Context): Cleanup[] => {
   return createWorkRows($work);
 };
 
+/* ---------- Film strip: slides in from the right, then its images scroll endlessly ---------- */
+const createFilmStrip = (context: gsap.Context) => {
+  const $film = document.querySelector('[data-section="film"]');
+  const $strip = $film && getLayer('film-strip', $film);
+  const $track = $film && getLayer('film-track', $film);
+  const $rounds = $film ? getAll('[data-layer="film-round"]', $film) : [];
+  if (!$film || !$strip || !$track || $rounds.length < 2) return;
+
+  // The strip starts just past the right edge of the screen (the section clips it sideways)
+  gsap.set($strip, { xPercent: 100 });
+
+  // One round of the six frames, as a share of the whole track. Everything scales with the
+  // page, so this share stays the same at any width, and the loop never shows a gap.
+  const roundPx = $rounds[1].offsetLeft - $rounds[0].offsetLeft;
+  const roundShare = (roundPx / $track.offsetWidth) * 100;
+  // Right to left runs from 0 to -1 round; left to right from -1 round back to 0
+  const flow = gsap.fromTo(
+    $track,
+    { xPercent: FILM_FLOW_DIRECTION < 0 ? 0 : -roundShare },
+    {
+      xPercent: FILM_FLOW_DIRECTION < 0 ? -roundShare : 0,
+      duration: roundPx / FILM_FLOW_PX_S,
+      ease: 'none',
+      repeat: -1,
+      paused: true,
+    },
+  );
+
+  let hasArrived = false;
+  let isOnScreen = false;
+  const updateFlow = () => (hasArrived && isOnScreen ? flow.play() : flow.pause());
+
+  // Only runs while the strip is on screen
+  ScrollTrigger.create({
+    trigger: $film,
+    start: 'top bottom',
+    end: 'bottom top',
+    onToggle: (self) => {
+      isOnScreen = self.isActive;
+      updateFlow();
+    },
+  });
+
+  ScrollTrigger.create({
+    trigger: $film,
+    start: 'top 85%',
+    once: true,
+    onEnter: () =>
+      context.add(() => {
+        gsap.to($strip, {
+          xPercent: 0,
+          duration: FILM_ENTER_S,
+          ease: 'power3.out',
+          onComplete: () => {
+            hasArrived = true;
+            updateFlow();
+          },
+        });
+      }),
+  });
+};
+
 /* ---------- Page load: the hero comes into register ---------- */
 const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $html = document.documentElement;
@@ -1059,6 +1126,7 @@ export const initAnimations = () => {
         document.documentElement.dataset.motion = '';
         addCleanup(() => delete document.documentElement.dataset.motion);
         createWorkAnimations(context).forEach(addCleanup);
+        createFilmStrip(context);
         waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
       }
 
