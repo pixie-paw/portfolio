@@ -1,6 +1,6 @@
 # Irina Moldovan's portfolio
 
-Personal portfolio for Irina Moldovan (Digital Design and Development, Howest). Astro 7 + GSAP, deployed to GitHub Pages from `main`. The domain www.irinamoldovan.be is being connected through Combell DNS.
+Personal portfolio for Irina Moldovan (Digital Design and Development, Howest). Astro 7 + GSAP, deployed to GitHub Pages from `main`. Live at https://www.irinamoldovan.be (DNS at Combell).
 
 ## Always use the project skills
 
@@ -40,7 +40,7 @@ Do not use `landing-page-design`. Its font rules conflict with this design.
 ## Commands
 
 ```sh
-npm run dev      # http://localhost:4321/portfolio/
+npm run dev      # http://localhost:4321/
 npm run build    # always run before pushing
 ```
 
@@ -48,5 +48,5 @@ After a PR is merged: `git checkout main && git pull`.
 
 ## Things to keep in mind
 
-- **Base path:** until the domain is live, the site is served at `/portfolio/`. Use `import.meta.env.BASE_URL` for links.
+- **Base path:** the site is served from the root of the domain (`base: '/'`). Still build links from `import.meta.env.BASE_URL`, as `Header.astro` does.
 - **Images:** keep raw Figma exports out of the repo. Resize images into `src/assets/`.

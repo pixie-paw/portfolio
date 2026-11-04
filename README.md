@@ -8,7 +8,7 @@ Needs Node 22.23 or newer.
 
 ```sh
 npm install
-npm run dev      # http://localhost:4321/portfolio/
+npm run dev      # http://localhost:4321/
 npm run build    # production build into dist/
 ```
 
@@ -35,13 +35,15 @@ Visitors with "reduce motion" turned on get the content without the movement.
 ## Deploying
 
 1. In the repo on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Push to `main`. The site appears at `https://pixie-paw.github.io/portfolio/`.
+2. Push to `main`. The site appears at https://www.irinamoldovan.be a minute or two later.
 
-## Connecting the Combell domain
+## The Combell domain (done)
+
+The domain is connected. For reference, this is how it was set up:
 
 1. **Settings → Pages → Custom domain**: enter the domain and save.
 2. In Combell's DNS settings for the domain, add:
-   - four `A` records on the root (`@`): `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+   - four `A` records on the root (`irinamoldovan.be`): `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
    - a `CNAME` record for `www` pointing to `pixie-paw.github.io`
    - and remove any existing `A`/`AAAA` records on the root that point to Combell hosting.
 3. In `astro.config.mjs`, set `site` to the domain and `base` to `'/'`, then push.
