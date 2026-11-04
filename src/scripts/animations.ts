@@ -40,11 +40,17 @@ const CTA_DURATION_S = 0.4;
 const CTA_STAGGER_S = 0.03;
 
 // Hero load sequence
+const BAND_S = 1.6; // the band and the plate wipe in at the pace of the text that lands on them
+const PLATE_S = 1.4;
+const TITLE_AT_S = 0.5; // the letters follow the plate's wipe from left to right
 const TITLE_STAND_S = 0.9; // each title letter stands up from flat
 const TITLE_STAGGER_S = 0.05;
 const SUBTITLE_OPEN_AT_S = 0.9; // the subtitle's < > appear together, rest a moment, then open
-const SUBTITLE_OPEN_S = 2;
+const SUBTITLE_OPEN_S = 1.4;
 const SUBTITLE_EASE = 'sine.inOut'; // starts and stops gently, like the tag is pulled open by hand
+const SUBTITLE_TYPE_S = 0.045; // then the text is typed between them, letter by letter
+const ABOUT_TITLE_AT_S = 2.6; // the About title peeking in below the hero is typed last, as a hint to scroll
+const ABOUT_TITLE_TYPE_S = 0.045;
 const INTERNSHIP_AT_S = 2.3;
 const SIGN_DROP_S = 0.55; // the sign flips down from its top edge
 const SIGN_DECODE_S = 1.2; // then its text decodes from random letters
@@ -328,6 +334,10 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   const titleSplit = SplitText.create($title, { type: 'chars' });
   // The < and > start side by side in the middle of the text, then move out to their places
   const subtitleHalf = $subtitleText.offsetWidth / 2;
+  const subtitleSplit = SplitText.create($subtitleText, { type: 'chars' });
+  // Words too, so the title still breaks between words, never inside one
+  const $aboutTitle = getLayer('about-title');
+  const aboutTitleChars = $aboutTitle ? SplitText.create($aboutTitle, { type: 'words,chars' }).chars : [];
 
   // Where each title tag starts: the centre of the plate, hidden under it.
   // GSAP's x/y move the tag along its own tilt (the CSS `rotate`), so the
@@ -373,29 +383,38 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     // 0.0s: the header is there almost at once, so it's usable from the start
     .fromTo($headerItems, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: 'power1.out' }, 0)
 
-    // 0.0s: the band tears on from the left like a strip of tape
+    // 0.0s: the band is pulled on from the left like a strip of tape
     .fromTo(
       $band,
       { scaleX: 0, skewX: -12, transformOrigin: 'left center', autoAlpha: 1 },
-      { scaleX: 1, skewX: 0, duration: 0.8, ease: 'power4.out' },
+      { scaleX: 1, skewX: 0, duration: BAND_S, ease: 'power3.inOut' },
       0,
     )
 
-    // 0.15s: the plate is placed by hand: it wipes in and settles from a bigger tilt
-    .fromTo($platePaper, { scaleX: 0, transformOrigin: 'left center' }, { scaleX: 1, duration: 0.8 }, 0.15)
-    .fromTo($platePaper, { rotation: 4 }, { rotation: 0, duration: 0.6, ease: 'power3.out', immediateRender: false }, 0.15)
+    // 0.1s: the plate is placed by hand: it wipes in and settles from a bigger tilt
+    .fromTo(
+      $platePaper,
+      { scaleX: 0, transformOrigin: 'left center' },
+      { scaleX: 1, duration: PLATE_S, ease: 'power3.inOut' },
+      0.1,
+    )
+    .fromTo(
+      $platePaper,
+      { rotation: 4 },
+      { rotation: 0, duration: PLATE_S * 0.85, ease: 'power2.out', immediateRender: false },
+      0.1,
+    )
 
-    // 0.4s: each letter stands up from lying flat on the plate, like cards flipped upright,
-    // with a little overshoot. Hinged on its bottom edge, one after another.
+    // 0.5s: each letter stands up from lying flat on the plate, like cards flipped upright,
+    // with a little overshoot. Hinged on its bottom edge, one after another, following the plate.
     .fromTo(
       titleSplit.chars,
       { rotationX: -100, autoAlpha: 0, transformOrigin: '50% 100%', transformPerspective: 500 },
       { rotationX: 0, autoAlpha: 1, duration: TITLE_STAND_S, ease: 'back.out(1.7)', stagger: TITLE_STAGGER_S },
-      0.4,
+      TITLE_AT_S,
     )
 
-    // 0.5s: the subtitle's < > appear side by side in the middle, then open like an HTML tag,
-    // and the text shows between them as they move apart
+    // 0.5s: the subtitle's < > appear side by side in the middle, then open like an HTML tag
     .fromTo(
       [$subtitleOpen, $subtitleClose],
       { autoAlpha: 0, x: (i: number) => (i === 0 ? subtitleHalf : -subtitleHalf) },
@@ -403,11 +422,19 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
       0.5,
     )
     .to([$subtitleOpen, $subtitleClose], { x: 0, duration: SUBTITLE_OPEN_S, ease: SUBTITLE_EASE }, SUBTITLE_OPEN_AT_S)
+    // 2.3s: once the tag is open, the text is typed between the brackets, with no cursor
     .fromTo(
-      $subtitleText,
-      { clipPath: 'inset(-20% 50% -20% 50%)' },
-      { clipPath: 'inset(-20% 0% -20% 0%)', duration: SUBTITLE_OPEN_S, ease: SUBTITLE_EASE },
-      SUBTITLE_OPEN_AT_S,
+      subtitleSplit.chars,
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: SUBTITLE_TYPE_S },
+      SUBTITLE_OPEN_AT_S + SUBTITLE_OPEN_S,
+    )
+    // 2.6s: the About title below the hero is typed, letter by letter
+    .fromTo(
+      aboutTitleChars,
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S },
+      ABOUT_TITLE_AT_S,
     )
 
     // 0.7s: the photo is pressed down like a sticker, and its fill and outlines
