@@ -17,11 +17,11 @@
   --c-green: #00bf72;
   --c-blue: #006fdc;
 
-  /* Akzidenz-Grotesk Next comes from Adobe Fonts; Bulletin Typewriter is pending licence check. */
+  /* Akzidenz-Grotesk Next and Bulletin Typewriter MN come from Irina's Adobe Fonts kit (uit2fga). */
   --f-display: 'Boldonse', 'Arial Black', sans-serif;
   --f-serif: 'Bona Nova', Georgia, serif;
   --f-sans: 'akzidenz-grotesk-next', 'Helvetica Neue', Arial, sans-serif;
-  --f-type: 'Bulletin Typewriter', 'Courier New', Courier, monospace;
+  --f-type: 'bulletin-typewriter-mn', 'Courier New', Courier, monospace;
 
   --u: calc(min(100vw, 1440px) / 1440);
   --gutter: 16px;
