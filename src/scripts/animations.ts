@@ -78,6 +78,15 @@ const WAVE_FLOW_PX_S = 40; // the wave text's normal speed along the curve
 const WAVE_SCROLL_BOOST = 15; // extra px/s for each px/frame of scroll speed
 const WAVE_SEPARATOR = '   ·   ';
 
+// Work section
+const WORK_CARD_TILT_DEG = -6.2; // the card's tilt in Figma (the CSS rotate on .work__card)
+// The card sits up and to the right of the cursor, so the project name stays readable
+const WORK_CARD_OFFSET = { x: 150, y: -30 };
+const WORK_ARROW_NUDGE_PX = 4;
+// The card is shown smaller than in Figma and see-through, so the rows stay in view
+const WORK_CARD_SCALE = 0.7;
+const WORK_CARD_OPACITY = 0.75;
+
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
 
@@ -207,22 +216,25 @@ const createNavLinks = (reduceMotion: boolean): Cleanup[] => {
   });
 };
 
-/* ---------- 5. Green buttons (Get in touch, About me): letters and arrow roll up into the light copy ---------- */
-const createRollButton = ($button: HTMLElement, reduceMotion: boolean): Cleanup | undefined => {
-  const $text = getLayer('button-text', $button);
-  const $textHover = getLayer('button-text-hover', $button);
-  const $arrow = getLayer<SVGElement>('button-arrow', $button);
-  const $arrowHover = getLayer<SVGElement>('button-arrow-hover', $button);
-  if (!$text || !$textHover || !$arrow || !$arrowHover) return;
-
+/*
+  ---------- Letter roll ----------
+  Two copies of a text sit in a window. On hover each letter of the top copy rolls up
+  and out while the same letter of the second copy rolls in from below, one after another.
+  Used by the green buttons and the project names. `extra` rolls along as one more "letter".
+*/
+const createLetterRoll = (
+  $text: HTMLElement,
+  $textHover: HTMLElement,
+  reduceMotion: boolean,
+  extra?: [Element, Element],
+) => {
   const textSplit = SplitText.create($text, { type: 'chars' });
   const hoverSplit = SplitText.create($textHover, { type: 'chars', aria: 'none' });
-  // The arrow rolls as the last "letter"
-  const $tops = [...textSplit.chars, $arrow];
-  const $bottoms = [...hoverSplit.chars, $arrowHover];
+  const $tops = [...textSplit.chars, ...(extra ? [extra[0]] : [])];
+  const $bottoms = [...hoverSplit.chars, ...(extra ? [extra[1]] : [])];
 
   gsap.set($bottoms, { yPercent: CTA_ROLL_Y });
-  gsap.set([$textHover, $arrowHover], { visibility: 'visible' });
+  gsap.set([$textHover, ...(extra ? [extra[1]] : [])], { visibility: 'visible' });
 
   const roll = (topY: number, bottomY: number) => {
     const settings = {
@@ -235,11 +247,20 @@ const createRollButton = ($button: HTMLElement, reduceMotion: boolean): Cleanup 
     gsap.to($bottoms, { yPercent: bottomY, ...settings });
   };
 
-  return onHover(
-    $button,
-    () => roll(-CTA_ROLL_Y, 0),
-    () => roll(0, CTA_ROLL_Y),
-  );
+  return { enter: () => roll(-CTA_ROLL_Y, 0), leave: () => roll(0, CTA_ROLL_Y) };
+};
+
+/* ---------- 5. Green buttons (Get in touch, About me): letters and arrow roll up into the light copy ---------- */
+const createRollButton = ($button: HTMLElement, reduceMotion: boolean): Cleanup | undefined => {
+  const $text = getLayer('button-text', $button);
+  const $textHover = getLayer('button-text-hover', $button);
+  const $arrow = getLayer<SVGElement>('button-arrow', $button);
+  const $arrowHover = getLayer<SVGElement>('button-arrow-hover', $button);
+  if (!$text || !$textHover || !$arrow || !$arrowHover) return;
+
+  // The arrow rolls as the last "letter"
+  const roll = createLetterRoll($text, $textHover, reduceMotion, [$arrow, $arrowHover]);
+  return onHover($button, roll.enter, roll.leave);
 };
 
 /* ---------- Smooth scrolling (Lenis) and the hero drifting apart on scroll ---------- */
@@ -531,6 +552,198 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($about))));
 };
 
+/* ---------- Work section: project rows ---------- */
+const createWorkRows = ($work: Element): Cleanup[] => {
+  const blue = getComputedStyle(document.documentElement).getPropertyValue('--c-blue').trim();
+  const ink = getComputedStyle(document.documentElement).getPropertyValue('--c-ink').trim();
+  const tilt = (WORK_CARD_TILT_DEG * Math.PI) / 180;
+  // The card body on screen right now, so moving to the next row swaps the card instead of
+  // shrinking one and growing the other
+  let $shownCard: HTMLElement | null = null;
+
+  return getAll('[data-layer="work-row"]', $work).map(($row) => {
+    const $text = getLayer('work-name-text', $row);
+    const $textHover = getLayer('work-name-hover', $row);
+    const $kindLine = getLayer('work-kind-line', $row);
+    const $arrow = getLayer<SVGElement>('work-arrow', $row);
+    const $card = getLayer('work-card', $row);
+    const $body = getLayer('work-card-body', $row);
+    if (!$text || !$textHover || !$kindLine || !$arrow || !$card || !$body) return () => {};
+
+    const roll = createLetterRoll($text, $textHover, false);
+
+    // The card itself stays at its Figma place and tilt. Only its body moves, shows and hides.
+    gsap.set($card, { autoAlpha: 1 });
+    gsap.set($body, { autoAlpha: 0, scale: 0.5 });
+    const moveX = gsap.quickTo($body, 'x', { duration: 0.45, ease: 'power3.out' });
+    const moveY = gsap.quickTo($body, 'y', { duration: 0.45, ease: 'power3.out' });
+
+    // Where the body has to go to sit next to the cursor, measured in the card's own tilted frame
+    const nextToCursor = (event?: MouseEvent) => {
+      if (!event) return { x: 0, y: 0 };
+      const box = $card.getBoundingClientRect();
+      const dx = event.clientX + WORK_CARD_OFFSET.x - (box.left + box.width / 2);
+      const dy = event.clientY + WORK_CARD_OFFSET.y - (box.top + box.height / 2);
+      return {
+        x: dx * Math.cos(-tilt) - dy * Math.sin(-tilt),
+        y: dx * Math.sin(-tilt) + dy * Math.cos(-tilt),
+      };
+    };
+
+    const enter = (event?: MouseEvent) => {
+      const point = nextToCursor(event);
+      if ($shownCard && $shownCard !== $body) {
+        // Coming straight from another row: hide that card and show this one in its place
+        gsap.killTweensOf($shownCard, 'scale,rotation,autoAlpha');
+        gsap.set($shownCard, { autoAlpha: 0, scale: 0.5 });
+        gsap.set($body, { ...point, scale: WORK_CARD_SCALE, rotation: 0, autoAlpha: WORK_CARD_OPACITY });
+      } else {
+        // It pops up at the cursor, growing from half its size and tilting from straight to the Figma tilt
+        gsap.set($body, point);
+        gsap.fromTo(
+          $body,
+          { scale: WORK_CARD_SCALE * 0.5, rotation: -WORK_CARD_TILT_DEG, autoAlpha: 0 },
+          {
+            scale: WORK_CARD_SCALE,
+            rotation: 0,
+            autoAlpha: WORK_CARD_OPACITY,
+            duration: 0.5,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          },
+        );
+      }
+      moveX(point.x);
+      moveY(point.y);
+      $shownCard = $body;
+
+      roll.enter();
+      gsap.set($kindLine, { transformOrigin: 'left center' });
+      gsap.to($kindLine, { scaleX: 1, duration: NAV_DURATION_S, ease: 'power3.out', overwrite: true });
+      gsap.to($arrow, {
+        x: WORK_ARROW_NUDGE_PX,
+        y: -WORK_ARROW_NUDGE_PX,
+        color: blue,
+        duration: 0.3,
+        ease: 'power2.out',
+        overwrite: true,
+      });
+    };
+
+    const move = (event: MouseEvent) => {
+      const point = nextToCursor(event);
+      moveX(point.x);
+      moveY(point.y);
+    };
+
+    const leave = () => {
+      gsap.to($body, {
+        scale: 0,
+        rotation: -WORK_CARD_TILT_DEG,
+        autoAlpha: 0,
+        duration: 0.4,
+        ease: 'power2.in',
+        overwrite: 'auto',
+        onComplete: () => {
+          if ($shownCard === $body) $shownCard = null;
+        },
+      });
+
+      roll.leave();
+      // The left end goes first, so the line also leaves towards the right
+      gsap.set($kindLine, { transformOrigin: 'right center' });
+      gsap.to($kindLine, { scaleX: 0, duration: NAV_DURATION_S, ease: 'power3.inOut', overwrite: true });
+      gsap.to($arrow, { x: 0, y: 0, color: ink, duration: 0.3, ease: 'power2.out', overwrite: true });
+    };
+
+    // Keyboard focus shows the card at its Figma place
+    const focus = () => enter();
+    const events: [string, EventListener][] = [
+      ['mouseenter', enter as EventListener],
+      ['mousemove', move as EventListener],
+      ['mouseleave', leave],
+      ['focus', focus],
+      ['blur', leave],
+    ];
+    events.forEach(([type, handler]) => $row.addEventListener(type, handler));
+    return () => events.forEach(([type, handler]) => $row.removeEventListener(type, handler));
+  });
+};
+
+/* ---------- Work section: the title bar, the sticker and the rows come in on scroll ---------- */
+const createWorkEntrance = (context: gsap.Context, $work: Element) => {
+  // Title: the yellow bar is drawn in from left to right, like the About highlighter
+  const $marker = getLayer('work-marker', $work);
+  const $click = getLayer('tag-click', $work);
+  const $clickBody = $click && getLayer('tag-body', $click);
+  if ($marker) {
+    gsap.set($marker, { clipPath: 'inset(0% 100% 0% 0%)' });
+    if ($clickBody) gsap.set($clickBody, { scale: 0.4, autoAlpha: 0 });
+
+    ScrollTrigger.create({
+      trigger: $marker,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        context.add(() => {
+          const title = gsap.timeline();
+          title.to($marker, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power2.inOut' });
+          // The sticker grows in like the camera tags, then floats like the hero tags
+          if ($clickBody) {
+            title.to(
+              $clickBody,
+              {
+                scale: 1,
+                autoAlpha: 1,
+                duration: 0.8,
+                ease: 'back.out(1.7)',
+                onComplete: () => context.add(() => startFloat($clickBody)),
+              },
+              0.5,
+            );
+          }
+        }),
+    });
+  }
+
+  // Rows: each line is drawn in from left to right, then its row rises in, one row after another
+  const $list = $work.querySelector('ul');
+  const $items = getAll('[data-layer="work-item"]', $work);
+  if (!$list || !$items.length) return;
+
+  const rows = $items.map(($item) => ({
+    $line: getLayer('work-line', $item),
+    $parts: [getLayer('work-name', $item), getLayer('work-tags', $item), getLayer('work-kind', $item)].filter(
+      ($part): $part is HTMLElement => $part !== null,
+    ),
+  }));
+  rows.forEach(({ $line, $parts }) => {
+    if ($line) gsap.set($line, { scaleX: 0 });
+    gsap.set($parts, { y: 20, autoAlpha: 0 });
+  });
+
+  ScrollTrigger.create({
+    trigger: $list,
+    start: 'top 80%',
+    once: true,
+    onEnter: () =>
+      context.add(() => {
+        const list = gsap.timeline();
+        rows.forEach(({ $line, $parts }, i) => {
+          if ($line) list.to($line, { scaleX: 1, duration: 0.7, ease: 'power2.inOut' }, i * 0.15);
+          list.to($parts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.06 }, i * 0.15 + 0.1);
+        });
+      }),
+  });
+};
+
+const createWorkAnimations = (context: gsap.Context): Cleanup[] => {
+  const $work = document.querySelector('[data-section="work"]');
+  if (!$work) return [];
+  createWorkEntrance(context, $work);
+  return createWorkRows($work);
+};
+
 /* ---------- Page load: the hero comes into register ---------- */
 const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $html = document.documentElement;
@@ -820,6 +1033,10 @@ export const initAnimations = () => {
         addCleanup(createSmoothScroll());
         createScrollDrift();
         createAboutAnimations(context, addCleanup);
+        // The work rows' hover is done here, so the instant CSS hover switches off
+        document.documentElement.dataset.motion = '';
+        addCleanup(() => delete document.documentElement.dataset.motion);
+        createWorkAnimations(context).forEach(addCleanup);
         waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
       }
 

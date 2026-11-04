@@ -1,0 +1,418 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Tag from './Tag.astro';
+
+import ArrowUpRight from '../assets/work/arrow-up-right.svg';
+import StarPinkLg from '../assets/home/svg/star-pink-lg.svg';
+import StarOutlineLg from '../assets/home/svg/star-outline-lg.svg';
+import StarPinkSm from '../assets/home/svg/star-pink-sm.svg';
+import StarOutlineSm from '../assets/home/svg/star-outline-sm.svg';
+
+import memome from '../assets/work/memome.webp';
+import marina from '../assets/work/marina.webp';
+import evo from '../assets/work/evo.webp';
+import bloom from '../assets/work/bloom.webp';
+import nmbs from '../assets/work/nmbs.webp';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+/*
+  Coordinates are Figma pixels from the 1440px "1.0 Home page" frame,
+  measured from the top-left of this section (Figma y 1700, where About ends).
+  x/y = centre of the layer.
+*/
+const SECTION_TOP = 1700;
+const layer = (x: number, y: number, w: number, r = 0) =>
+  `--x:${x};--y:${y - SECTION_TOP};--w:${w};--r:${r}deg`;
+
+// The small tags under each project name: Figma's widths are the minimum, a longer text makes its tag wider
+const TAG_WIDTHS: Record<string, number> = {
+  'Visual Design': 121.05,
+  UX: 60.05,
+  Development: 121.05,
+  'Motion Design': 121.05,
+};
+
+interface Project {
+  name: string;
+  kind: string;
+  tags: string[];
+  image: ImageMetadata;
+  // The hover card from Figma: card size, image size, image left edge, and how the image is cropped
+  card: { w: number; h: number; iw: number; ih: number; ix: number; position?: string };
+}
+
+const PROJECTS: Project[] = [
+  {
+    name: 'MemoMe',
+    kind: 'Web app platform',
+    tags: ['Visual Design', 'UX', 'Development'],
+    image: memome,
+    card: { w: 339, h: 219, iw: 323, ih: 176.72, ix: 8 },
+  },
+  {
+    name: 'Marina Yee Longread',
+    kind: 'Interactive website',
+    tags: ['Visual Design', 'UX', 'Development'],
+    image: marina,
+    card: { w: 339, h: 252, iw: 323, ih: 208, ix: 8, position: 'top' },
+  },
+  {
+    name: 'EVO Generational Spaceship',
+    kind: 'Concept design',
+    tags: ['UX'],
+    image: evo,
+    card: { w: 339, h: 219, iw: 323.5, ih: 177, ix: 8 },
+  },
+  {
+    name: 'Bloom Ferments',
+    kind: 'Promo video',
+    tags: ['Visual Design', 'Motion Design'],
+    image: bloom,
+    card: { w: 339, h: 225, iw: 323, ih: 181.69, ix: 8 },
+  },
+  {
+    name: 'NMBS Art Contest',
+    kind: 'Motion video',
+    tags: ['Visual Design', 'Motion Design'],
+    image: nmbs,
+    card: { w: 165, h: 301, iw: 146.25, ih: 260, ix: 9 },
+  },
+];
+---
+
+<section class="work" id="work" aria-labelledby="work-title" data-section="work">
+  <div class="work__frame">
+    <!-- Title area: sparkles, the title with its yellow highlighter bar, and the sticker -->
+    <div class="work__title-area">
+      <span class="work__star" data-layer="work-sparkle-big" style={layer(83.2, 1706.8, 56.35)}><StarPinkLg /></span>
+      <span class="work__star" data-layer="work-sparkle-big-outline" style={layer(85, 1705.2, 56.35)}><StarOutlineLg /></span>
+      <span class="work__star" data-layer="work-sparkle-small" style={layer(103.4, 1686, 22.62)}><StarPinkSm /></span>
+      <span class="work__star" data-layer="work-sparkle-small-outline" style={layer(104.1, 1685.3, 22.62)}><StarOutlineSm /></span>
+
+      <span class="work__marker" data-layer="work-marker"></span>
+      <h2 class="work__title" id="work-title" data-layer="work-title">Some of my work</h2>
+
+      <Tag
+        name="tag-click"
+        text="{ Click to see more }"
+        x={588.5}
+        y={1821 - SECTION_TOP}
+        w={143.36}
+        rotate={3.25}
+        font="sans"
+        class="work__click"
+      />
+    </div>
+
+    <!-- The projects. Hovering a row shows its card, turns the name blue and underlines its kind. -->
+    <ul class="work__list" role="list">
+      {
+        PROJECTS.map(({ name, kind, tags, image, card }) => (
+          <li class="work__item" data-layer="work-item">
+            <a class="work__row" href={`${base}/#work`} data-layer="work-row">
+              <!-- Two copies of the name: on hover the dark one rolls up and out, the blue one rolls in -->
+              <span class="work__name" data-layer="work-name">
+                <span class="work__name-text" data-layer="work-name-text">{name}</span>
+                <span class="work__name-text work__name-text--hover" data-layer="work-name-hover" aria-hidden="true">{name}</span>
+              </span>
+              <span class="work__tags" data-layer="work-tags">
+                {tags.map((tag) => (
+                  <Tag name="work-tag" text={`{ ${tag} }`} x={0} y={0} w={TAG_WIDTHS[tag]} h={32} flow />
+                ))}
+              </span>
+              <span class="work__kind" data-layer="work-kind">
+                <span class="work__kind-text">{kind}</span>
+                <ArrowUpRight class="work__arrow" aria-hidden="true" data-layer="work-arrow" />
+                <span class="work__kind-line" data-layer="work-kind-line" aria-hidden="true" />
+              </span>
+
+              <span
+                class="work__card"
+                data-layer="work-card"
+                aria-hidden="true"
+                style={`--cw:${card.w};--ch:${card.h};--iw:${card.iw};--ih:${card.ih};--ix:${card.ix}`}
+              >
+                <span class="work__card-body" data-layer="work-card-body">
+                <svg class="work__card-close" viewBox="0 0 13 10.5" aria-hidden="true">
+                  <path d="M0.5 0.5L12.5 10M12.5 0.5L0.5 10" />
+                </svg>
+                <span class="work__card-bar" />
+                <Image
+                  class="work__card-image"
+                  src={image}
+                  alt=""
+                  widths={[Math.round(card.iw), image.width]}
+                  sizes={`${Math.round(card.iw)}px`}
+                  style={card.position ? `object-position:${card.position}` : undefined}
+                />
+                </span>
+              </span>
+            </a>
+            <span class="work__line" data-layer="work-line" aria-hidden="true" />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it.
+  */
+  .work {
+    position: relative;
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    padding-bottom: calc(53 * var(--u));
+  }
+
+  .work__frame {
+    grid-column: frame;
+    display: grid;
+    grid-template-rows: calc(165 * var(--u)) auto;
+    grid-template-areas:
+      'title'
+      'list';
+  }
+
+  /* ---------- Title area ---------- */
+  .work__title-area {
+    grid-area: title;
+    position: relative;
+  }
+
+  .work__star {
+    position: absolute;
+    left: calc(var(--x) * var(--u));
+    top: calc(var(--y) * var(--u));
+    width: calc(var(--w) * var(--u));
+    translate: -50% -50%;
+    rotate: var(--r);
+    z-index: 2;
+  }
+
+  .work__star :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .work__title {
+    position: absolute;
+    left: calc(108 * var(--u));
+    top: calc((1726 - 1700) * var(--u));
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(70 * var(--u));
+    line-height: 1;
+    /* Figma trims the text box to the capital letters, so its top is the top of the caps */
+    text-box: trim-both cap alphabetic;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--c-ink);
+    z-index: 1;
+  }
+
+  .work__marker {
+    position: absolute;
+    left: calc(100 * var(--u));
+    top: calc((1808 - 15 - 1700) * var(--u));
+    width: calc(836 * var(--u));
+    height: calc(30 * var(--u));
+    background: var(--c-marker);
+  }
+
+  .work__title-area :global(.work__click) {
+    z-index: 2;
+  }
+
+  /* ---------- Project list ---------- */
+  .work__list {
+    grid-area: list;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Each row: 31px above the name, the line 116px below the name's top, as in Figma */
+  .work__item {
+    position: relative;
+    margin-left: calc(100 * var(--u));
+    width: calc(1240 * var(--u));
+  }
+
+  /* The 1.5px line under each row is its own layer, so it can be drawn in */
+  .work__line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(1.5 * var(--u));
+    background: var(--c-ink);
+    transform-origin: left center;
+  }
+
+  .work__row {
+    position: relative;
+    display: block;
+    height: calc((31 + 116) * var(--u));
+    padding: calc(31 * var(--u)) 0 0 calc(8 * var(--u));
+    color: var(--c-ink);
+  }
+
+  /*
+    A window the letters roll through, like on the green buttons. The padding gives
+    the tall Boldonse letters room, and the negative margin keeps the row's layout.
+  */
+  /*
+    The texts sit above the hover card (z-index 2 over its 1), in every row, so the card
+    never hides a name, a tag or a kind. None of the rows is a stacking context.
+  */
+  .work__name {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: max-content;
+    overflow: hidden;
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+    font-family: var(--f-display);
+    font-size: calc(28 * var(--u));
+    line-height: calc(54 * var(--u));
+    white-space: nowrap;
+  }
+
+  .work__name-text {
+    display: block;
+  }
+
+  .work__name-text--hover {
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+    color: var(--c-blue);
+    /* shown by the script once it has moved it below the window */
+    visibility: hidden;
+  }
+
+  /* The tags sit side by side, 12px apart, as in Figma */
+  .work__tags {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: calc(12 * var(--u));
+    height: calc(32 * var(--u));
+    margin-top: calc(4 * var(--u));
+  }
+
+  .work__kind {
+    position: absolute;
+    z-index: 2;
+    right: calc(1.5 * var(--u));
+    top: calc((31 + 16) * var(--u));
+    display: flex;
+    align-items: center;
+    gap: calc(26 * var(--u));
+    height: calc(38 * var(--u));
+    font-family: var(--f-sans);
+    font-size: calc(32 * var(--u));
+    white-space: nowrap;
+  }
+
+  .work__arrow {
+    width: calc(19.5 * var(--u));
+    height: auto;
+    overflow: visible;
+  }
+
+  /* The blue line under the kind, shown on hover (Figma: 4px wider on the left, 2.5px thick) */
+  .work__kind-line {
+    position: absolute;
+    left: calc(-4 * var(--u));
+    right: calc(-3.5 * var(--u));
+    bottom: 0;
+    height: calc(2.5 * var(--u));
+    background: var(--c-blue);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  /* ---------- Hover card ---------- */
+  /* Figma: centred 634px from the row's left and 179px from its top, tilted -6.2° */
+  .work__card {
+    position: absolute;
+    left: calc(634 * var(--u));
+    top: calc(179 * var(--u));
+    width: calc(var(--cw) * var(--u));
+    height: calc(var(--ch) * var(--u));
+    translate: -50% -50%;
+    rotate: -6.2deg;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .work__card-body {
+    position: absolute;
+    inset: 0;
+    background: var(--c-ink);
+  }
+
+  .work__card-close {
+    position: absolute;
+    left: calc(9 * var(--u));
+    top: calc(7.9 * var(--u));
+    width: calc(13.06 * var(--u));
+    height: calc(10.51 * var(--u));
+    fill: none;
+    stroke: var(--c-light);
+    stroke-width: 1.2;
+  }
+
+  .work__card-bar {
+    position: absolute;
+    left: calc(8 * var(--u));
+    top: calc(24.5 * var(--u));
+    width: calc((var(--iw) + var(--ix) - 8) * var(--u));
+    height: 1px;
+    background: var(--c-light);
+  }
+
+  .work__card-image {
+    position: absolute;
+    left: calc(var(--ix) * var(--u));
+    top: calc(31 * var(--u));
+    width: calc(var(--iw) * var(--u));
+    height: calc(var(--ih) * var(--u));
+    object-fit: cover;
+  }
+
+  /*
+    ---------- Hover state without the animations ----------
+    For reduced motion (and if the script doesn't run) the hover is instant.
+    With the animations on, <html> has data-motion and the script does all of this.
+  */
+  :global(html:not([data-motion])) .work__row:hover .work__name-text,
+  :global(html:not([data-motion])) .work__row:focus-visible .work__name-text,
+  :global(html:not([data-motion])) .work__row:hover .work__arrow,
+  :global(html:not([data-motion])) .work__row:focus-visible .work__arrow {
+    color: var(--c-blue);
+  }
+
+  :global(html:not([data-motion])) .work__row:hover .work__kind-line,
+  :global(html:not([data-motion])) .work__row:focus-visible .work__kind-line {
+    transform: none;
+  }
+
+  :global(html:not([data-motion])) .work__row:hover .work__card,
+  :global(html:not([data-motion])) .work__row:focus-visible .work__card {
+    opacity: 1;
+    visibility: visible;
+  }
+</style>
