@@ -4,3 +4,6 @@ node_modules/
 .env
 .env.*
 .DS_Store
+
+# Third-party Claude skills: kept local, not published
+.claude/skills/
