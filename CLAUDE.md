@@ -17,12 +17,13 @@ These are the project rules. Follow them on every task in this repo. When Irina 
 - **Branches:** always work on a `feature/...` branch made from the latest `main`, named after the work (`feature/hero-animations`, `feature/about-section`). Never commit to `main`. Cloud sessions start on an auto-named `claude/...` branch: don't use it, create the feature branch.
 - **One topic per PR.** Irina reviews and merges every PR herself. Never merge a PR.
 - **Before pushing:** `npm run build` must pass. There's no CI on PRs. The only workflow is the deploy on `main`.
+- **No browser checks:** don't open the site in the browser pane or take screenshots of it, because that uses a lot of tokens. Build it, then Irina checks it in her own browser and reports back.
 - **Commit messages:** one plain sentence that says what changed. Add a short body when the reason isn't obvious.
 - **PR descriptions are detailed and pertinent.** Every one has these parts:
   - **Why:** the goal or the problem, and what was wrong or missing before.
   - **What changed:** each change, the file it's in and the reason for it. Explain the decisions and trade-offs, not just the diff.
-  - **What I checked:** the build, screenshots, the widths tested, the comparison with Figma.
-  - **How to check:** the steps for Irina to see it herself.
+  - **What I checked:** the build, and the values compared with Figma (colours, sizes, positions).
+  - **How to check:** the steps for Irina to see it herself, with the widths to look at.
   - **Decisions for you** and **Still open:** what Irina needs to choose, and what's left for later.
 
   Leave out anything that doesn't help Irina review the PR.
@@ -46,7 +47,7 @@ For PR descriptions, commit messages, docs and code comments:
 - **Figma file:** `XkBDu8XvKNo8hmGnVPvtln`, home page frame `289:111` ("1.0 Home page", 1440px wide).
 - **Scale:** `--u` in `src/styles/global.css` is one Figma pixel, so desktop layouts keep the exact proportions. Sizes are written as `calc(N * var(--u))`.
 - **Wide screens:** above 1440px the design looks exactly as it does at 1440, centred. `--u` stops growing at 1440. Each section's content sits in the 1440 frame, with a `1fr` column on each side of its grid, as in `Hero.astro`. Only the parts that run edge to edge in Figma (bands, marquees, backgrounds) keep running edge to edge.
-- **Check every section** against Figma at 1440px, then at 1920px and 2560px.
+- **Check every section** against Figma at 1440px, then at 1920px and 2560px. Irina does this in her own browser. Claude compares the values in the code with Figma.
 - **Layout:** each section is a CSS grid with named areas (`grid-template-areas`). Overlapping collage layers sit in the same grid area and are positioned inside it.
 - **Placement by area, never by number:** place every element by its named area (`grid-area: title`). When an element has to overlap another area, use that area's lines (`grid-row: title-start / tag-end`). Never use column or row numbers like `grid-column: 2 / 3`, because they break as soon as a column or row is added.
 - **Layers:** every visual element (tags, stars, outlines, photo, camera) is its own element with a `data-layer` name, so it can be animated on its own.
