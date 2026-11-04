@@ -45,17 +45,34 @@ body {
   color: var(--c-ink);
   font-family: var(--f-sans);
   line-height: 1.4;
-  /* clip (not hidden) so the oversized rotated grid never causes scrolling */
+  /* clip (not hidden) so collage pieces that stick out past the edges never cause scrolling */
   overflow: clip;
   position: relative;
   min-height: 100vh;
 }
 
-/* Grid paper background: rotated tiles at 43% like the Figma "math_page" layers. */
+/*
+  Background: two layers the size of the screen, fixed in place.
+  The page scrolls over the grid paper and under the texture, so both cover
+  every page and every section from top to bottom, however long the page is.
+  (position: fixed, not background-attachment: fixed, which iPhones ignore.)
+*/
+
+/*
+  Grid paper: rotated tiles at 43% like the Figma "math_page" layers.
+  100px bigger than the screen on every side, so the -2.22deg rotation never
+  shows its corners (enough for screens up to about 5000px).
+  100lvh is the screen height with the phone toolbars hidden, so no gap shows
+  when Safari's toolbar slides away; the 100vh line is for older browsers.
+*/
 body::before {
   content: '';
-  position: absolute;
-  inset: -200px;
+  position: fixed;
+  top: -100px;
+  left: -100px;
+  width: calc(100vw + 200px);
+  height: calc(100vh + 200px);
+  height: calc(100lvh + 200px);
   z-index: -1;
   background-image: var(--paper-url);
   background-size: calc(758 * var(--u)) auto;
@@ -65,11 +82,18 @@ body::before {
   pointer-events: none;
 }
 
-/* Texture over every page, top to bottom (Figma "texture" layer, lighten blend). */
+/*
+  Texture over everything (Figma "texture" layer, lighten blend).
+  In Figma it's only on the hero; that's a mistake in the file, it belongs on every section.
+*/
 body::after {
   content: '';
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
   z-index: 100;
   background-image: var(--texture-url);
   background-size: max(calc(488 * var(--u)), 320px) auto;
