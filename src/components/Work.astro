@@ -167,7 +167,8 @@ const PROJECTS: Project[] = [
     position: relative;
     display: grid;
     grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
-    padding-bottom: calc(53 * var(--u));
+    /* down to the film strip, which starts at Figma y 2657 */
+    padding-bottom: calc(57 * var(--u));
   }
 
   .work__frame {
