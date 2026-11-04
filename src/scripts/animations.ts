@@ -97,6 +97,10 @@ const MARQUEE_FLOW_PX_S = 50; // its normal speed, right to left
 const MARQUEE_SCROLL_BOOST = 12; // extra px/s for each px/frame of scroll speed, up or down
 const MARQUEE_LINE_DRAW_S = 1.6;
 
+// Footer
+const FOOTER_ARROW_NUDGE_EVERY_S = 3; // the arrows nudge towards "CV" this often
+const FOOTER_ARROW_NUDGE_PX = 6;
+
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
 
@@ -924,6 +928,112 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   });
 };
 
+/* ---------- Footer: stickers, DOWNLOAD CV with its arrows, the buttons and the pink band ---------- */
+const createFooter = (context: gsap.Context) => {
+  const $footer = document.querySelector('[data-section="footer"]');
+  if (!$footer) return;
+
+  // Stickers grow in where they are, like the camera tags, then float
+  getAll('[data-layer="footer-sticker"]', $footer).forEach(($sticker) => {
+    const $body = getLayer('tag-body', $sticker);
+    if (!$body) return;
+    gsap.set($body, { scale: 0.4, autoAlpha: 0 });
+    ScrollTrigger.create({
+      trigger: $sticker,
+      start: 'top 90%',
+      once: true,
+      onEnter: () =>
+        context.add(() => {
+          gsap.to($body, {
+            scale: 1,
+            autoAlpha: 1,
+            duration: 0.8,
+            ease: 'back.out(1.7)',
+            onComplete: () => context.add(() => startFloat($body)),
+          });
+        }),
+    });
+  });
+
+  // DOWNLOAD CV, the arrows and the buttons come in together, one after another
+  const $cv = getLayer('footer-cv', $footer);
+  const $download = getLayer('footer-cv-download', $footer);
+  const $letters = getLayer('footer-cv-letters', $footer);
+  const $marker = getLayer('footer-cv-marker', $footer);
+  const $arrows = getAll<SVGElement>('[data-layer="footer-arrow-svg"]', $footer);
+  const $buttons = getAll('[data-roll-button]', getLayer('footer-links', $footer) ?? $footer);
+  if ($cv && $download && $letters && $marker) {
+    gsap.set($download, { y: 20, autoAlpha: 0 });
+    gsap.set($letters, { autoAlpha: 0 });
+    gsap.set($marker, { clipPath: 'inset(0% 100% 0% 0%)' });
+    // Each arrow starts further out along its own direction. The right ones are mirrored,
+    // so the same values move them out to the right. The top ones point down, the bottom ones up.
+    const isTop = (i: number) => i < 2;
+    gsap.set($arrows, { x: -40, y: (i: number) => (isTop(i) ? -20 : 20), autoAlpha: 0 });
+    gsap.set($buttons, { y: 20, autoAlpha: 0 });
+
+    ScrollTrigger.create({
+      trigger: $cv,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        waitForFonts().then(() =>
+          context.add(() => {
+            const letters = SplitText.create($letters, { type: 'chars' }).chars;
+            gsap.set($letters, { autoAlpha: 1 });
+            gsap
+              .timeline({
+                // Then every few seconds the arrows nudge towards "CV" together, to draw the eye
+                onComplete: () =>
+                  context.add(() => {
+                    gsap.to($arrows, {
+                      x: FOOTER_ARROW_NUDGE_PX,
+                      y: (i: number) => (isTop(i) ? FOOTER_ARROW_NUDGE_PX / 2 : -FOOTER_ARROW_NUDGE_PX / 2),
+                      duration: 0.25,
+                      ease: 'power2.out',
+                      yoyo: true,
+                      repeat: -1,
+                      repeatDelay: FOOTER_ARROW_NUDGE_EVERY_S,
+                    });
+                  }),
+              })
+              // "DOWNLOAD" rises into place
+              .to($download, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out' })
+              // "CV" stands up from flat, like the hero title
+              .fromTo(
+                letters,
+                { rotationX: -100, autoAlpha: 0, transformOrigin: '50% 100%', transformPerspective: 500 },
+                { rotationX: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.7)', stagger: 0.08 },
+                0.2,
+              )
+              // and the yellow bar is drawn in behind it like a highlighter
+              .to($marker, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power2.inOut' }, 0.5)
+              // The arrows shoot in and stop with a small overshoot, pointing at "CV"
+              .to($arrows, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.6)', stagger: 0.08 }, 0.9)
+              // The buttons rise in one after another
+              .to($buttons, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.1 }, 1.2);
+          }),
+        ),
+    });
+  }
+
+  // Pink band: its three texts fade up
+  const $bandTexts = getAll('[data-layer="footer-name"], [data-layer="footer-by"], [data-layer="footer-rights"]', $footer);
+  const $band = getLayer('footer-band', $footer);
+  if ($band && $bandTexts.length) {
+    gsap.set($bandTexts, { y: 12, autoAlpha: 0 });
+    ScrollTrigger.create({
+      trigger: $band,
+      start: 'top 95%',
+      once: true,
+      onEnter: () =>
+        context.add(() => {
+          gsap.to($bandTexts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.08 });
+        }),
+    });
+  }
+};
+
 /* ---------- Page load: the hero comes into register ---------- */
 const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $html = document.documentElement;
@@ -1219,6 +1329,7 @@ export const initAnimations = () => {
         createWorkAnimations(context).forEach(addCleanup);
         createFilmStrip(context);
         createMarquee(context, addCleanup);
+        createFooter(context);
         waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
       }
 
