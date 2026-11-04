@@ -108,7 +108,7 @@ const FOOTER_ARROW_NUDGE_EVERY_S = 3; // the arrows nudge towards "CV" this ofte
 const FOOTER_ARROW_NUDGE_PX = 6;
 
 // About me page, section 1
-const INTRO_TITLE_AT_S = 0.3; // the title is typed letter by letter, like the home page's About title
+const INTRO_TITLE_AT_S = 0.3; // the title's letters stand up one after another, like HI, I'M IRINA.
 const INTRO_FLOWER_AT_S = 1; // the first stem starts growing
 const INTRO_FLOWER_GAP_S = 0.5; // and the next ones follow this far apart
 const INTRO_STEM_S = 2.2; // a slow, calm grow
@@ -116,6 +116,10 @@ const INTRO_HAT_DROP_AT_S = 1.4;
 const INTRO_FLOAT_PX = 7; // the open flowers float up and down this much
 const INTRO_PHONE_STRETCH = 0.06; // the phone bobs as its cord stretches this much
 const INTRO_PHONE_SWAY_DEG = 3;
+
+// About me page, section 2
+const HOW_STEM_AFTER_S = 0.3; // the stem starts growing this long after section 1's text is in
+const HOW_STEM_S = 3.2; // longer than section 1's stems, so it grows as slowly
 
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
@@ -133,6 +137,15 @@ type Cleanup = () => void;
 let markAboutTitleTyped: () => void = () => {};
 const aboutTitleTyped = new Promise<void>((resolve) => {
   markAboutTitleTyped = resolve;
+});
+
+/*
+  On the About me page: resolves once section 1's card text is in. Section 2's stem waits for it,
+  then grows down from that card to lead the eye down the page.
+*/
+let markIntroTextShown: () => void = () => {};
+const introTextShown = new Promise<void>((resolve) => {
+  markIntroTextShown = resolve;
 });
 
 const getLayer = <T extends Element = HTMLElement>(name: string, $root: ParentNode = document) =>
@@ -399,11 +412,12 @@ const createInternshipSwing = ($body: HTMLElement): Cleanup => {
 };
 
 /* ---------- About: the wave text flows along the curve forever ---------- */
-const startWaveFlow = ($about: Element): Cleanup | undefined => {
-  const $wave = getLayer<SVGSVGElement>('wave', $about);
-  const $text = getLayer<SVGTextElement>('wave-text', $about);
-  const $textPath = getLayer<SVGTextPathElement>('wave-text-path', $about);
-  const $curve = $about.querySelector<SVGPathElement>('#about-wave-text-path');
+const startWaveFlow = ($section: Element, waveLayer = 'wave'): Cleanup | undefined => {
+  const $wave = getLayer<SVGSVGElement>(waveLayer, $section);
+  const $text = getLayer<SVGTextElement>('wave-text', $section);
+  const $textPath = getLayer<SVGTextPathElement>('wave-text-path', $section);
+  const curveId = $textPath?.getAttribute('href') ?? '';
+  const $curve = curveId ? $section.querySelector<SVGPathElement>(curveId) : null;
   if (!$wave || !$text || !$textPath || !$curve) return;
 
   const originalText = $textPath.textContent ?? '';
@@ -1171,8 +1185,8 @@ const createFooter = (context: gsap.Context) => {
 /*
   ---------- About me page, section 1: "A few more things about this human" ----------
   It reuses the home page's motion: the photo is pressed down while the yellow fill and the
-  outlines slide into register, the title is typed and its yellow bars are drawn right after,
-  and the card wipes in once the title is typed. On top: Kiki runs in from off the left edge, the stems grow
+  outlines slide into register, the title's letters stand up like "HI, I'M IRINA." and its yellow
+  bars are drawn right after, and the card wipes in once the title is up. On top: Kiki runs in from off the left edge, the stems grow
   slowly out from behind the photo and their flowers open and float, and the hat drops onto
   Irina's head and stays there. The phone always bobs on its cord. Hovering the hat tips it, like saying howdy.
 */
@@ -1264,7 +1278,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
             const lines = SplitText.create($cardText, { type: 'lines' }).lines;
             gsap.set($cardText, { autoAlpha: 1 });
             gsap
-              .timeline()
+              .timeline({ onComplete: () => markIntroTextShown() })
               .to($card, { clipPath: 'inset(-5% -5% -5% -5%)', duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
               .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
               .fromTo(
@@ -1285,6 +1299,8 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
       const titleChars = $title ? SplitText.create($title, { type: 'words,chars' }).chars : [];
       gsap.set(titleChars, { autoAlpha: 0 });
       if ($title) gsap.set($title, { autoAlpha: 1 });
+      // When the last letter has stood up
+      const titleDoneAt = INTRO_TITLE_AT_S + Math.max(titleChars.length - 1, 0) * TITLE_STAGGER_S + TITLE_STAND_S;
 
       const load = gsap.timeline({
         onComplete: () => {
@@ -1309,14 +1325,19 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
       });
 
       load
-        // 0.3s: the title is typed letter by letter
-        .to(titleChars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S }, INTRO_TITLE_AT_S)
-        .call(() => markTitleTyped(), [], INTRO_TITLE_AT_S + titleChars.length * ABOUT_TITLE_TYPE_S)
-        // Right after the typing, the yellow bars are drawn in from left to right behind the title
+        // 0.3s: each letter stands up from lying flat, like "HI, I'M IRINA." on the home page
+        .fromTo(
+          titleChars,
+          { rotationX: -100, autoAlpha: 0, transformOrigin: '50% 100%', transformPerspective: 500 },
+          { rotationX: 0, autoAlpha: 1, duration: TITLE_STAND_S, ease: 'back.out(1.7)', stagger: TITLE_STAGGER_S },
+          INTRO_TITLE_AT_S,
+        )
+        .call(() => markTitleTyped(), [], titleDoneAt)
+        // Once the letters are up, the yellow bars are drawn in from left to right behind the title
         .to(
           $markers,
           { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut', stagger: MARKER_S * 0.9 },
-          INTRO_TITLE_AT_S + titleChars.length * ABOUT_TITLE_TYPE_S,
+          titleDoneAt,
         )
         // 0.4s: the photo is pressed down, its fill and outlines slide into register behind it
         .to($photo ?? [], { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.4)' }, 0.4)
@@ -1343,6 +1364,139 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
       }
     }),
   );
+};
+
+/*
+  ---------- About me page, section 2: "How it started" ----------
+  Once section 1's text is in, the stem grows down from that card on its own, to lead the eye
+  down the page, and its flower opens once the stem reaches it. It stays when you scroll back up.
+  The title is typed and the card wipes in, like the home page. The camera tilts as if it takes
+  the picture, then the photo and the strip grow out from their middle. The words flow along the wave like on
+  the home page. The camera, its photo and the strip move inside wrappers that keep their tilt.
+*/
+const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
+  const $section = document.querySelector('[data-section="how-started"]');
+  if (!$section) return;
+
+  // The stem and the flower are two copies of one SVG: the stem under the cards, the flower above
+  const $flower = getLayer('how-started-flower', $section);
+  const $bloom = getLayer('how-started-bloom', $section);
+  const $stem = $flower?.querySelector<SVGPathElement>('[data-layer="flower-stem"]') ?? null;
+  const $head = $bloom?.querySelector<SVGGElement>('[data-layer="flower-head"]') ?? null;
+  const $title = getLayer('how-started-title', $section);
+  const $card = getLayer('how-started-card', $section);
+  const $cardText = getLayer('how-started-text', $section);
+  const $corners = getAll('[data-layer="how-started-corner"]', $section);
+  const $camera = getLayer('how-started-camera', $section);
+  const $photo = getLayer('how-started-photo', $section);
+  const $strip = getLayer('how-started-strip', $section);
+
+  // ---------- After section 1's text, the stem grows down on its own; then its flower opens ----------
+  if ($flower && $stem) {
+    const length = $stem.getTotalLength();
+    const fromEnd = $flower.dataset.grow === 'end';
+    gsap.set($stem, { strokeDasharray: length, strokeDashoffset: fromEnd ? -length : length });
+    if ($head) gsap.set($head, { scale: 0, transformOrigin: '50% 50%' });
+
+    // The stem and its flower float together, once the flower is open
+    const float = gsap.to([$flower, $bloom].filter(Boolean), {
+      y: -INTRO_FLOAT_PX,
+      duration: 2.8,
+      ease: 'sine.inOut',
+      yoyo: true,
+      repeat: -1,
+      paused: true,
+    });
+
+    // Once section 1's text is in, the stem grows down on its own, then its flower opens and
+    // floats. It doesn't wait for the scroll, so it shows the way down the page. Once grown, it stays.
+    introTextShown.then(() =>
+      context.add(() => {
+        gsap
+          .timeline({ delay: HOW_STEM_AFTER_S, onComplete: () => float.play() })
+          .to($stem, { strokeDashoffset: 0, duration: HOW_STEM_S, ease: 'sine.inOut' })
+          .to($head ?? [], { scale: 1, duration: 0.9, ease: 'back.out(1.6)' }, HOW_STEM_S * 0.9);
+      }),
+    );
+  }
+
+  // ---------- Title, typed like the home page's About title, then the card ----------
+  if ($cardText) gsap.set($cardText, { autoAlpha: 0 });
+  if ($card) gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
+  gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
+  if ($title) gsap.set($title, { autoAlpha: 0 });
+
+  if ($title) {
+    ScrollTrigger.create({
+      trigger: $title,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        waitForFonts().then(() =>
+          context.add(() => {
+            const chars = SplitText.create($title, { type: 'words,chars' }).chars;
+            gsap.set(chars, { autoAlpha: 0 });
+            gsap.set($title, { autoAlpha: 1 });
+            const typed = gsap.timeline();
+            typed.to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S });
+
+            // Once the title is typed, the card wipes in, its corners clamp, and the lines appear
+            if ($card && $cardText) {
+              const lines = SplitText.create($cardText, { type: 'lines' }).lines;
+              gsap.set($cardText, { autoAlpha: 1 });
+              gsap.set(lines, { y: 12, autoAlpha: 0 });
+              typed
+                .to($card, { clipPath: 'inset(-5% -5% -5% -5%)', duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
+                .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
+                .to(lines, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, '<0.2');
+            }
+          }),
+        ),
+    });
+  }
+
+  // ---------- Camera: it tilts as it takes the picture, then the pictures grow from their middle ----------
+  // It starts with the title and the card, when the section scrolls in (the camera itself is
+  // high enough to be on screen at load). The camera rises in, the photo and the strip then open
+  // from a line across their middle, out to the top and the bottom.
+  const $pictures = [$photo, $strip].filter(($el): $el is HTMLElement => $el !== null);
+  if ($camera) gsap.set($camera, { autoAlpha: 0, y: 16, transformOrigin: '50% 100%' });
+  gsap.set($pictures, { clipPath: 'inset(50% 0% 50% 0%)', autoAlpha: 1 });
+
+  if ($camera) {
+    ScrollTrigger.create({
+      trigger: $title ?? $camera,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        context.add(() => {
+          gsap
+            .timeline()
+            .to($camera, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' })
+            // a quick tilt and back, like pressing the shutter
+            .to($camera, {
+              keyframes: [
+                { rotation: -5, duration: 0.25, ease: 'power2.out' },
+                { rotation: 0, duration: 0.7, ease: 'elastic.out(1, 0.5)' },
+              ],
+            })
+            .to(
+              $pictures,
+              {
+                clipPath: 'inset(0% 0% 0% 0%)',
+                duration: 0.9,
+                ease: 'power3.inOut',
+                stagger: 0.2,
+                clearProps: 'clipPath',
+              },
+              0.9, // just after the tilt starts
+            );
+        }),
+    });
+  }
+
+  // ---------- The words flow along the wave, like on the home page ----------
+  waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($section, 'how-started-wave'))));
 };
 
 /* ---------- Page load: the hero comes into register ---------- */
@@ -1642,6 +1796,7 @@ export const initAnimations = () => {
         createMarquee(context, addCleanup);
         createFooter(context);
         createAboutIntro(context, addCleanup);
+        createAboutHowItStarted(context, addCleanup);
         if (document.querySelector('[data-section="hero"]')) {
           waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
         } else {
