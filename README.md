@@ -12,6 +12,14 @@ npm run dev      # http://localhost:4321/portfolio/
 npm run build    # production build into dist/
 ```
 
+## After a PR is merged on GitHub
+
+```sh
+git checkout main      # go back to the main branch
+git pull               # download what was merged
+npm install            # only needed if package.json changed
+```
+
 ## Animations
 
 All GSAP code lives in `src/scripts/animations.ts` and runs on every page. Add these attributes to any element:

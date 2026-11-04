@@ -4,7 +4,6 @@ import Tag from './Tag.astro';
 
 import irina from '../assets/home/irina-cutout.png';
 import camera from '../assets/home/pink-camera.png';
-import texture from '../assets/home/texture.webp';
 
 import StarPinkLg from '../assets/home/svg/star-pink-lg.svg';
 import StarOutlineLg from '../assets/home/svg/star-outline-lg.svg';
@@ -101,8 +100,6 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     <Tag name="tag-visual-camera" text="{ Visual Design }" x={404.3} y={284.3} w={121.12} rotate={-3.15} class="hero__tag" />
     <Tag name="tag-experience-camera" text="{ Experience Design }" x={364} y={447.4} w={156.34} rotate={3.25} class="hero__tag" />
   </div>
-
-  <span class="hero__texture" data-layer="texture" aria-hidden="true" style={`--texture:url(${texture.src})`}></span>
 </section>
 
 <style>
@@ -229,17 +226,6 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     z-index: 2;
   }
 
-  /* Texture sits on top of the whole hero, like the Figma "texture" layer (lighten blend). */
-  .hero__texture {
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: calc(885 * var(--u));
-    background-image: var(--texture);
-    background-size: calc(488 * var(--u)) auto;
-    mix-blend-mode: lighten;
-    pointer-events: none;
-    z-index: 5;
-  }
 
   /* ---------- Mobile suggestion (< 900px): stacked, same collage pieces ---------- */
   @media (max-width: 899px) {
@@ -309,9 +295,5 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
       margin-top: calc(-120 * var(--u));
     }
 
-    .hero__texture {
-      height: 100%;
-      background-size: max(calc(488 * var(--u)), 320px) auto;
-    }
   }
 </style>
