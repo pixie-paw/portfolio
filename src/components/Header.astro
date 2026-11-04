@@ -6,22 +6,37 @@ import Arrow from '../assets/home/svg/arrow.svg';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
+<!--
+  Nav links: grey by default, dark with the blue underline on hover and when active.
+  The active link gets site-header__link--active and aria-current. On the homepage
+  none is active: Projects will be, while the projects section is on screen.
+-->
 <header class="site-header" data-layer="header">
-  <a class="site-header__logo" href={`${base}/`} aria-label="Irina Moldovan, home" data-layer="logo">
-    <Logo aria-hidden="true" />
+  <a class="site-header__logo" href={`${base}/`} aria-label="Irina Moldovan, home" data-layer="logo" data-intro>
+    <Logo class="site-header__flower" aria-hidden="true" data-layer="logo-flower" />
   </a>
 
   <nav class="site-header__nav" aria-label="Main">
-    <a class="site-header__link site-header__link--active" href={`${base}/#work`} data-layer="nav-projects">
-      Projects
+    <a class="site-header__link" href={`${base}/#work`} data-layer="nav-projects" data-nav-link data-intro>
+      <span class="site-header__label" data-layer="nav-label">Projects</span>
       <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
     </a>
-    <a class="site-header__link" href={`${base}/#about`} data-layer="nav-about">About me</a>
+    <a class="site-header__link" href={`${base}/#about`} data-layer="nav-about" data-nav-link data-intro>
+      <span class="site-header__label" data-layer="nav-label">About me</span>
+      <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
+    </a>
   </nav>
 
-  <a class="button site-header__cta" href={`${base}/#contact`} data-layer="cta">
-    <span>Get in touch</span>
-    <Arrow class="button__arrow" aria-hidden="true" />
+  <!-- Two copies of the text and the arrow: on hover the dark one rolls up and out, the light one rolls in -->
+  <a class="button site-header__cta" href={`${base}/#contact`} data-layer="cta" data-intro>
+    <span class="button__roll">
+      <span class="button__label" data-layer="cta-text">Get in touch</span>
+      <span class="button__label button__label--hover" data-layer="cta-text-hover" aria-hidden="true">Get in touch</span>
+    </span>
+    <span class="button__roll" aria-hidden="true">
+      <Arrow class="button__arrow" data-layer="cta-arrow" />
+      <Arrow class="button__arrow button__arrow--hover" data-layer="cta-arrow-hover" />
+    </span>
   </a>
 </header>
 
@@ -48,9 +63,16 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     width: calc(149 * var(--u));
   }
 
-  .site-header__logo :global(svg) {
+  .site-header__logo {
+    display: block;
+  }
+
+  .site-header__flower {
+    display: block;
     width: 100%;
     height: auto;
+    /* the centre of the flower's heart, so it spins in place */
+    transform-origin: 48.5% 50%;
   }
 
   .site-header__nav {
@@ -63,20 +85,35 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   .site-header__link {
     position: relative;
     font-size: calc(24 * var(--u));
-    color: var(--c-ink-soft);
+    color: var(--c-ink);
     line-height: 1.2;
   }
 
-  .site-header__link--active {
-    color: var(--c-ink);
+  /*
+    Ink at 68.4% opacity on the paper gives exactly --c-ink-soft (#727070).
+    Fading the opacity to 1 on hover changes the colour without animating `color`.
+  */
+  .site-header__label {
+    opacity: 0.684;
   }
 
+  .site-header__link--active .site-header__label {
+    opacity: 1;
+  }
+
+  /* 9px wider than the text on each side, as in Figma. Hidden until hover or active. */
   .site-header__underline {
     position: absolute;
     left: calc(-9 * var(--u));
     top: calc(32 * var(--u));
-    width: calc(100 * var(--u));
+    width: calc(100% + 18 * var(--u));
     height: auto;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .site-header__link--active .site-header__underline {
+    transform: none;
   }
 
   .site-header__cta {
@@ -99,9 +136,42 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     color: var(--c-ink);
   }
 
+  /*
+    A window the letters roll through. The padding gives the tall Boldonse
+    letters room, and the negative margin keeps the button the same size.
+  */
+  .button__roll {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+  }
+
+  .button__label {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .button__label--hover,
+  .button__arrow--hover {
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+    color: var(--c-light);
+    /* shown by the script once it has moved them below the window */
+    visibility: hidden;
+  }
+
   .button__arrow {
+    display: block;
     width: calc(18 * var(--u));
     height: auto;
+  }
+
+  .button__arrow--hover {
+    top: auto;
+    bottom: 0.2em;
   }
 
   /* Mobile suggestion: small logo left, button right, nav links under them. */

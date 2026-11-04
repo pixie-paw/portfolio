@@ -28,33 +28,36 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   <slot name="header" />
 
   <!-- Title area: black paper plate, "HI, I'M IRINA.", stars, floating tags -->
-  <div class="hero__title-area">
-    <span class="layer hero__plate" data-layer="title-plate" style={layer(351, 285.5, 641, -2.67, 345, 175)}></span>
-    <h1 class="layer hero__title" data-layer="title" style={layer(361.3, 287.4, 600, -2.67, 350, 177)}>
+  <div class="hero__title-area" data-drift="-120">
+    <!-- The paper is its own layer, so it can wipe in without moving the plate's tilt point -->
+    <span class="layer hero__plate" data-layer="title-plate" data-intro style={layer(351, 285.5, 641, -2.67, 345, 175)}>
+      <span class="hero__plate-paper" data-layer="title-plate-paper"></span>
+    </span>
+    <h1 class="layer hero__title" data-layer="title" data-intro style={layer(361.3, 287.4, 600, -2.67, 350, 177)}>
       Hi, I’m Irina.
     </h1>
 
-    <span class="layer layer--svg" data-layer="title-star-left" style={layer(83.2, 290.4, 37.79, -4.26, 77, 180)}><StarPinkMd /></span>
-    <span class="layer layer--svg" data-layer="title-star-left-outline" style={layer(84.3, 289.2, 37.79, -4.26, 78, 179)}><StarOutlineMd /></span>
-    <span class="layer layer--svg" data-layer="title-star-right" style={layer(623.2, 269.4, 37.79, -4.26, 617, 159)}><StarPinkMd /></span>
-    <span class="layer layer--svg" data-layer="title-star-right-outline" style={layer(624.3, 268.2, 37.79, -4.26, 618, 158)}><StarOutlineMd /></span>
+    <span class="layer layer--svg" data-layer="title-star-left" data-intro style={layer(83.2, 290.4, 37.79, -4.26, 77, 180)}><StarPinkMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-left-outline" data-intro style={layer(84.3, 289.2, 37.79, -4.26, 78, 179)}><StarOutlineMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-right" data-intro style={layer(623.2, 269.4, 37.79, -4.26, 617, 159)}><StarPinkMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-right-outline" data-intro style={layer(624.3, 268.2, 37.79, -4.26, 618, 158)}><StarOutlineMd data-depth="12" /></span>
 
-    <span class="layer layer--svg" data-layer="sparkle-big" style={layer(663.2, 91.8, 56.35, 0, 655, 35)}><StarPinkLg /></span>
-    <span class="layer layer--svg" data-layer="sparkle-big-outline" style={layer(665, 90.2, 56.35, 0, 657, 33)}><StarOutlineLg /></span>
-    <span class="layer layer--svg" data-layer="sparkle-small" style={layer(683.4, 71, 22.62, 0, 675, 14)}><StarPinkSm /></span>
-    <span class="layer layer--svg" data-layer="sparkle-small-outline" style={layer(684.1, 70.3, 22.62, 0, 676, 13)}><StarOutlineSm /></span>
+    <span class="layer layer--svg" data-layer="sparkle-big" data-intro style={layer(663.2, 91.8, 56.35, 0, 655, 35)}><StarPinkLg data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="sparkle-big-outline" data-intro style={layer(665, 90.2, 56.35, 0, 657, 33)}><StarOutlineLg data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="sparkle-small" data-intro style={layer(683.4, 71, 22.62, 0, 675, 14)}><StarPinkSm data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="sparkle-small-outline" data-intro style={layer(684.1, 70.3, 22.62, 0, 676, 13)}><StarOutlineSm data-depth="12" /></span>
 
-    <Tag name="tag-coding-top" text="{ Coding }" x={393.5} y={-8.6} w={84.83} rotate={-13.31} class="hero__tag" />
-    <Tag name="tag-experience-left" text="{ Experience Design }" x={225.1} y={111.9} w={156.34} rotate={4.15} class="hero__tag" />
-    <Tag name="tag-visual-left" text="{ Visual Design }" x={484.7} y={118.3} w={121.12} rotate={-3.15} class="hero__tag" />
+    <Tag name="tag-coding-top" text="{ Coding }" x={393.5} y={-8.6} w={84.83} rotate={-13.31} intro="travel" class="hero__tag" />
+    <Tag name="tag-experience-left" text="{ Experience Design }" x={225.1} y={111.9} w={156.34} rotate={4.15} intro="travel" class="hero__tag" />
+    <Tag name="tag-visual-left" text="{ Visual Design }" x={484.7} y={118.3} w={121.12} rotate={-3.15} intro="travel" class="hero__tag" />
   </div>
 
   <!-- Dark band with the subtitle -->
-  <span class="hero__band" data-layer="band" aria-hidden="true"></span>
-  <p class="hero__subtitle" data-layer="subtitle">&lt;I’m a Digital Designer and Developer&gt;</p>
+  <span class="hero__band" data-layer="band" data-intro data-shake aria-hidden="true"></span>
+  <p class="hero__subtitle" data-layer="subtitle" data-intro data-shake>&lt;I’m a Digital Designer and Developer&gt;</p>
 
   <!-- Internship tag, overlapping the bottom of the band -->
-  <div class="hero__tag-area">
+  <div class="hero__tag-area" data-drift="-60" data-shake>
     <Tag
       name="tag-internship"
       text="{ currently searching for an internship }"
@@ -65,6 +68,8 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
       rotate={-3.15}
       size="lg"
       paper="var(--c-green)"
+      intro="stamp"
+      cursor
       class="hero__internship"
     />
   </div>
@@ -73,33 +78,38 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     Visual: photo cutout + outlines + camera. The photo is ONE piece that runs
     on past the hero into the About section (it's 885px tall in Figma).
   -->
-  <div class="hero__visual">
-    <span class="cutout cutout--outline-b" data-layer="photo-outline-back"><PhotoOutlineB /></span>
-    <span class="cutout cutout--fill" data-layer="photo-yellow"><PhotoFill /></span>
-    <span class="cutout cutout--outline-a" data-layer="photo-outline-front"><PhotoOutlineA /></span>
+  <div class="hero__visual" data-drift="-40">
+    <span class="cutout cutout--outline-b" data-layer="photo-outline-back" data-intro data-depth="4"><PhotoOutlineB /></span>
+    <span class="cutout cutout--fill" data-layer="photo-yellow" data-intro data-depth="4"><PhotoFill /></span>
+    <span class="cutout cutout--outline-a" data-layer="photo-outline-front" data-intro data-depth="4"><PhotoOutlineA /></span>
     <Image
       class="cutout cutout--photo"
       data-layer="photo"
+      data-intro
+      data-depth="4"
       src={irina}
       alt="Irina, cut out like a collage, wearing a long beige coat"
       widths={[300, 600, 900]}
       sizes="(max-width: 899px) 45vw, 292px"
       loading="eager"
     />
-    <Image
-      class="layer hero__camera"
-      data-layer="camera"
-      src={camera}
-      alt=""
-      widths={[500, 735]}
-      sizes="(max-width: 899px) 70vw, 497px"
-      loading="eager"
-      style={layer(264.2, 239.1, 496.69, -6.13)}
-    />
+    <!-- The image is its own layer, so it can swing in from its corner without moving the camera's tilt point -->
+    <span class="layer hero__camera" data-layer="camera" data-intro style={layer(264.2, 239.1, 496.69, -6.13)}>
+      <Image
+        class="hero__camera-image"
+        data-layer="camera-image"
+        data-depth="4"
+        src={camera}
+        alt=""
+        widths={[500, 735]}
+        sizes="(max-width: 899px) 70vw, 497px"
+        loading="eager"
+      />
+    </span>
 
-    <Tag name="tag-coding-camera" text="{ Coding }" x={37.2} y={277.4} w={84.83} rotate={-13.31} class="hero__tag" />
-    <Tag name="tag-visual-camera" text="{ Visual Design }" x={404.3} y={284.3} w={121.12} rotate={-3.15} class="hero__tag" />
-    <Tag name="tag-experience-camera" text="{ Experience Design }" x={364} y={447.4} w={156.34} rotate={3.25} class="hero__tag" />
+    <Tag name="tag-coding-camera" text="{ Coding }" x={37.2} y={277.4} w={84.83} rotate={-13.31} intro="grow" class="hero__tag" />
+    <Tag name="tag-visual-camera" text="{ Visual Design }" x={404.3} y={284.3} w={121.12} rotate={-3.15} intro="grow" class="hero__tag" />
+    <Tag name="tag-experience-camera" text="{ Experience Design }" x={364} y={447.4} w={156.34} rotate={3.25} intro="grow" class="hero__tag" />
   </div>
 </section>
 
@@ -193,6 +203,11 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
 
   .hero__plate {
     height: calc(139.19 * var(--k));
+  }
+
+  .hero__plate-paper {
+    position: absolute;
+    inset: 0;
     background: var(--c-ink);
   }
 
@@ -231,6 +246,12 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   }
 
   .hero__camera {
+    display: block;
+  }
+
+  .hero__camera-image {
+    display: block;
+    width: 100%;
     height: auto;
     filter: drop-shadow(calc(-6 * var(--u)) calc(6 * var(--u)) calc(4 * var(--u)) rgb(30 36 51 / 0.1));
   }
@@ -239,6 +260,18 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     z-index: 2;
   }
 
+  /*
+    The title tags sit behind the plate, the title and the stars. On page load they
+    start hidden under the plate and travel out to where they are now.
+  */
+  .hero__title-area :global(.tag) {
+    z-index: -1;
+  }
+
+  /* The internship tag reacts to hover, so it takes the pointer (it isn't a link) */
+  .hero__internship :global(.tag__body) {
+    pointer-events: auto;
+  }
 
   /* ---------- Mobile suggestion (< 900px): stacked, same collage pieces ---------- */
   @media (max-width: 899px) {

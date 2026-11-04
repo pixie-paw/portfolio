@@ -6,6 +6,12 @@
  * x / y  = centre of the tag in Figma pixels, relative to its parent.
  * w / h  = size of the paper strip in Figma pixels.
  * paper  = colour of the paper strip. Pink (--c-tag) unless a tag sets its own.
+ * intro  = how the tag arrives on page load, then floats (see animations.ts):
+ *          'travel' = grows while travelling out from under the title plate,
+ *          'grow'   = grows where it is,
+ *          'stamp'  = stamped down, then its text is typed out.
+ *          Leave it out for a tag that stays still.
+ * cursor = adds a typing cursor after the text (used with 'stamp').
  */
 interface Props {
   text: string;
@@ -16,6 +22,8 @@ interface Props {
   rotate?: number;
   size?: 'sm' | 'lg';
   paper?: string;
+  intro?: 'travel' | 'grow' | 'stamp';
+  cursor?: boolean;
   name?: string;
   class?: string;
 }
@@ -29,6 +37,8 @@ const {
   rotate = 0,
   size = 'sm',
   paper = 'var(--c-tag)',
+  intro,
+  cursor = false,
   name,
   class: className,
 } = Astro.props;
@@ -37,14 +47,25 @@ const {
 <span
   class:list={['tag', `tag--${size}`, className]}
   data-layer={name ?? 'tag'}
+  data-tag-intro={intro}
+  data-intro={intro ? '' : undefined}
   style={`--x:${x};--y:${y};--w:${w};--h:${h};--r:${rotate}deg;--paper:${paper}`}
 >
-  <span class="tag__paper" data-layer="tag-paper"></span>
-  <span class="tag__text" data-layer="tag-text">{text}</span>
-  <span class="tag__corner tag__corner--tl" data-layer="tag-corner"></span>
-  <span class="tag__corner tag__corner--tr" data-layer="tag-corner"></span>
-  <span class="tag__corner tag__corner--bl" data-layer="tag-corner"></span>
-  <span class="tag__corner tag__corner--br" data-layer="tag-corner"></span>
+  <!--
+    The outer span holds the Figma position and tilt. The body is what the
+    animations move, so they never touch the position.
+  -->
+  <span class="tag__body" data-layer="tag-body">
+    <span class="tag__paper" data-layer="tag-paper"></span>
+    <span class="tag__text" data-layer="tag-text">
+      {text}
+      {cursor && <span class="tag__cursor" data-layer="tag-cursor" aria-hidden="true"></span>}
+    </span>
+    <span class="tag__corner tag__corner--tl" data-layer="tag-corner"></span>
+    <span class="tag__corner tag__corner--tr" data-layer="tag-corner"></span>
+    <span class="tag__corner tag__corner--bl" data-layer="tag-corner"></span>
+    <span class="tag__corner tag__corner--br" data-layer="tag-corner"></span>
+  </span>
 </span>
 
 <style>
@@ -54,15 +75,19 @@ const {
     /* position always follows the page scale (--u); size can be scaled up with --k */
     left: calc(var(--x) * var(--u));
     top: calc(var(--y) * var(--u));
+    translate: -50% -50%;
+    rotate: var(--r);
+    pointer-events: none;
+  }
+
+  .tag__body {
+    position: relative;
+    display: grid;
+    place-items: center;
     width: max-content;
     min-width: calc(var(--w) * var(--k));
     height: calc(var(--h) * var(--k));
     padding-inline: calc(14 * var(--k));
-    translate: -50% -50%;
-    rotate: var(--r);
-    display: grid;
-    place-items: center;
-    pointer-events: none;
   }
 
   .tag__paper {
@@ -82,6 +107,17 @@ const {
 
   .tag--lg .tag__text {
     font-size: calc(20 * var(--k));
+  }
+
+  /* Sits just after the text without changing the tag's width. The script moves it while typing. */
+  .tag__cursor {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 0.09em;
+    height: 1em;
+    margin-left: 0.12em;
+    background: var(--c-ink);
   }
 
   .tag__corner {

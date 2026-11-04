@@ -121,3 +121,12 @@ a {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/*
+  Page-load sequence: a script in <head> sets data-intro="pending" on <html>,
+  so the layers marked data-intro stay hidden until GSAP takes them over.
+  Without that script (or with reduced motion) everything shows straight away.
+*/
+html[data-intro='pending'] [data-intro] {
+  visibility: hidden;
+}
