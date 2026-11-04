@@ -5,6 +5,7 @@
  *
  * x / y  = centre of the tag in Figma pixels, relative to its parent.
  * w / h  = size of the paper strip in Figma pixels.
+ * paper  = colour of the paper strip. Pink (--c-tag) unless a tag sets its own.
  */
 interface Props {
   text: string;
@@ -14,17 +15,29 @@ interface Props {
   h?: number;
   rotate?: number;
   size?: 'sm' | 'lg';
+  paper?: string;
   name?: string;
   class?: string;
 }
 
-const { text, x, y, w, h = 31.91, rotate = 0, size = 'sm', name, class: className } = Astro.props;
+const {
+  text,
+  x,
+  y,
+  w,
+  h = 31.91,
+  rotate = 0,
+  size = 'sm',
+  paper = 'var(--c-tag)',
+  name,
+  class: className,
+} = Astro.props;
 ---
 
 <span
   class:list={['tag', `tag--${size}`, className]}
   data-layer={name ?? 'tag'}
-  style={`--x:${x};--y:${y};--w:${w};--h:${h};--r:${rotate}deg`}
+  style={`--x:${x};--y:${y};--w:${w};--h:${h};--r:${rotate}deg;--paper:${paper}`}
 >
   <span class="tag__paper" data-layer="tag-paper"></span>
   <span class="tag__text" data-layer="tag-text">{text}</span>
@@ -55,7 +68,7 @@ const { text, x, y, w, h = 31.91, rotate = 0, size = 'sm', name, class: classNam
   .tag__paper {
     position: absolute;
     inset: 0;
-    background: var(--c-tag);
+    background: var(--paper);
   }
 
   .tag__text {
