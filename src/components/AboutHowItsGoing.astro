@@ -1,0 +1,305 @@
+---
+import { Image } from 'astro:assets';
+
+import statue from '../assets/about-page/statue.webp';
+import eyeLeft from '../assets/about-page/eye-left.webp';
+import eyeRight from '../assets/about-page/eye-right.webp';
+import discoBall from '../assets/about-page/disco-ball.webp';
+import StemCardLong from '../assets/about-page/stem-card-long.svg';
+import StemCardBranch from '../assets/about-page/stem-card-branch.svg';
+import FlowerRedCard from '../assets/about-page/flower-red-card.svg';
+import FlowerBlueCard from '../assets/about-page/flower-blue-card.svg';
+import FlowerStatueBlue from '../assets/about-page/flower-statue-blue.svg';
+import FlowerStatueRed from '../assets/about-page/flower-statue-red.svg';
+
+/*
+  The About me page, section 3: "How it's going". Figma pixels from the 1440px
+  "3.0 About page" frame, measured from the top of this section (Figma y 1520, where section 2
+  ends). It ends at y 2040, so the marquee's words land at y 2241 as in Figma. Some layers
+  start higher, in section 2: the long stem comes out from under section 2's card, and the red
+  flower above the statue sits beside the wave text.
+*/
+const SECTION_TOP = 1520;
+
+// x / y = top-left corner, w / h = size, r = tilt (Figma turns the other way, so its sign is flipped)
+const place = (x: number, y: number, w: number, h = 0, r = 0) =>
+  `--x:${x};--y:${y - SECTION_TOP};--w:${w};--h:${h};--r:${r}deg`;
+---
+
+<section class="how-going" aria-labelledby="how-going-title" data-section="how-going">
+  <div class="how-going__frame">
+    <!--
+      Stems and flowers. data-grow says which end of the stem it grows from: the long stem grows
+      from section 2's card down into this card, the short branch from the long stem down to
+      the blue flower, and the two statue stems out of the statue.
+    -->
+    <span class="how-going__layer how-going__stem" data-intro data-layer="going-stem-long" data-grow="end" style={place(142.08, 1209.57, 344)}>
+      <StemCardLong />
+    </span>
+    <span class="how-going__layer how-going__stem-branch" data-intro data-layer="going-stem-branch" data-grow="start" style={place(221.69, 1645.68, 25)}>
+      <StemCardBranch />
+    </span>
+    <span class="how-going__layer how-going__card-flower" data-intro data-layer="going-flower-red" style={place(315.79, 1608, 93)}>
+      <FlowerRedCard />
+    </span>
+    <span class="how-going__layer how-going__card-flower" data-intro data-layer="going-flower-blue" style={place(149.79, 1703, 181)}>
+      <FlowerBlueCard />
+    </span>
+    <span class="how-going__layer how-going__statue-flower" data-intro data-layer="going-statue-flower-red" data-grow="start" style={place(1185.35, 1257, 126)}>
+      <FlowerStatueRed />
+    </span>
+    <span class="how-going__layer how-going__statue-flower how-going__statue-flower--over" data-intro data-layer="going-statue-flower-blue" data-grow="start" style={place(948, 1451, 196)}>
+      <FlowerStatueBlue />
+    </span>
+
+    <!-- The statue, with cut-out eyes stuck on and a bubble gum bubble -->
+    <span class="how-going__layer how-going__statue" data-intro style={place(1034, 1462, 322, 566.06)}>
+      <Image
+        class="how-going__image"
+        data-layer="going-statue"
+        src={statue}
+        alt="A black and white bust with cut-out eyes stuck on, blowing a pink bubble gum bubble"
+        widths={[322, 644]}
+        sizes="322px"
+      />
+    </span>
+    <span class="how-going__layer how-going__eye" data-intro style={place(1173, 1569, 67.02, 39.71)}>
+      <Image class="how-going__image" data-layer="going-eye-left" src={eyeLeft} alt="" widths={[67, 134]} sizes="67px" />
+    </span>
+    <span class="how-going__layer how-going__eye" data-intro style={place(1243, 1568.43, 53.34, 29.87, -11.28)}>
+      <Image class="how-going__image" data-layer="going-eye-right" src={eyeRight} alt="" widths={[54, 107]} sizes="54px" />
+    </span>
+
+    <!-- The bubble covers the real bubble gum in the photo, with two loose outlines -->
+    <span class="how-going__layer how-going__bubble" data-intro data-layer="going-bubble" style={place(1234, 1605, 123, 123)}></span>
+    <span class="how-going__layer how-going__ring how-going__ring--thin" data-intro data-layer="going-bubble-outline" style={place(1233.64, 1605.64, 131.75, 121.43)}></span>
+    <span class="how-going__layer how-going__ring how-going__ring--thin" data-intro data-layer="going-bubble-outline" style={place(1230, 1602, 130, 131)}></span>
+
+    <!-- The disco ball on a yellow circle, with two loose outlines -->
+    <span class="how-going__layer how-going__disco-fill" data-intro data-layer="going-disco-fill" style={place(926, 1865, 213, 214)}></span>
+    <span class="how-going__layer how-going__ring" data-intro data-layer="going-disco-outline" style={place(922, 1875, 217, 200)}></span>
+    <span class="how-going__layer how-going__ring" data-intro data-layer="going-disco-outline" style={place(916, 1869, 224, 215)}></span>
+    <span class="how-going__layer how-going__disco" data-intro style={place(936, 1869, 197.75, 204.41)}>
+      <Image
+        class="how-going__image"
+        data-layer="going-disco-ball"
+        src={discoBall}
+        alt="A disco ball"
+        widths={[198, 396]}
+        sizes="198px"
+      />
+    </span>
+
+    <h2 class="how-going__title" id="how-going-title" data-layer="going-title" data-intro>HOW IT’S GOING</h2>
+
+    <!-- Text card with corner brackets -->
+    <div class="how-going__card" data-layer="going-card" data-intro>
+      <div class="how-going__text" data-layer="going-text">
+        <p>
+          These days, <strong>inspiration tends to find me everywhere</strong>. I collect postcards and flyers, keep a
+          box of nicely designed kombucha cans (I know this is weird, but hey, we all have our weird stuff...), and
+          spend my bus rides looking up at the buildings and spotting old shop signs that have somehow survived time.
+        </p>
+        <p>
+          When I’m making something, the beginning isn’t always pretty. I collect references, experiment, change
+          things around and occasionally wonder if it’s all going anywhere. But then the pieces start to come
+          together, and somehow they click. <strong>I’m still learning, still exploring, and very happy to be doing it</strong>.
+        </p>
+      </div>
+      <span class="how-going__corner how-going__corner--tl" data-layer="going-corner"></span>
+      <span class="how-going__corner how-going__corner--tr" data-layer="going-corner"></span>
+      <span class="how-going__corner how-going__corner--bl" data-layer="going-corner"></span>
+      <span class="how-going__corner how-going__corner--br" data-layer="going-corner"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it.
+  */
+  .how-going {
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-rows: [content-start] calc(520 * var(--u)) [content-end];
+  }
+
+  .how-going__frame {
+    grid-column: frame;
+    grid-row: content;
+    position: relative;
+  }
+
+  /* ---------- Collage layers ---------- */
+  /* Placed from their top-left corner and tilted around it, like Figma does */
+  .how-going__layer {
+    position: absolute;
+    left: calc(var(--x) * var(--u));
+    top: calc(var(--y) * var(--u));
+    width: calc(var(--w) * var(--u));
+    transform-origin: 0 0;
+    rotate: var(--r);
+  }
+
+  .how-going__layer :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .how-going__statue,
+  .how-going__eye,
+  .how-going__bubble,
+  .how-going__ring,
+  .how-going__disco-fill,
+  .how-going__disco {
+    height: calc(var(--h) * var(--u));
+  }
+
+  .how-going__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+    Stacking, as in Figma: the long stem runs under both cards (section 2's card is z 2 too,
+    and comes first). The other stems and flowers sit above this card, under the statue.
+  */
+  .how-going__stem {
+    z-index: 1;
+  }
+
+  .how-going__statue-flower {
+    z-index: 1;
+  }
+
+  /* The blue statue stem runs over this card's right edge */
+  .how-going__statue-flower--over,
+  .how-going__stem-branch,
+  .how-going__card-flower {
+    z-index: 3;
+  }
+
+  .how-going__statue {
+    z-index: 4;
+  }
+
+  .how-going__statue .how-going__image {
+    filter: drop-shadow(calc(-5 * var(--u)) calc(5 * var(--u)) calc(5.5 * var(--u)) rgb(30 36 51 / 0.1));
+  }
+
+  .how-going__eye,
+  .how-going__bubble,
+  .how-going__ring,
+  .how-going__disco-fill,
+  .how-going__disco {
+    z-index: 5;
+  }
+
+  .how-going__bubble {
+    border-radius: 50%;
+    background: var(--c-pink);
+  }
+
+  /* Outlines are drawn inside their box, like Figma's inside strokes */
+  .how-going__ring {
+    border: calc(2.57 * var(--u)) solid var(--c-ink);
+    border-radius: 50%;
+  }
+
+  .how-going__ring--thin {
+    border-width: calc(1.56 * var(--u));
+  }
+
+  .how-going__disco-fill {
+    border-radius: 50%;
+    background: var(--c-marker);
+  }
+
+  /* ---------- Title ---------- */
+  .how-going__title {
+    position: absolute;
+    left: calc(420 * var(--u));
+    top: calc((1529 - 1520) * var(--u));
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(48 * var(--u));
+    line-height: 1.4;
+    white-space: nowrap;
+    color: var(--c-ink);
+    z-index: 3;
+  }
+
+  /* ---------- Text card ---------- */
+  .how-going__card {
+    position: absolute;
+    left: calc(378 * var(--u));
+    top: calc((1572 - 1520) * var(--u));
+    width: calc(702 * var(--u));
+    height: calc(353 * var(--u));
+    padding: calc(37 * var(--u)) calc(41 * var(--u)) 0 calc(42 * var(--u));
+    background: var(--c-light);
+    z-index: 2;
+  }
+
+  .how-going__text {
+    font-family: var(--f-sans);
+    font-size: calc(20 * var(--u));
+    line-height: 1.2;
+    color: var(--c-ink);
+  }
+
+  .how-going__text p {
+    margin: 0;
+  }
+
+  /* One empty line between the two paragraphs, as in Figma */
+  .how-going__text p + p {
+    margin-top: 1.2em;
+  }
+
+  .how-going__text strong {
+    font-weight: 500;
+  }
+
+  .how-going__corner {
+    position: absolute;
+    width: calc(12 * var(--u));
+    height: calc(14 * var(--u));
+    border: 0 solid var(--c-ink);
+    --stroke: max(1.5px, calc(2.5 * var(--u)));
+  }
+
+  .how-going__corner--tl {
+    top: 0;
+    left: 0;
+    border-top-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .how-going__corner--tr {
+    top: 0;
+    right: 0;
+    border-top-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  .how-going__corner--bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .how-going__corner--br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+</style>
