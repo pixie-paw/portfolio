@@ -84,12 +84,14 @@ Write the code from the official documentation for the versions this project use
 | --- | --- | --- |
 | Astro | 7.4.5 | https://docs.astro.build/ |
 | GSAP, ScrollTrigger, SplitText | 3.15.0 | https://gsap.com/docs/v3/ |
+| Lenis (smooth scrolling, the only one) | 1.3.27 | https://github.com/darkroomengineering/lenis |
 
 When a version in `package.json` goes up, update this table too.
 
 ## Animation code
 
 - GSAP with ScrollTrigger and SplitText, set up in `src/scripts/animations.ts`.
+- Lenis is the only smooth-scroll library. It drives ScrollTrigger and is off for reduced motion. Never add a second one.
 - Animate transform and opacity only. Never use `transition: all`.
 - Everything goes inside the `gsap.matchMedia` reduced motion check, so visitors who ask for less motion get the content without the movement.
 

@@ -29,6 +29,18 @@ const {
     <!-- Akzidenz-Grotesk Next + Bulletin Typewriter MN from Irina's Adobe Fonts web project -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
     <link rel="stylesheet" href="https://use.typekit.net/uit2fga.css" />
+    <!--
+      Hide the page-load layers before the first paint, so they don't flash before
+      the animation starts. Skipped for reduced motion. If the animation script never
+      runs, the layers show anyway after 4s.
+    -->
+    <script is:inline>
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const $html = document.documentElement;
+        $html.dataset.intro = 'pending';
+        setTimeout(() => delete $html.dataset.intro, 4000);
+      }
+    </script>
   </head>
   <body style={`--paper-url: url(${gridPaper.src}); --texture-url: url(${texture.src})`}>
     <slot />
