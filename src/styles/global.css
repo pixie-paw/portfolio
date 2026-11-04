@@ -129,8 +129,10 @@ a {
 /*
   Page-load sequence: a script in <head> sets data-intro="pending" on <html>,
   so the layers marked data-intro stay hidden until GSAP takes them over.
+  The About title is listed by its data-layer: it's typed at the end of the hero load.
   Without that script (or with reduced motion) everything shows straight away.
 */
-html[data-intro='pending'] [data-intro] {
+html[data-intro='pending'] [data-intro],
+html[data-intro='pending'] [data-layer='about-title'] {
   visibility: hidden;
 }
