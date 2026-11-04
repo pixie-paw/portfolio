@@ -1,5 +1,6 @@
 @import '@fontsource/boldonse/latin-400.css';
 @import '@fontsource/bona-nova/latin-400.css';
+@import '@fontsource/inter/latin-400.css';
 
 /*
   Design tokens from the Figma home page (1440px frame).
@@ -16,6 +17,8 @@
   --c-yellow: #f3ce29;
   --c-green: #00bf72;
   --c-blue: #006fdc;
+  --c-marker: #f3ce56; /* highlighter bars behind the About title, same yellow as the flower */
+  --c-grey: #d9d9d9; /* highlight behind the headings on the skills paper */
 
   /* Akzidenz-Grotesk Next and Bulletin Typewriter MN come from Irina's Adobe Fonts kit (uit2fga). */
   --f-display: 'Boldonse', 'Arial Black', sans-serif;
@@ -23,6 +26,7 @@
   /* Adobe serves Akzidenz-Grotesk Next Regular/Medium under the "-pro" family name */
   --f-sans: 'akzidenz-grotesk-next-pro', 'akzidenz-grotesk-next', 'Helvetica Neue', Arial, sans-serif;
   --f-type: 'bulletin-typewriter-mn', 'Courier New', Courier, monospace;
+  --f-inter: 'Inter', 'Helvetica Neue', Arial, sans-serif; /* the text along the blue wave */
 
   --u: calc(min(100vw, 1440px) / 1440);
   --gutter: 16px;

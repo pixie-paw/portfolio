@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
 ---
 
 <Base title="Irina Moldovan · Digital Designer and Developer">
@@ -9,21 +10,6 @@ import Hero from '../components/Hero.astro';
     <Hero>
       <Header slot="header" />
     </Hero>
-
-    <!-- Next section ("Good looks and good experiences") comes in the next step.
-         This spacer only leaves room for the photo that runs on past the hero. -->
-    <section id="about" class="next-placeholder" aria-hidden="true"></section>
+    <About />
   </main>
 </Base>
-
-<style>
-  .next-placeholder {
-    height: calc(560 * var(--u));
-  }
-
-  @media (max-width: 899px) {
-    .next-placeholder {
-      height: 80px;
-    }
-  }
-</style>
