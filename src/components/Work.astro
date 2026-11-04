@@ -156,6 +156,44 @@ const PROJECTS: Project[] = [
       }
     </ul>
   </div>
+
+  <!--
+    The shared preview card, used while the animations are on (see animations.ts). One card
+    for the whole list: it follows the mouse, changes shape to the hovered project's card, and
+    its five images sit in a reel that rolls to that project. Without the script (or with
+    reduced motion) it stays hidden and each row shows its own card instead.
+  -->
+  <div class="work__preview" data-layer="work-preview" aria-hidden="true">
+    <div
+      class="work__preview-card"
+      data-layer="work-preview-card"
+      style={`--cw:${PROJECTS[0].card.w};--ch:${PROJECTS[0].card.h};--iw:${PROJECTS[0].card.iw};--ih:${PROJECTS[0].card.ih};--ix:${PROJECTS[0].card.ix}`}
+    >
+      <svg class="work__card-close" viewBox="0 0 13 10.5" aria-hidden="true">
+        <path d="M0.5 0.5L12.5 10M12.5 0.5L0.5 10" />
+      </svg>
+      <span class="work__preview-bar" />
+      <div class="work__preview-window" data-layer="work-preview-window">
+        <div class="work__preview-reel" data-layer="work-preview-reel">
+          {
+            PROJECTS.map(({ image, card }) => (
+              <Image
+                class="work__preview-image"
+                data-layer="work-preview-image"
+                src={image}
+                alt=""
+                widths={[Math.round(card.iw), image.width]}
+                sizes={`${Math.round(card.iw)}px`}
+                loading="lazy"
+                data-card={JSON.stringify(card)}
+                style={`--iw:${card.iw};--ih:${card.ih}${card.position ? `;object-position:${card.position}` : ''}`}
+              />
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <style>
@@ -343,7 +381,58 @@ const PROJECTS: Project[] = [
     transform-origin: left center;
   }
 
-  /* ---------- Hover card ---------- */
+  /* ---------- Shared preview card (with the animations on) ---------- */
+  /* Placed and moved by the script (it has no CSS translate, so GSAP owns its transform) */
+  .work__preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  /* Its size comes from --cw / --ch (Figma px), which the script tweens between projects */
+  .work__preview-card {
+    position: relative;
+    width: calc(var(--cw) * var(--u));
+    height: calc(var(--ch) * var(--u));
+    background: var(--c-ink);
+  }
+
+  .work__preview-bar {
+    position: absolute;
+    left: calc(8 * var(--u));
+    top: calc(24.5 * var(--u));
+    width: calc((var(--iw) + var(--ix) - 8) * var(--u));
+    height: 1px;
+    background: var(--c-light);
+  }
+
+  /* The window the reel rolls through: the hovered project's image size and place */
+  .work__preview-window {
+    position: absolute;
+    left: calc(var(--ix) * var(--u));
+    top: calc(31 * var(--u));
+    width: calc(var(--iw) * var(--u));
+    height: calc(var(--ih) * var(--u));
+    overflow: hidden;
+  }
+
+  .work__preview-reel {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .work__preview-image {
+    display: block;
+    width: calc(var(--iw) * var(--u));
+    height: calc(var(--ih) * var(--u));
+    object-fit: cover;
+  }
+
+  /* ---------- Hover card (without the animations) ---------- */
   /* Figma: centred 634px from the row's left and 179px from its top, tilted -6.2° */
   .work__card {
     position: absolute;

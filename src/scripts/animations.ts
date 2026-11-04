@@ -79,13 +79,19 @@ const WAVE_SCROLL_BOOST = 15; // extra px/s for each px/frame of scroll speed
 const WAVE_SEPARATOR = '   ·   ';
 
 // Work section
-const WORK_CARD_TILT_DEG = -6.2; // the card's tilt in Figma (the CSS rotate on .work__card)
+const WORK_CARD_TILT_DEG = -6.2; // the card's tilt in Figma, where it settles when the mouse stops
 // The card sits up and to the right of the cursor, so the project name stays readable
 const WORK_CARD_OFFSET = { x: 150, y: -30 };
 const WORK_ARROW_NUDGE_PX = 4;
 // The card is shown smaller than in Figma and see-through, so the rows stay in view
 const WORK_CARD_SCALE = 0.7;
 const WORK_CARD_OPACITY = 0.75;
+const WORK_CARD_FOLLOW = 9; // how quickly the card catches up with the cursor (higher = snappier)
+const WORK_CARD_LEAN = 0.012; // degrees of extra tilt per px/s of sideways speed
+const WORK_CARD_MAX_LEAN_DEG = 9;
+const WORK_CARD_DEPTH = 0.006; // px the image moves against the card per px/s of speed
+const WORK_CARD_MAX_DEPTH_PX = 8;
+const WORK_CARD_SWITCH_S = 0.6; // the reel rolls and the card changes shape in this long
 
 // Film strip
 const FILM_ENTER_S = 1.2; // the strip slides in from the right
@@ -588,71 +594,22 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($about))));
 };
 
-/* ---------- Work section: project rows ---------- */
-const createWorkRows = ($work: Element): Cleanup[] => {
+/* ---------- Work section: project rows (name roll, kind underline, arrow) ---------- */
+const createWorkRows = ($work: Element, preview?: WorkPreview): Cleanup[] => {
   const blue = getComputedStyle(document.documentElement).getPropertyValue('--c-blue').trim();
   const ink = getComputedStyle(document.documentElement).getPropertyValue('--c-ink').trim();
-  const tilt = (WORK_CARD_TILT_DEG * Math.PI) / 180;
-  // The card body on screen right now, so moving to the next row swaps the card instead of
-  // shrinking one and growing the other
-  let $shownCard: HTMLElement | null = null;
 
-  return getAll('[data-layer="work-row"]', $work).map(($row) => {
+  return getAll('[data-layer="work-row"]', $work).map(($row, index) => {
     const $text = getLayer('work-name-text', $row);
     const $textHover = getLayer('work-name-hover', $row);
     const $kindLine = getLayer('work-kind-line', $row);
     const $arrow = getLayer<SVGElement>('work-arrow', $row);
-    const $card = getLayer('work-card', $row);
-    const $body = getLayer('work-card-body', $row);
-    if (!$text || !$textHover || !$kindLine || !$arrow || !$card || !$body) return () => {};
+    if (!$text || !$textHover || !$kindLine || !$arrow) return () => {};
 
     const roll = createLetterRoll($text, $textHover, false);
 
-    // The card itself stays at its Figma place and tilt. Only its body moves, shows and hides.
-    gsap.set($card, { autoAlpha: 1 });
-    gsap.set($body, { autoAlpha: 0, scale: 0.5 });
-    const moveX = gsap.quickTo($body, 'x', { duration: 0.45, ease: 'power3.out' });
-    const moveY = gsap.quickTo($body, 'y', { duration: 0.45, ease: 'power3.out' });
-
-    // Where the body has to go to sit next to the cursor, measured in the card's own tilted frame
-    const nextToCursor = (event?: MouseEvent) => {
-      if (!event) return { x: 0, y: 0 };
-      const box = $card.getBoundingClientRect();
-      const dx = event.clientX + WORK_CARD_OFFSET.x - (box.left + box.width / 2);
-      const dy = event.clientY + WORK_CARD_OFFSET.y - (box.top + box.height / 2);
-      return {
-        x: dx * Math.cos(-tilt) - dy * Math.sin(-tilt),
-        y: dx * Math.sin(-tilt) + dy * Math.cos(-tilt),
-      };
-    };
-
-    const enter = (event?: MouseEvent) => {
-      const point = nextToCursor(event);
-      if ($shownCard && $shownCard !== $body) {
-        // Coming straight from another row: hide that card and show this one in its place
-        gsap.killTweensOf($shownCard, 'scale,rotation,autoAlpha');
-        gsap.set($shownCard, { autoAlpha: 0, scale: 0.5 });
-        gsap.set($body, { ...point, scale: WORK_CARD_SCALE, rotation: 0, autoAlpha: WORK_CARD_OPACITY });
-      } else {
-        // It pops up at the cursor, growing from half its size and tilting from straight to the Figma tilt
-        gsap.set($body, point);
-        gsap.fromTo(
-          $body,
-          { scale: WORK_CARD_SCALE * 0.5, rotation: -WORK_CARD_TILT_DEG, autoAlpha: 0 },
-          {
-            scale: WORK_CARD_SCALE,
-            rotation: 0,
-            autoAlpha: WORK_CARD_OPACITY,
-            duration: 0.5,
-            ease: 'power2.out',
-            overwrite: 'auto',
-          },
-        );
-      }
-      moveX(point.x);
-      moveY(point.y);
-      $shownCard = $body;
-
+    const enter = () => {
+      preview?.show(index, $row);
       roll.enter();
       gsap.set($kindLine, { transformOrigin: 'left center' });
       gsap.to($kindLine, { scaleX: 1, duration: NAV_DURATION_S, ease: 'power3.out', overwrite: true });
@@ -666,25 +623,7 @@ const createWorkRows = ($work: Element): Cleanup[] => {
       });
     };
 
-    const move = (event: MouseEvent) => {
-      const point = nextToCursor(event);
-      moveX(point.x);
-      moveY(point.y);
-    };
-
     const leave = () => {
-      gsap.to($body, {
-        scale: 0,
-        rotation: -WORK_CARD_TILT_DEG,
-        autoAlpha: 0,
-        duration: 0.4,
-        ease: 'power2.in',
-        overwrite: 'auto',
-        onComplete: () => {
-          if ($shownCard === $body) $shownCard = null;
-        },
-      });
-
       roll.leave();
       // The left end goes first, so the line also leaves towards the right
       gsap.set($kindLine, { transformOrigin: 'right center' });
@@ -692,18 +631,202 @@ const createWorkRows = ($work: Element): Cleanup[] => {
       gsap.to($arrow, { x: 0, y: 0, color: ink, duration: 0.3, ease: 'power2.out', overwrite: true });
     };
 
-    // Keyboard focus shows the card at its Figma place
-    const focus = () => enter();
+    // Keyboard: focusing a row shows the card next to it; leaving the row hides it
+    const focus = () => {
+      // Aim at the row first, so the card opens right there
+      preview?.focusRow($row);
+      enter();
+    };
+    const blur = () => {
+      leave();
+      preview?.hide();
+    };
+
     const events: [string, EventListener][] = [
-      ['mouseenter', enter as EventListener],
-      ['mousemove', move as EventListener],
+      ['mouseenter', enter],
       ['mouseleave', leave],
       ['focus', focus],
-      ['blur', leave],
+      ['blur', blur],
     ];
     events.forEach(([type, handler]) => $row.addEventListener(type, handler));
     return () => events.forEach(([type, handler]) => $row.removeEventListener(type, handler));
   });
+};
+
+/*
+  ---------- Work section: one shared preview card for the whole list ----------
+  It appears when the mouse enters the list and stays until it leaves the list, so moving
+  between rows never hides it. Hovering a row rolls the reel inside it to that project's image
+  (from below going down, from above going up) and changes its shape to that project's card.
+  It follows the cursor like a piece of paper: it catches up smoothly, leans with sideways
+  speed and settles back to its Figma tilt, and the image moves a little against it.
+*/
+interface WorkPreview {
+  show: (index: number, $row: HTMLElement) => void;
+  focusRow: ($row: HTMLElement) => void;
+  hide: () => void;
+  cleanup: Cleanup;
+}
+
+interface WorkCard {
+  w: number;
+  h: number;
+  iw: number;
+  ih: number;
+  ix: number;
+}
+
+const createWorkPreview = ($work: HTMLElement): WorkPreview | undefined => {
+  const $list = $work.querySelector<HTMLElement>('ul');
+  const $preview = getLayer('work-preview', $work);
+  const $card = $preview && getLayer('work-preview-card', $preview);
+  const $reel = $preview && getLayer('work-preview-reel', $preview);
+  const $images = $preview ? getAll('[data-layer="work-preview-image"]', $preview) : [];
+  if (!$list || !$preview || !$card || !$reel || !$images.length) return;
+
+  const cards: WorkCard[] = $images.map(($image) => JSON.parse($image.dataset.card ?? '{}'));
+
+  // Start state: hidden, closed from the centre, a bit smaller
+  gsap.set($preview, {
+    xPercent: -50,
+    yPercent: -50,
+    rotation: WORK_CARD_TILT_DEG,
+    scale: WORK_CARD_SCALE * 0.85,
+    autoAlpha: 0,
+    clipPath: 'inset(50% 50% 50% 50%)',
+  });
+
+  let active = -1;
+  let isShown = false;
+  // Where the card is (px, inside the section) and where it's heading
+  const position = { x: 0, y: 0 };
+  const target = { x: 0, y: 0 };
+  let pointer: { x: number; y: number } | null = null;
+  let lean = 0;
+  let depth = 0;
+
+  // The point next to the cursor, inside the section (the page may scroll while hovering)
+  const aimAtPointer = () => {
+    if (!pointer) return;
+    const box = $work.getBoundingClientRect();
+    target.x = pointer.x - box.left + WORK_CARD_OFFSET.x;
+    target.y = pointer.y - box.top + WORK_CARD_OFFSET.y;
+  };
+
+  const tick = (_time: number, deltaMs: number) => {
+    const dt = Math.min(deltaMs, 50) / 1000;
+    aimAtPointer();
+    const previousX = position.x;
+    // Frame-rate independent easing: the same feel at 60 and 120 frames per second
+    const ease = 1 - Math.exp(-WORK_CARD_FOLLOW * dt);
+    position.x += (target.x - position.x) * ease;
+    position.y += (target.y - position.y) * ease;
+
+    const speedX = dt > 0 ? (position.x - previousX) / dt : 0;
+    const leanTarget = gsap.utils.clamp(-WORK_CARD_MAX_LEAN_DEG, WORK_CARD_MAX_LEAN_DEG, speedX * WORK_CARD_LEAN);
+    const depthTarget = gsap.utils.clamp(-WORK_CARD_MAX_DEPTH_PX, WORK_CARD_MAX_DEPTH_PX, -speedX * WORK_CARD_DEPTH);
+    lean += (leanTarget - lean) * 0.12;
+    depth += (depthTarget - depth) * 0.12;
+
+    gsap.set($preview, { x: position.x, y: position.y, rotation: WORK_CARD_TILT_DEG + lean });
+    gsap.set($reel, { x: depth });
+  };
+
+  // Rolls the reel to a project and changes the card to that project's shape
+  const switchTo = (index: number, instant: boolean) => {
+    if (index === active) return;
+    active = index;
+    const card = cards[index];
+    const settings = instant ? { duration: 0 } : { duration: WORK_CARD_SWITCH_S, ease: 'power3.inOut' };
+    gsap.to($card, { '--cw': card.w, '--ch': card.h, '--iw': card.iw, '--ih': card.ih, '--ix': card.ix, ...settings, overwrite: true });
+    gsap.to($reel, { y: -$images[index].offsetTop, ...settings, overwrite: 'auto' });
+  };
+
+  const open = () => {
+    if (isShown) return;
+    isShown = true;
+    // Start right where it should be, so it doesn't fly in from the corner
+    position.x = target.x;
+    position.y = target.y;
+    gsap.ticker.add(tick);
+    gsap.to($preview, {
+      clipPath: 'inset(0% 0% 0% 0%)',
+      scale: WORK_CARD_SCALE,
+      autoAlpha: WORK_CARD_OPACITY,
+      duration: 0.6,
+      ease: 'power3.out',
+      overwrite: 'auto',
+    });
+  };
+
+  const hide = () => {
+    if (!isShown) return;
+    isShown = false;
+    pointer = null;
+    gsap.to($preview, {
+      clipPath: 'inset(50% 50% 50% 50%)',
+      scale: WORK_CARD_SCALE * 0.85,
+      autoAlpha: 0,
+      duration: 0.4,
+      ease: 'power2.in',
+      overwrite: 'auto',
+      onComplete: () => {
+        if (!isShown) {
+          gsap.ticker.remove(tick);
+          active = -1;
+        }
+      },
+    });
+  };
+
+  const show = (index: number, _$row: HTMLElement) => {
+    switchTo(index, !isShown);
+    open();
+  };
+
+  // Keyboard focus: the card goes to the row's Figma spot (634px in, 179px down)
+  const focusRow = ($row: HTMLElement) => {
+    pointer = null;
+    const box = $work.getBoundingClientRect();
+    const row = $row.getBoundingClientRect();
+    const u = Math.min(window.innerWidth, 1440) / 1440;
+    target.x = row.left - box.left + 634 * u;
+    target.y = row.top - box.top + 179 * u;
+    if (!isShown) {
+      position.x = target.x;
+      position.y = target.y;
+    }
+  };
+
+  const onMove = (event: MouseEvent) => {
+    pointer = { x: event.clientX, y: event.clientY };
+    if (!isShown) aimAtPointer();
+  };
+  const onEnterList = (event: MouseEvent) => onMove(event);
+  const onLeaveList = () => hide();
+
+  // The reel's place depends on the image sizes, so it's set again when the page resizes
+  const onResize = () => {
+    if (active >= 0) gsap.set($reel, { y: -$images[active].offsetTop });
+  };
+
+  $list.addEventListener('mouseenter', onEnterList);
+  $list.addEventListener('mousemove', onMove);
+  $list.addEventListener('mouseleave', onLeaveList);
+  window.addEventListener('resize', onResize);
+
+  return {
+    show,
+    focusRow,
+    hide,
+    cleanup: () => {
+      gsap.ticker.remove(tick);
+      $list.removeEventListener('mouseenter', onEnterList);
+      $list.removeEventListener('mousemove', onMove);
+      $list.removeEventListener('mouseleave', onLeaveList);
+      window.removeEventListener('resize', onResize);
+    },
+  };
 };
 
 /* ---------- Work section: the title bar, the sticker and the rows come in on scroll ---------- */
@@ -774,10 +897,11 @@ const createWorkEntrance = (context: gsap.Context, $work: Element) => {
 };
 
 const createWorkAnimations = (context: gsap.Context): Cleanup[] => {
-  const $work = document.querySelector('[data-section="work"]');
+  const $work = document.querySelector<HTMLElement>('[data-section="work"]');
   if (!$work) return [];
   createWorkEntrance(context, $work);
-  return createWorkRows($work);
+  const preview = createWorkPreview($work);
+  return [...createWorkRows($work, preview), ...(preview ? [preview.cleanup] : [])];
 };
 
 /* ---------- Film strip: slides in from the right, then its images scroll endlessly ---------- */
