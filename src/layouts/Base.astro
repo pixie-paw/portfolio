@@ -4,6 +4,7 @@ import gridPaper from '../assets/home/grid-paper.webp';
 import texture from '../assets/home/texture.webp';
 // The flower logo, cropped close to its edges so it fills the browser tab
 import faviconUrl from '../assets/favicon.svg?url';
+import Flower from '../assets/home/svg/logo-flower.svg';
 
 interface Props {
   title: string;
@@ -44,6 +45,10 @@ const {
   </head>
   <body style={`--paper-url: url(${gridPaper.src}); --texture-url: url(${texture.src})`}>
     <slot />
+    <!-- The yellow flower from the logo follows the mouse across the whole site (desktop only, see animations.ts) -->
+    <span class="cursor-flower" data-layer="cursor-flower" aria-hidden="true">
+      <Flower class="cursor-flower__svg" />
+    </span>
     <script>
       import { initAnimations } from '../scripts/animations';
       initAnimations();

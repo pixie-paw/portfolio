@@ -39,6 +39,10 @@ const CTA_ROLL_Y = 140; // % of a letter's height: far enough to clear the windo
 const CTA_DURATION_S = 0.4;
 const CTA_STAGGER_S = 0.03;
 
+// The flower that follows the cursor
+const CURSOR_FLOWER_OFFSET_PX = 22; // it trails just below and to the right of the pointer
+const CURSOR_FLOWER_LAG_S = 0.6;
+
 // Hero load sequence
 const BAND_S = 1.6; // the band and the plate wipe in at the pace of the text that lands on them
 const PLATE_S = 1.4;
@@ -129,6 +133,49 @@ const createLogo = (): Cleanup | undefined => {
     () => gsap.to($flower, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
     () => gsap.to($flower, { scale: 1, duration: 0.3, ease: 'power2.out' }),
   );
+};
+
+/* ---------- The yellow flower follows the cursor across the whole site (mouse only, no spin) ---------- */
+const createCursorFlower = (): Cleanup | undefined => {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const $flower = getLayer('cursor-flower');
+  if (!$flower) return;
+
+  // Centred on its point (the flower has no CSS translate, so GSAP can own its transform)
+  gsap.set($flower, { xPercent: -50, yPercent: -50, scale: 0, autoAlpha: 1 });
+
+  const moveX = gsap.quickTo($flower, 'x', { duration: CURSOR_FLOWER_LAG_S, ease: 'power3.out' });
+  const moveY = gsap.quickTo($flower, 'y', { duration: CURSOR_FLOWER_LAG_S, ease: 'power3.out' });
+  let isShown = false;
+
+  const onMove = (event: PointerEvent) => {
+    if (event.pointerType !== 'mouse') return;
+    const x = event.clientX + CURSOR_FLOWER_OFFSET_PX;
+    const y = event.clientY + CURSOR_FLOWER_OFFSET_PX;
+    if (!isShown) {
+      // First move (or back in the window): start right at the cursor, then pop in
+      isShown = true;
+      gsap.set($flower, { x, y });
+      gsap.to($flower, { scale: 1, duration: 0.4, ease: 'back.out(2)', overwrite: 'auto' });
+    }
+    moveX(x);
+    moveY(y);
+  };
+
+  const hide = () => {
+    isShown = false;
+    gsap.to($flower, { scale: 0, duration: 0.3, ease: 'power2.in', overwrite: 'auto' });
+  };
+
+  window.addEventListener('pointermove', onMove);
+  document.documentElement.addEventListener('pointerleave', hide);
+  window.addEventListener('blur', hide);
+
+  return () => {
+    window.removeEventListener('pointermove', onMove);
+    document.documentElement.removeEventListener('pointerleave', hide);
+    window.removeEventListener('blur', hide);
+  };
 };
 
 /* ---------- 2, 3, 4. Nav links: dark text, underline in and out from left to right ---------- */
@@ -769,6 +816,7 @@ export const initAnimations = () => {
         markAboutTitleTyped();
       } else {
         addCleanup(createLogo());
+        addCleanup(createCursorFlower());
         addCleanup(createSmoothScroll());
         createScrollDrift();
         createAboutAnimations(context, addCleanup);
