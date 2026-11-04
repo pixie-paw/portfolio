@@ -26,6 +26,10 @@ These are the project rules. Follow them on every task in this repo. When Irina 
   - **Decisions for you** and **Still open:** what Irina needs to choose, and what's left for later.
 
   Leave out anything that doesn't help Irina review the PR.
+- **After opening a PR:** give Irina three command blocks in chat:
+  1. **Try it:** `git fetch`, `git checkout <branch>`, `npm install` (only if the dependencies changed), `npm run dev`.
+  2. **Merge:** the link to the PR. Irina merges it on GitHub.
+  3. **Pull:** `git checkout main`, `git pull`.
 - **After a PR is merged:** `git checkout main && git pull`.
 
 ## Writing style
@@ -55,6 +59,32 @@ Both are one layer the size of the screen, fixed in place (`position: fixed` in 
 - **Texture** (`body::after`): fixed on top of everything (z-index 100, `mix-blend-mode: lighten`, no pointer events). In Figma the texture is only on the hero. That's a mistake in the Figma file, so don't copy it.
 - **Use `position: fixed`, not `background-attachment: fixed`**, which iPhones ignore. Heights use `100lvh`, so no gap shows when the phone's toolbar slides away.
 - **Never put a background colour on `body`**, because it paints over the grid paper. The paper colour sits on `html`.
+
+## Code conventions
+
+The same rules as Irina's earlier projects, so every file reads the same way.
+
+| What | Rule | Example |
+| --- | --- | --- |
+| CSS class names | BEM: block, `__element`, `--modifier` | `.site-header__link`, `.tag--lg`, `.tag__corner--tl` |
+| Variables and functions | camelCase | `initAnimations`, `titleChars` |
+| Constants | UPPER_SNAKE_CASE | `MAX_TILT` |
+| HTML elements selected in JS | `$` in front of the name | `const $title = document.querySelector('[data-layer="title"]');` |
+| Functions | arrow functions assigned to `const` | `export const initAnimations = () => { ... };` |
+| Formatting | 2 spaces, semicolons, single quotes | |
+
+- **JS hooks:** select elements through `data-*` attributes (`data-layer`, `data-split`), never through their classes. Classes are for styling only.
+
+## Official docs first
+
+Write the code from the official documentation for the versions this project uses, not from memory or older tutorials. Check the version in `package.json` first, because APIs change between versions. Link the page you used in the PR, and in a code comment where it helps.
+
+| Library | Version | Docs |
+| --- | --- | --- |
+| Astro | 7.4.5 | https://docs.astro.build/ |
+| GSAP, ScrollTrigger, SplitText | 3.15.0 | https://gsap.com/docs/v3/ |
+
+When a version in `package.json` goes up, update this table too.
 
 ## Animation code
 
