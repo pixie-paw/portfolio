@@ -1,7 +1,7 @@
 ---
 import Logo from '../assets/home/svg/logo-flower.svg';
 import NavUnderline from '../assets/home/svg/nav-underline.svg';
-import Arrow from '../assets/home/svg/arrow.svg';
+import Button from './Button.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
@@ -27,17 +27,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     </a>
   </nav>
 
-  <!-- Two copies of the text and the arrow: on hover the dark one rolls up and out, the light one rolls in -->
-  <a class="button site-header__cta" href={`${base}/#contact`} data-layer="cta" data-intro>
-    <span class="button__roll">
-      <span class="button__label" data-layer="cta-text">Get in touch</span>
-      <span class="button__label button__label--hover" data-layer="cta-text-hover" aria-hidden="true">Get in touch</span>
-    </span>
-    <span class="button__roll" aria-hidden="true">
-      <Arrow class="button__arrow" data-layer="cta-arrow" />
-      <Arrow class="button__arrow button__arrow--hover" data-layer="cta-arrow-hover" />
-    </span>
-  </a>
+  <Button href={`${base}/#contact`} text="Get in touch" w={216} name="cta" intro class="site-header__cta" />
 </header>
 
 <style>
@@ -116,62 +106,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     transform: none;
   }
 
-  .site-header__cta {
+  /*
+    The button is its own component, which doesn't get this file's style scope,
+    so it's reached with :global from inside the header.
+  */
+  .site-header :global(.site-header__cta) {
     grid-area: cta;
     margin-top: calc(33 * var(--u));
-  }
-
-  .button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: calc(10 * var(--u));
-    height: calc(52 * var(--u));
-    width: calc(216 * var(--u));
-    background: var(--c-green);
-    border: 2px solid var(--c-ink);
-    font-family: var(--f-display);
-    font-size: calc(16 * var(--u));
-    text-transform: uppercase;
-    color: var(--c-ink);
-  }
-
-  /*
-    A window the letters roll through. The padding gives the tall Boldonse
-    letters room, and the negative margin keeps the button the same size.
-  */
-  .button__roll {
-    position: relative;
-    display: block;
-    overflow: hidden;
-    padding-block: 0.2em;
-    margin-block: -0.2em;
-  }
-
-  .button__label {
-    display: block;
-    line-height: 1.2;
-  }
-
-  .button__label--hover,
-  .button__arrow--hover {
-    position: absolute;
-    left: 0;
-    top: 0.2em;
-    color: var(--c-light);
-    /* shown by the script once it has moved them below the window */
-    visibility: hidden;
-  }
-
-  .button__arrow {
-    display: block;
-    width: calc(18 * var(--u));
-    height: auto;
-  }
-
-  .button__arrow--hover {
-    top: auto;
-    bottom: 0.2em;
   }
 
   /* Mobile suggestion: small logo left, button right, nav links under them. */
@@ -204,20 +145,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       width: 76px;
     }
 
-    .site-header__cta {
+    .site-header :global(.site-header__cta) {
       margin-top: 12px;
-    }
-
-    .button {
-      height: 44px;
-      width: auto;
-      padding: 0 16px;
-      gap: 8px;
-      font-size: 12px;
-    }
-
-    .button__arrow {
-      width: 14px;
     }
   }
 </style>

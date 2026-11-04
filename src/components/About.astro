@@ -1,0 +1,402 @@
+---
+import { Image } from 'astro:assets';
+import Button from './Button.astro';
+
+import typewriter from '../assets/home/typewriter.png';
+
+import StarPinkLg from '../assets/home/svg/star-pink-lg.svg';
+import StarOutlineLg from '../assets/home/svg/star-outline-lg.svg';
+import StarPinkSm from '../assets/home/svg/star-pink-sm.svg';
+import StarOutlineSm from '../assets/home/svg/star-outline-sm.svg';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+/*
+  Coordinates are Figma pixels from the 1440px "1.0 Home page" frame,
+  measured from the top-left of this section (Figma y 720, where the hero ends).
+  x/y = centre of the layer.
+*/
+const SECTION_TOP = 720;
+const layer = (x: number, y: number, w: number, r = 0) =>
+  `--x:${x};--y:${y - SECTION_TOP};--w:${w};--r:${r}deg`;
+
+/*
+  The blue wave, measured from the Figma render (the centre of the 60px line, every
+  40px). Under the typewriter it's hidden, so those points only keep the curve smooth.
+  Both ends run on past the frame, so on wide screens the line still goes edge to edge.
+*/
+const WAVE_POINTS: [number, number][] = [
+  [-800, 1850], [-500, 1830], [-195, 1690], [-100, 1615], [0, 1499.5], [40, 1442.5],
+  [80, 1398], [120, 1369.5], [160, 1357], [200, 1361], [240, 1377], [280, 1398],
+  [320, 1418.5], [360, 1431.5], [400, 1434], [440, 1425.5], [480, 1401.5], [520, 1358],
+  [560, 1306.5], [600, 1266.5], [640, 1248], [700, 1238], [780, 1262], [860, 1310],
+  [940, 1352], [1000, 1374], [1040, 1386], [1080, 1396], [1120, 1402], [1160, 1404.5],
+  [1200, 1404], [1240, 1400], [1280, 1392.5], [1320, 1381], [1360, 1367], [1400, 1347.5],
+  [1440, 1325], [1542, 1270], [1800, 1190], [2240, 1160],
+];
+// In Figma the text runs along the same curve, 146.5px lower, starting at x -195
+const TEXT_OFFSET_Y = 146.5;
+const TEXT_START_X = -195;
+
+// A smooth line through the points (Catmull-Rom turned into cubic Béziers)
+const smoothPath = (points: [number, number][]) => {
+  const p = points.map(([x, y]) => [x, y - SECTION_TOP]);
+  let d = `M${p[0][0]} ${p[0][1]}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const [x0, y0] = p[i - 1] ?? p[i];
+    const [x1, y1] = p[i];
+    const [x2, y2] = p[i + 1];
+    const [x3, y3] = p[i + 2] ?? p[i + 1];
+    const c1 = [x1 + (x2 - x0) / 6, y1 + (y2 - y0) / 6];
+    const c2 = [x2 - (x3 - x1) / 6, y2 - (y3 - y1) / 6];
+    d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${x2} ${y2}`;
+  }
+  return d;
+};
+
+const wavePath = smoothPath(WAVE_POINTS);
+const textPath = smoothPath(
+  WAVE_POINTS.filter(([x]) => x >= TEXT_START_X).map(([x, y]) => [x, y + TEXT_OFFSET_Y]),
+);
+
+// The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
+const WAVE_BOX = { x: -800, y: 380, w: 3040, h: 1000 };
+
+// Irina's approved copy, word for word
+const WAVE_TEXT =
+  'Test   ·   Design   ·   Iterate   ·   Code   ·   Create   ·   Test   ·   Design   ·   Iterate   ·   Code   ·   Create   ·   Test   ·   Design   ·   Iterate   ·   Code   ·   Test   ·   Create   ·   Design   ·   Iterate   ·   Code   ·   Create';
+
+const SKILLS = [
+  { heading: 'Design tools', lines: ['Photoshop · Illustrator · Figma', 'After Effects · Blender'] },
+  { heading: 'Experience design', lines: ['User research · Usability testing', 'Wireframing & prototyping'] },
+  {
+    heading: 'Coding skills',
+    lines: [
+      'HTML · CSS · JavaScript · PHP',
+      'Astro · Git · Vite · GSAP · ML5',
+      'React · React Native · TypeScript',
+      'Three.js · WebGPU',
+    ],
+  },
+];
+---
+
+<section class="about" id="about" aria-labelledby="about-title" data-section="about">
+  <!-- The blue wave runs edge to edge, behind everything else -->
+  <svg
+    class="about__wave"
+    data-layer="wave"
+    viewBox={`${WAVE_BOX.x} ${WAVE_BOX.y} ${WAVE_BOX.w} ${WAVE_BOX.h}`}
+    style={`--wx:${WAVE_BOX.x};--wy:${WAVE_BOX.y};--ww:${WAVE_BOX.w};--wh:${WAVE_BOX.h}`}
+    aria-hidden="true"
+  >
+    <path class="about__wave-line" data-layer="wave-line" d={wavePath} />
+    <path id="about-wave-text-path" d={textPath} fill="none" />
+    <text class="about__wave-text" data-layer="wave-text" xml:space="preserve">
+      <textPath href="#about-wave-text-path">{WAVE_TEXT}</textPath>
+    </text>
+  </svg>
+
+  <div class="about__frame">
+    <!-- Title with the yellow highlighter bars behind each line -->
+    <span class="about__marker about__marker--first" data-layer="title-marker-first"></span>
+    <span class="about__marker about__marker--second" data-layer="title-marker-second"></span>
+    <h2 class="about__title" id="about-title" data-layer="about-title">Good looks and good experiences</h2>
+
+    <span class="about__star" data-layer="about-sparkle-big" style={layer(642.2, 794.8, 56.35)}><StarPinkLg /></span>
+    <span class="about__star" data-layer="about-sparkle-big-outline" style={layer(644, 793.2, 56.35)}><StarOutlineLg /></span>
+    <span class="about__star" data-layer="about-sparkle-small" style={layer(662.4, 774, 22.62)}><StarPinkSm /></span>
+    <span class="about__star" data-layer="about-sparkle-small-outline" style={layer(663.1, 773.3, 22.62)}><StarOutlineSm /></span>
+
+    <span class="about__star" data-layer="about-star-low" style={layer(1229.6, 927.3, 21.27)}><StarPinkSm /></span>
+    <span class="about__star" data-layer="about-star-low-outline" style={layer(1230.3, 926.6, 21.27)}><StarOutlineSm /></span>
+    <span class="about__star" data-layer="about-star-high" style={layer(1289.7, 760.7, 17.4)}><StarPinkSm /></span>
+    <span class="about__star" data-layer="about-star-high-outline" style={layer(1290.3, 760.7, 17.4)}><StarOutlineSm /></span>
+
+    <!-- Text card with corner brackets and the About me button -->
+    <div class="about__card" data-layer="about-card">
+      <p class="about__text" data-layer="about-text">
+        <strong>I love the visual side of design</strong>: the colours, the details, and the little things that
+        make you stop scrolling. But I care just as much about what happens next:
+        <strong>how an experience works, feels, and makes sense to the people</strong> using it. And when an idea
+        needs a little code to come to life, I’m happy to get my hands dirty.
+      </p>
+      <Button href={`${base}/#about`} text="About me" w={177} name="about-button" class="about__button" />
+      <span class="about__corner about__corner--tl" data-layer="about-corner"></span>
+      <span class="about__corner about__corner--tr" data-layer="about-corner"></span>
+      <span class="about__corner about__corner--bl" data-layer="about-corner"></span>
+      <span class="about__corner about__corner--br" data-layer="about-corner"></span>
+    </div>
+
+    <!-- The skills paper comes out of the typewriter. Its bottom is tucked into the machine. -->
+    <div class="about__paper" data-layer="skills-paper">
+      <div class="about__sheet" data-layer="skills-sheet">
+        {
+          SKILLS.map(({ heading, lines }) => (
+            <div class="about__skills" data-layer="skills-group">
+              <h3 class="about__skills-heading" data-layer="skills-heading">
+                <span class="about__skills-mark"><span class="about__skills-name">{heading}</span>:</span>
+              </h3>
+              {lines.map((line) => (
+                <p class="about__skills-line" data-layer="skills-line">
+                  {line}
+                </p>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="about__typewriter" data-layer="typewriter">
+      <Image
+        class="about__typewriter-image"
+        data-layer="typewriter-image"
+        src={typewriter}
+        alt="A pink typewriter typing out Irina’s skills"
+        widths={[466, 932]}
+        sizes="466px"
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it. Only the wave runs edge to edge.
+  */
+  .about {
+    position: relative;
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-rows: [content-start] calc(980 * var(--u)) [content-end];
+    /* the wave is wider than the screen: clip it sideways only */
+    overflow-x: clip;
+  }
+
+  .about__frame {
+    grid-column: frame;
+    grid-row: content;
+    position: relative;
+  }
+
+  /* ---------- Wave ---------- */
+  .about__wave {
+    grid-column: full;
+    grid-row: content;
+    position: absolute;
+    /* the frame's left edge is 720u left of the centre, the SVG starts further left */
+    left: calc(50% + (var(--wx) - 720) * var(--u));
+    top: calc(var(--wy) * var(--u));
+    width: calc(var(--ww) * var(--u));
+    height: calc(var(--wh) * var(--u));
+    overflow: visible;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .about__wave-line {
+    fill: none;
+    stroke: var(--c-blue);
+    stroke-width: 60;
+  }
+
+  .about__wave-text {
+    fill: var(--c-blue);
+    font-family: var(--f-inter);
+    font-size: 24px;
+    white-space: pre;
+  }
+
+  /* ---------- Positioned collage pieces (Figma px from the frame's top-left) ---------- */
+  .about__star {
+    position: absolute;
+    left: calc(var(--x) * var(--u));
+    top: calc(var(--y) * var(--u));
+    width: calc(var(--w) * var(--u));
+    translate: -50% -50%;
+    rotate: var(--r);
+    z-index: 3;
+  }
+
+  .about__star :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ---------- Title ---------- */
+  .about__title {
+    position: absolute;
+    left: calc(166 * var(--u));
+    top: calc(50 * var(--u));
+    width: calc(487 * var(--u));
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(42 * var(--u));
+    line-height: 1.4;
+    color: var(--c-ink);
+    z-index: 2;
+  }
+
+  .about__marker {
+    position: absolute;
+    left: calc(150 * var(--u));
+    height: calc(23 * var(--u));
+    background: var(--c-marker);
+    z-index: 1;
+  }
+
+  .about__marker--first {
+    top: calc((818 - 11.5 - 720) * var(--u));
+    width: calc(440 * var(--u));
+  }
+
+  .about__marker--second {
+    top: calc((877 - 11.5 - 720) * var(--u));
+    width: calc(508 * var(--u));
+  }
+
+  /* ---------- Text card ---------- */
+  .about__card {
+    position: absolute;
+    left: calc(152 * var(--u));
+    top: calc((921 - 720) * var(--u));
+    width: calc(553 * var(--u));
+    height: calc(310 * var(--u));
+    padding: calc(37 * var(--u)) calc(40 * var(--u)) 0 calc(42 * var(--u));
+    background: var(--c-light);
+    z-index: 2;
+  }
+
+  .about__text {
+    margin: 0;
+    font-family: var(--f-sans);
+    font-size: calc(20 * var(--u));
+    line-height: 1.2;
+    color: var(--c-ink);
+  }
+
+  .about__text strong {
+    font-weight: 500;
+  }
+
+  .about__card :global(.about__button) {
+    position: absolute;
+    left: calc((194 - 152) * var(--u));
+    top: calc((1117 - 921) * var(--u));
+  }
+
+  .about__corner {
+    position: absolute;
+    width: calc(12 * var(--u));
+    height: calc(14 * var(--u));
+    border: 0 solid var(--c-ink);
+    --stroke: max(1.5px, calc(2.5 * var(--u)));
+  }
+
+  .about__corner--tl {
+    top: 0;
+    left: 0;
+    border-top-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .about__corner--tr {
+    top: 0;
+    right: 0;
+    border-top-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  .about__corner--bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .about__corner--br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  /* ---------- Skills paper ---------- */
+  /*
+    The paper keeps its Figma left edge (x 688), its Figma width (287px) and its
+    bottom inside the typewriter (y 1185). It grows upwards to fit the full list.
+  */
+  .about__paper {
+    position: absolute;
+    left: calc(688 * var(--u));
+    bottom: calc((720 + 980 - 1185) * var(--u));
+    z-index: 5;
+  }
+
+  .about__sheet {
+    width: calc(287 * var(--u));
+    padding: calc(35 * var(--u)) calc(17 * var(--u)) calc(35 * var(--u)) calc(23 * var(--u));
+    background: var(--c-light);
+    box-shadow: calc(-5 * var(--u)) calc(-2 * var(--u)) calc(6 * var(--u)) rgb(30 36 51 / 0.1);
+    rotate: -1.37deg;
+    transform-origin: bottom center;
+    font-family: var(--f-type);
+    font-size: calc(16 * var(--u));
+    color: var(--c-ink);
+  }
+
+  .about__skills + .about__skills {
+    margin-top: calc(17.9 * var(--u));
+  }
+
+  .about__skills-heading {
+    margin: 0;
+    font-size: inherit;
+    font-weight: 400;
+    line-height: calc(20.8 * var(--u));
+  }
+
+  /* the grey highlight behind each heading (18px tall, a little wider than the text) */
+  .about__skills-mark {
+    display: inline-block;
+    margin-left: calc(-4 * var(--u));
+    padding: 0 calc(5.5 * var(--u)) 0 calc(4 * var(--u));
+    background: linear-gradient(var(--c-grey), var(--c-grey)) center / 100% calc(18 * var(--u)) no-repeat;
+  }
+
+  /* the heading's name is underlined, the colon isn't */
+  .about__skills-name {
+    text-decoration: underline;
+    text-decoration-skip-ink: none;
+  }
+
+  /* the first line sits 30px under its heading, as in Figma */
+  .about__skills-heading + .about__skills-line {
+    margin-top: calc(9.2 * var(--u));
+  }
+
+  .about__skills-line {
+    margin: 0;
+    line-height: calc(20.8 * var(--u));
+  }
+
+  /* ---------- Typewriter ---------- */
+  .about__typewriter {
+    position: absolute;
+    left: calc((553 + 9) * var(--u));
+    top: calc((1152 + 7 - 720) * var(--u));
+    width: calc(466 * var(--u));
+    z-index: 6;
+  }
+
+  .about__typewriter-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(calc(-5 * var(--u)) calc(5 * var(--u)) calc(5.5 * var(--u)) rgb(30 36 51 / 0.1));
+  }
+</style>

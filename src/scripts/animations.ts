@@ -22,7 +22,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin);
  * place and slide onto each other, and the tape and stickers are pressed down by hand.
  *
  * Elements are found through data-* attributes, never through classes.
- * Only transform and opacity are animated.
+ * Transform and opacity are used where they do the job, other properties where the effect needs them.
  *
  * Layers that are placed with the CSS `translate` / `rotate` properties are never
  * animated themselves: GSAP would fold those into its own transform and lose the
@@ -130,14 +130,13 @@ const createNavLinks = (reduceMotion: boolean): Cleanup[] => {
   });
 };
 
-/* ---------- 5. Get in touch: letters and arrow roll up into the light copy ---------- */
-const createCtaRoll = (reduceMotion: boolean): Cleanup | undefined => {
-  const $cta = getLayer('cta');
-  const $text = $cta && getLayer('cta-text', $cta);
-  const $textHover = $cta && getLayer('cta-text-hover', $cta);
-  const $arrow = $cta && getLayer<SVGElement>('cta-arrow', $cta);
-  const $arrowHover = $cta && getLayer<SVGElement>('cta-arrow-hover', $cta);
-  if (!$cta || !$text || !$textHover || !$arrow || !$arrowHover) return;
+/* ---------- 5. Green buttons (Get in touch, About me): letters and arrow roll up into the light copy ---------- */
+const createRollButton = ($button: HTMLElement, reduceMotion: boolean): Cleanup | undefined => {
+  const $text = getLayer('button-text', $button);
+  const $textHover = getLayer('button-text-hover', $button);
+  const $arrow = getLayer<SVGElement>('button-arrow', $button);
+  const $arrowHover = getLayer<SVGElement>('button-arrow-hover', $button);
+  if (!$text || !$textHover || !$arrow || !$arrowHover) return;
 
   const textSplit = SplitText.create($text, { type: 'chars' });
   const hoverSplit = SplitText.create($textHover, { type: 'chars', aria: 'none' });
@@ -160,7 +159,7 @@ const createCtaRoll = (reduceMotion: boolean): Cleanup | undefined => {
   };
 
   return onHover(
-    $cta,
+    $button,
     () => roll(-CTA_ROLL_Y, 0),
     () => roll(0, CTA_ROLL_Y),
   );
@@ -511,7 +510,7 @@ export const initAnimations = () => {
       };
 
       createNavLinks(reduceMotion).forEach(addCleanup);
-      addCleanup(createCtaRoll(reduceMotion));
+      getAll('[data-roll-button]').forEach(($button) => addCleanup(createRollButton($button, reduceMotion)));
 
       if (reduceMotion) {
         // No spinning, floating, smooth scrolling or page-load sequence: everything is simply there

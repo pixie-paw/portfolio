@@ -1,0 +1,112 @@
+---
+/**
+ * The green button with a text and an arrow (Get in touch, About me).
+ * On hover the letters and the arrow roll up into a light copy (see animations.ts).
+ *
+ * href  = where it goes.
+ * text  = the label, written as in Figma (the CSS makes it uppercase).
+ * w     = width in Figma pixels.
+ * name  = its data-layer name.
+ */
+import Arrow from '../assets/home/svg/arrow.svg';
+
+interface Props {
+  href: string;
+  text: string;
+  w: number;
+  name: string;
+  class?: string;
+  intro?: boolean;
+}
+
+const { href, text, w, name, class: className, intro = false } = Astro.props;
+---
+
+<!-- Two copies of the text and the arrow: on hover the dark one rolls up and out, the light one rolls in -->
+<a
+  class:list={['button', className]}
+  href={href}
+  data-layer={name}
+  data-roll-button
+  data-intro={intro ? '' : undefined}
+  style={`--w:${w}`}
+>
+  <span class="button__roll">
+    <span class="button__label" data-layer="button-text">{text}</span>
+    <span class="button__label button__label--hover" data-layer="button-text-hover" aria-hidden="true">{text}</span>
+  </span>
+  <span class="button__roll" aria-hidden="true">
+    <Arrow class="button__arrow" data-layer="button-arrow" />
+    <Arrow class="button__arrow button__arrow--hover" data-layer="button-arrow-hover" />
+  </span>
+</a>
+
+<style>
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(10 * var(--u));
+    height: calc(52 * var(--u));
+    width: calc(var(--w) * var(--u));
+    background: var(--c-green);
+    border: 2px solid var(--c-ink);
+    font-family: var(--f-display);
+    font-size: calc(16 * var(--u));
+    text-transform: uppercase;
+    color: var(--c-ink);
+  }
+
+  /*
+    A window the letters roll through. The padding gives the tall Boldonse
+    letters room, and the negative margin keeps the button the same size.
+  */
+  .button__roll {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+  }
+
+  .button__label {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .button__label--hover,
+  .button__arrow--hover {
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+    color: var(--c-light);
+    /* shown by the script once it has moved them below the window */
+    visibility: hidden;
+  }
+
+  .button__arrow {
+    display: block;
+    width: calc(18 * var(--u));
+    height: auto;
+  }
+
+  .button__arrow--hover {
+    top: auto;
+    bottom: 0.2em;
+  }
+
+  /* Mobile first try (rejected, to be replaced once the mobile design is agreed) */
+  @media (max-width: 899px) {
+    .button {
+      height: 44px;
+      width: auto;
+      padding: 0 16px;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .button__arrow {
+      width: 14px;
+    }
+  }
+</style>

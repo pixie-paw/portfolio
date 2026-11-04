@@ -92,12 +92,13 @@ When a version in `package.json` goes up, update this table too.
 
 - GSAP with ScrollTrigger and SplitText, set up in `src/scripts/animations.ts`.
 - Lenis is the only smooth-scroll library. It drives ScrollTrigger and is off for reduced motion. Never add a second one.
-- Animate transform and opacity only. Never use `transition: all`.
+- **Animate whatever the effect needs:** SVG strokes, clip paths, colours, text on a path. Irina wants Awwwards-level motion, so the property list isn't limited. Transform and opacity are the cheapest, so use them when they give the same result. Never use `transition: all`.
+- **Layers placed with the CSS `translate` / `rotate` properties are never animated themselves.** GSAP folds those into its own transform and loses the Figma position. Animate an inner layer instead, as `Tag.astro` (`tag__body`) and `Hero.astro` (plate paper, camera image, star SVGs) do.
 - Everything goes inside the `gsap.matchMedia` reduced motion check, so visitors who ask for less motion get the content without the movement.
 
 ## Fonts
 
-- **Boldonse and Bona Nova:** loaded through Fontsource.
+- **Boldonse, Bona Nova and Inter:** loaded through Fontsource. Inter (Regular, 24px) is only for the text along the blue wave.
 - **Akzidenz-Grotesk Next and Bulletin Typewriter MN:** from Irina's Adobe Fonts kit, `https://use.typekit.net/uit2fga.css`. Regular (400) and Medium (500) Akzidenz are under the family name `akzidenz-grotesk-next-pro`.
 - **Bulletin Typewriter licence:** education and non-commercial use only. Keep it to this personal portfolio.
 
@@ -107,7 +108,7 @@ The skills live on Irina's Mac in `~/Documents/portfolio/.claude/skills/`. Some 
 
 - **build-awwwards-quality-sites:** the overall art direction and motion system (GSAP + ScrollTrigger, one smooth-scroll library, a complete first frame, reduced motion).
 - **animate**, **emil-design-eng:** the easing and the duration, once Irina has said what moves.
-- **animation-performance:** transform and opacity only, no `transition: all`, smooth on a mid-range phone.
+- **animation-performance:** cheap properties first (transform, opacity), no `transition: all`, smooth on a mid-range phone.
 - **build-design:** build each section from the Figma file and compare the result with it.
 - **better-interface** and the better-* skills (ui, typography, layout, colors, accessibility, writing): review every section after building it.
 - **mobile-native:** for the responsive version, once desktop is finished.
