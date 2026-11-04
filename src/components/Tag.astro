@@ -9,9 +9,9 @@
  * intro  = how the tag arrives on page load, then floats (see animations.ts):
  *          'travel' = grows while travelling out from under the title plate,
  *          'grow'   = grows where it is,
- *          'stamp'  = stamped down, then its text is typed out.
+ *          'hang'   = flips down from its top edge like a hanging sign and swings,
+ *                     then its text decodes.
  *          Leave it out for a tag that stays still.
- * cursor = adds a typing cursor after the text (used with 'stamp').
  */
 interface Props {
   text: string;
@@ -22,8 +22,7 @@ interface Props {
   rotate?: number;
   size?: 'sm' | 'lg';
   paper?: string;
-  intro?: 'travel' | 'grow' | 'stamp';
-  cursor?: boolean;
+  intro?: 'travel' | 'grow' | 'hang';
   name?: string;
   class?: string;
 }
@@ -38,7 +37,6 @@ const {
   size = 'sm',
   paper = 'var(--c-tag)',
   intro,
-  cursor = false,
   name,
   class: className,
 } = Astro.props;
@@ -58,8 +56,7 @@ const {
   <span class="tag__body" data-layer="tag-body">
     <span class="tag__paper" data-layer="tag-paper"></span>
     <span class="tag__text" data-layer="tag-text">
-      {text}
-      {cursor && <span class="tag__cursor" data-layer="tag-cursor" aria-hidden="true"></span>}
+      <span data-layer="tag-label">{text}</span>
     </span>
     <span class="tag__corner tag__corner--tl" data-layer="tag-corner"></span>
     <span class="tag__corner tag__corner--tr" data-layer="tag-corner"></span>
@@ -109,16 +106,6 @@ const {
     font-size: calc(20 * var(--k));
   }
 
-  /* Sits just after the text without changing the tag's width. The script moves it while typing. */
-  .tag__cursor {
-    position: absolute;
-    left: 100%;
-    top: 0;
-    width: 0.09em;
-    height: 1em;
-    margin-left: 0.12em;
-    background: var(--c-ink);
-  }
 
   .tag__corner {
     position: absolute;

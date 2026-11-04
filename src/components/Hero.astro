@@ -53,11 +53,12 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   </div>
 
   <!-- Dark band with the subtitle -->
-  <span class="hero__band" data-layer="band" data-intro data-shake aria-hidden="true"></span>
-  <p class="hero__subtitle" data-layer="subtitle" data-intro data-shake>&lt;I’m a Digital Designer and Developer&gt;</p>
+  <span class="hero__band" data-layer="band" data-intro aria-hidden="true"></span>
+  <!-- The brackets and the text are separate layers, so the tag can open on load -->
+  <p class="hero__subtitle" data-layer="subtitle" data-intro><span class="hero__bracket" data-layer="subtitle-open">&lt;</span><span class="hero__subtitle-text" data-layer="subtitle-text">I’m a Digital Designer and Developer</span><span class="hero__bracket" data-layer="subtitle-close">&gt;</span></p>
 
   <!-- Internship tag, overlapping the bottom of the band -->
-  <div class="hero__tag-area" data-drift="-60" data-shake>
+  <div class="hero__tag-area" data-drift="-60">
     <Tag
       name="tag-internship"
       text="{ currently searching for an internship }"
@@ -68,8 +69,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
       rotate={-3.15}
       size="lg"
       paper="var(--c-green)"
-      intro="stamp"
-      cursor
+      intro="hang"
       class="hero__internship"
     />
   </div>
@@ -162,6 +162,11 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     color: var(--c-light);
     white-space: nowrap;
     z-index: 2;
+  }
+
+  .hero__bracket,
+  .hero__subtitle-text {
+    display: inline-block;
   }
 
   .hero__tag-area {
@@ -269,7 +274,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   }
 
   /* The internship tag reacts to hover, so it takes the pointer (it isn't a link) */
-  .hero__internship :global(.tag__body) {
+  .hero__tag-area :global(.hero__internship .tag__body) {
     pointer-events: auto;
   }
 
