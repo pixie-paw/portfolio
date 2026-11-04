@@ -12,7 +12,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   </a>
 
   <nav class="site-header__nav" aria-label="Main">
-    <a class="site-header__link is-active" href={`${base}/#work`} data-layer="nav-projects">
+    <a class="site-header__link site-header__link--active" href={`${base}/#work`} data-layer="nav-projects">
       Projects
       <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
     </a>
@@ -67,7 +67,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     line-height: 1.2;
   }
 
-  .site-header__link.is-active {
+  .site-header__link--active {
     color: var(--c-ink);
   }
 
