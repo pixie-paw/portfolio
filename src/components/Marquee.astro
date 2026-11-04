@@ -1,0 +1,166 @@
+---
+import StarPinkLg from '../assets/home/svg/star-pink-lg.svg';
+import StarOutlineLg from '../assets/home/svg/star-outline-lg.svg';
+
+/*
+  "Let's work together", repeated with a pink star between each one, over a double blue
+  line. The transition into the footer. Figma pixels from the 1440px home page frame,
+  measured from the top of this section (Figma y 2878, where the film strip ends).
+*/
+const SECTION_TOP = 2878;
+const SECTION_H = 452;
+
+// Irina's copy, word for word
+const TEXT = 'Let’s work together';
+
+// Enough rounds to fill a 2560px screen plus one more round, so the flow can loop
+const ROUNDS = 6;
+
+/*
+  The double line, measured from the Figma render: the centre of the upper 7px line every
+  40px. The lower line is the same curve, 4px to the right and 14px lower (as in Figma).
+  Both ends run on past the frame, so the lines go edge to edge on wide screens too.
+*/
+const LINE_POINTS: [number, number][] = [
+  [-800, 3520], [-400, 3480], [-90, 3378], [0, 3288], [40, 3257.5], [80, 3234], [120, 3215],
+  [160, 3202], [200, 3195.5], [240, 3194.5], [280, 3196.5], [320, 3200], [360, 3204.5],
+  [400, 3208.5], [440, 3212.5], [480, 3216.5], [520, 3218.5], [560, 3218.5], [600, 3215],
+  [640, 3207.5], [680, 3198.5], [720, 3188.5], [760, 3178.5], [800, 3169], [840, 3161],
+  [880, 3155], [920, 3155.5], [960, 3159.5], [1000, 3166], [1040, 3173.5], [1080, 3181],
+  [1120, 3188], [1160, 3193.5], [1200, 3196.5], [1240, 3194.5], [1280, 3187.5], [1320, 3177.5],
+  [1360, 3166], [1400, 3153.5], [1534, 3118], [1800, 3060], [2240, 3040],
+];
+const LOWER_OFFSET = { x: 4, y: 14 };
+
+// A smooth line through the points (Catmull-Rom turned into cubic Béziers)
+const smoothPath = (points: [number, number][]) => {
+  const p = points.map(([x, y]) => [x, y - SECTION_TOP]);
+  let d = `M${p[0][0]} ${p[0][1]}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const [x0, y0] = p[i - 1] ?? p[i];
+    const [x1, y1] = p[i];
+    const [x2, y2] = p[i + 1];
+    const [x3, y3] = p[i + 2] ?? p[i + 1];
+    const c1 = [x1 + (x2 - x0) / 6, y1 + (y2 - y0) / 6];
+    const c2 = [x2 - (x3 - x1) / 6, y2 - (y3 - y1) / 6];
+    d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${x2} ${y2}`;
+  }
+  return d;
+};
+
+const upperLine = smoothPath(LINE_POINTS);
+const lowerLine = smoothPath(LINE_POINTS.map(([x, y]) => [x + LOWER_OFFSET.x, y + LOWER_OFFSET.y]));
+
+// The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
+const LINE_BOX = { x: -800, y: 120, w: 3040, h: 680 };
+---
+
+<section class="marquee" aria-label="Let’s work together" data-section="marquee">
+  <svg
+    class="marquee__lines"
+    data-layer="marquee-lines"
+    data-intro
+    viewBox={`${LINE_BOX.x} ${LINE_BOX.y} ${LINE_BOX.w} ${LINE_BOX.h}`}
+    style={`--lx:${LINE_BOX.x};--ly:${LINE_BOX.y};--lw:${LINE_BOX.w};--lh:${LINE_BOX.h}`}
+    aria-hidden="true"
+  >
+    <path class="marquee__line" data-layer="marquee-line" d={upperLine} />
+    <path class="marquee__line" data-layer="marquee-line" d={lowerLine} />
+  </svg>
+
+  <!-- The words are read once; the repeats are decoration -->
+  <div class="marquee__band" data-intro style={`--section-h:${SECTION_H}`}>
+    <div class="marquee__track" data-layer="marquee-track">
+      {
+        Array.from({ length: ROUNDS }, (_, round) => (
+          <div class="marquee__round" data-layer="marquee-round" aria-hidden={round > 0 ? 'true' : undefined}>
+            <span class="marquee__text" data-layer="marquee-text">
+              {TEXT}
+            </span>
+            <span class="marquee__star" data-layer="marquee-star" aria-hidden="true">
+              <span class="marquee__star-pink" data-layer="marquee-star-pink"><StarPinkLg /></span>
+              <span class="marquee__star-outline" data-layer="marquee-star-outline"><StarOutlineLg /></span>
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .marquee {
+    position: relative;
+    height: calc(452 * var(--u));
+    /* the text and the lines are wider than the screen: clip them sideways only */
+    overflow-x: clip;
+  }
+
+  /* ---------- Double blue line ---------- */
+  .marquee__lines {
+    position: absolute;
+    /* the 1440 frame's left edge is 720u left of the centre, the SVG starts further left */
+    left: calc(50% + (var(--lx) - 720) * var(--u));
+    top: calc(var(--ly) * var(--u));
+    width: calc(var(--lw) * var(--u));
+    height: calc(var(--lh) * var(--u));
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .marquee__line {
+    fill: none;
+    stroke: var(--c-blue);
+    stroke-width: 7;
+  }
+
+  /* ---------- Text ---------- */
+  /* The first "Let's work together" starts at Figma x -195, 201px down (y 3079) */
+  .marquee__band {
+    position: absolute;
+    left: calc(50% - (720 + 195) * var(--u));
+    top: calc((3079 - 2878) * var(--u));
+    z-index: 1;
+  }
+
+  .marquee__track,
+  .marquee__round {
+    display: flex;
+    align-items: center;
+    width: max-content;
+  }
+
+  .marquee__text {
+    font-family: var(--f-display);
+    font-size: calc(48 * var(--u));
+    line-height: calc(92 * var(--u));
+    white-space: nowrap;
+    color: var(--c-ink);
+  }
+
+  /* 19px after the text, 20.4px before the next one, as in Figma */
+  .marquee__star {
+    position: relative;
+    width: calc(46.63 * var(--u));
+    height: calc(46.63 * var(--u));
+    margin: 0 calc(20.37 * var(--u)) 0 calc(19 * var(--u));
+  }
+
+  .marquee__star-pink,
+  .marquee__star-outline {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* The outline sits 1.5px right and 1.4px up from the pink, like the other stars */
+  .marquee__star-outline {
+    left: calc(1.49 * var(--u));
+    top: calc(-1.37 * var(--u));
+  }
+
+  .marquee__star :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

@@ -92,6 +92,11 @@ const FILM_ENTER_S = 1.2; // the strip slides in from the right
 const FILM_FLOW_PX_S = 40; // then the images inside scroll right to left at this pace
 const FILM_FLOW_DIRECTION = -1; // -1 = right to left, 1 = left to right
 
+// "Let's work together" marquee
+const MARQUEE_FLOW_PX_S = 50; // its normal speed, right to left
+const MARQUEE_SCROLL_BOOST = 12; // extra px/s for each px/frame of scroll speed, up or down
+const MARQUEE_LINE_DRAW_S = 1.6;
+
 // If someone scrolls while the hero is still loading, the rest of the load plays this much faster
 const INTRO_HURRY_SPEED = 4;
 
@@ -833,6 +838,92 @@ const createFilmStrip = (context: gsap.Context) => {
   });
 };
 
+/* ---------- "Let's work together": words rise, stars pop, the lines draw, then it flows ---------- */
+const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
+  const $marquee = document.querySelector('[data-section="marquee"]');
+  const $track = $marquee && getLayer('marquee-track', $marquee);
+  if (!$marquee || !$track) return;
+
+  const $rounds = getAll('[data-layer="marquee-round"]', $marquee);
+  const $texts = getAll('[data-layer="marquee-text"]', $marquee);
+  const $pinks = getAll('[data-layer="marquee-star-pink"]', $marquee);
+  const $outlines = getAll('[data-layer="marquee-star-outline"]', $marquee);
+  const $lines = getAll<SVGPathElement>('[data-layer="marquee-line"]', $marquee);
+  if ($rounds.length < 2) return;
+
+  // Start states: words just below their line, stars at nothing, lines not drawn yet
+  gsap.set($texts, { yPercent: 60, autoAlpha: 0 });
+  gsap.set($pinks, { scale: 0, rotation: -90, autoAlpha: 0 });
+  gsap.set($outlines, { x: -6, y: 6, autoAlpha: 0 });
+  $lines.forEach(($line) => {
+    const length = $line.getTotalLength();
+    gsap.set($line, { strokeDasharray: length, strokeDashoffset: length });
+  });
+
+  // The flow: one round at a time, measured as a share of the track so the loop never shows a gap
+  let roundPx = 0;
+  let roundShare = 0;
+  const measure = () => {
+    roundPx = $rounds[1].offsetLeft - $rounds[0].offsetLeft;
+    roundShare = (roundPx / $track.offsetWidth) * 100;
+  };
+  let progress = 0; // 0 to 1 through one round
+  let speed = MARQUEE_FLOW_PX_S;
+  const tick = (_time: number, deltaMs: number) => {
+    if (!roundPx) return;
+    // Scrolling either way speeds it up for a moment; it always flows right to left
+    const scrollSpeed = Math.abs(smoothScroll?.velocity ?? 0);
+    const target = MARQUEE_FLOW_PX_S + scrollSpeed * MARQUEE_SCROLL_BOOST;
+    speed += (target - speed) * 0.08;
+    progress = (progress + (speed * deltaMs) / 1000 / roundPx) % 1;
+    gsap.set($track, { xPercent: -progress * roundShare });
+  };
+
+  let hasArrived = false;
+  let isOnScreen = false;
+  const updateFlow = () => (hasArrived && isOnScreen ? gsap.ticker.add(tick) : gsap.ticker.remove(tick));
+  addCleanup(() => gsap.ticker.remove(tick));
+
+  // Only flows while it's on screen, and measures again whenever the layout changes
+  ScrollTrigger.create({
+    trigger: $marquee,
+    start: 'top bottom',
+    end: 'bottom top',
+    onToggle: (self) => {
+      isOnScreen = self.isActive;
+      updateFlow();
+    },
+    onRefresh: measure,
+  });
+
+  ScrollTrigger.create({
+    trigger: $marquee,
+    start: 'top 80%',
+    once: true,
+    onEnter: () =>
+      // The text is Boldonse: measure the rounds once the font is in
+      waitForFonts().then(() =>
+        context.add(() => {
+          measure();
+          gsap
+            .timeline({
+              onComplete: () => {
+                hasArrived = true;
+                updateFlow();
+              },
+            })
+            // Each "Let's work together" rises into its line, one after another from left to right
+            .to($texts, { yPercent: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', stagger: 0.12 }, 0)
+            // The stars pop in with a quarter turn, the outline locks on just after
+            .to($pinks, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.12 }, 0.3)
+            .to($outlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.6, ease: 'expo.out', stagger: 0.12 }, 0.4)
+            // The double line draws itself in from left to right
+            .to($lines, { strokeDashoffset: 0, duration: MARQUEE_LINE_DRAW_S, ease: 'power2.inOut', stagger: 0.1 }, 0);
+        }),
+      ),
+  });
+};
+
 /* ---------- Page load: the hero comes into register ---------- */
 const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $html = document.documentElement;
@@ -1127,6 +1218,7 @@ export const initAnimations = () => {
         addCleanup(() => delete document.documentElement.dataset.motion);
         createWorkAnimations(context).forEach(addCleanup);
         createFilmStrip(context);
+        createMarquee(context, addCleanup);
         waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
       }
 
