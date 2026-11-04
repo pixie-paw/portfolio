@@ -159,10 +159,14 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     z-index: 2;
   }
 
-  /* The visual starts in the title row and keeps going down past the band. */
+  /*
+    The visual starts in the title row and keeps going down past the band.
+    It overlaps the band, so it can't be its own rectangle in grid-template-areas:
+    it uses the lines of the areas it spans (top of "title" to bottom of "tag").
+  */
   .hero__visual {
     grid-column: visual;
-    grid-row: 2 / 5;
+    grid-row: title-start / tag-end;
     align-self: start;
     position: relative;
     height: calc(1040 * var(--u));
