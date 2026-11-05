@@ -75,6 +75,7 @@ The same rules as Irina's earlier projects, so every file reads the same way.
 | Formatting | 2 spaces, semicolons, single quotes | |
 
 - **JS hooks:** select elements through `data-*` attributes (`data-layer`, `data-split`), never through their classes. Classes are for styling only.
+- **Colours:** written in OKLCH, as variables in `src/styles/global.css` (the old hex is in a comment next to each). GSAP can't blend OKLCH, so a colour tween reads the variable through `colorVar()` in `animations.ts`.
 
 ## Official docs first
 

@@ -1,0 +1,235 @@
+---
+import { Image } from 'astro:assets';
+import { DOUBLE_LINE_POINTS, DOUBLE_LINE_LOWER, smoothPath, shiftPoints } from '../data/wave';
+
+/*
+  A project page, section 2: the double blue line under the hero, the card with the client,
+  year and kind of project, and the card with the tools. Figma pixels from the 1440px
+  "2.0 Projects page_MemoMe" frame, measured from the top of this section (Figma y 790, where
+  the hero ends). Every project page uses this; each one passes its own facts and tools.
+*/
+interface Props {
+  facts: { label: string; value: string }[];
+  // w = the icon's width in Figma pixels (they're all 70px tall)
+  tools: { name: string; image: ImageMetadata; w: number }[];
+}
+
+const { facts, tools } = Astro.props;
+
+const SECTION_TOP = 790;
+
+/*
+  The marquee's double line, in the same shape: here it sits 70px further left and 2327.09px
+  higher than on the home page (Figma: the upper line at x -155, y 789 here, x -85, y 3116.09 there).
+*/
+const LINE = shiftPoints(DOUBLE_LINE_POINTS, -155 - -85, 789 - 3116.09);
+const upperLine = smoothPath(LINE, SECTION_TOP);
+const lowerLine = smoothPath(shiftPoints(LINE, DOUBLE_LINE_LOWER.x, DOUBLE_LINE_LOWER.y), SECTION_TOP);
+// The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
+const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
+---
+
+<section class="project-facts" aria-label="Project facts" data-section="project-facts">
+  <svg
+    class="project-facts__lines"
+    data-layer="facts-lines"
+    data-intro
+    viewBox={`${LINE_BOX.x} ${LINE_BOX.y} ${LINE_BOX.w} ${LINE_BOX.h}`}
+    style={`--lx:${LINE_BOX.x};--ly:${LINE_BOX.y};--lw:${LINE_BOX.w};--lh:${LINE_BOX.h}`}
+    aria-hidden="true"
+  >
+    <path class="project-facts__line" data-layer="facts-line" d={upperLine} />
+    <path class="project-facts__line" data-layer="facts-line" d={lowerLine} />
+  </svg>
+
+  <div class="project-facts__frame">
+    <!-- Client, year and kind of project -->
+    <div class="project-facts__card project-facts__card--facts" data-layer="facts-card" data-intro>
+      <dl class="project-facts__list">
+        {
+          facts.map(({ label, value }) => (
+            <div class="project-facts__fact" data-layer="facts-fact">
+              <dt class="project-facts__label" data-layer="facts-label">{label}</dt>
+              <dd class="project-facts__value" data-layer="facts-value">{value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <span class="project-facts__corner project-facts__corner--tl" data-layer="facts-corner"></span>
+      <span class="project-facts__corner project-facts__corner--tr" data-layer="facts-corner"></span>
+      <span class="project-facts__corner project-facts__corner--bl" data-layer="facts-corner"></span>
+      <span class="project-facts__corner project-facts__corner--br" data-layer="facts-corner"></span>
+    </div>
+
+    <!-- The tools -->
+    <div class="project-facts__card project-facts__card--tools" data-layer="tools-card" data-intro>
+      <h2 class="project-facts__label" data-layer="tools-label">Tools</h2>
+      <ul class="project-facts__tools" role="list">
+        {
+          tools.map(({ name, image, w }) => (
+            <li class="project-facts__tool" data-layer="tools-icon" style={`--w:${w}`}>
+              <Image class="project-facts__icon" src={image} alt={name} title={name} widths={[Math.round(w), Math.round(w * 2)]} sizes={`${Math.round(w)}px`} />
+            </li>
+          ))
+        }
+      </ul>
+      <span class="project-facts__corner project-facts__corner--tl" data-layer="tools-corner"></span>
+      <span class="project-facts__corner project-facts__corner--tr" data-layer="tools-corner"></span>
+      <span class="project-facts__corner project-facts__corner--bl" data-layer="tools-corner"></span>
+      <span class="project-facts__corner project-facts__corner--br" data-layer="tools-corner"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it. Only the double line runs edge to edge.
+  */
+  .project-facts {
+    position: relative;
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-rows: [content-start] calc(510 * var(--u)) [content-end];
+    /* the lines are wider than the screen: clip them sideways only */
+    overflow-x: clip;
+  }
+
+  .project-facts__frame {
+    grid-column: frame;
+    grid-row: content;
+    position: relative;
+  }
+
+  /* ---------- Double blue line ---------- */
+  .project-facts__lines {
+    position: absolute;
+    /* the 1440 frame's left edge is 720u left of the centre, the SVG starts further left */
+    left: calc(50% + (var(--lx) - 720) * var(--u));
+    top: calc(var(--ly) * var(--u));
+    width: calc(var(--lw) * var(--u));
+    height: calc(var(--lh) * var(--u));
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .project-facts__line {
+    fill: none;
+    stroke: var(--c-blue);
+    stroke-width: 7;
+  }
+
+  /* ---------- Cards (Figma: both at y 942) ---------- */
+  .project-facts__card {
+    position: absolute;
+    top: calc((942 - 790) * var(--u));
+    background: var(--c-light);
+  }
+
+  /* Figma: x 64, 363 x 251, the first label at x 84, y 956 */
+  .project-facts__card--facts {
+    left: calc(64 * var(--u));
+    width: calc(363 * var(--u));
+    height: calc(251 * var(--u));
+    padding: calc(14 * var(--u)) 0 0 calc(20 * var(--u));
+  }
+
+  /* Figma: x 752, 588 x 138, the label at x 770, y 956 */
+  .project-facts__card--tools {
+    left: calc(752 * var(--u));
+    width: calc(588 * var(--u));
+    height: calc(138 * var(--u));
+    padding: calc(14 * var(--u)) 0 0 calc(18 * var(--u));
+  }
+
+  .project-facts__list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(24 * var(--u));
+  }
+
+  /* Each label is 6px above its value, as in Figma */
+  .project-facts__fact {
+    display: flex;
+    flex-direction: column;
+    gap: calc(6 * var(--u));
+  }
+
+  /* Figma: Akzidenz 18px, --c-ink-soft */
+  .project-facts__label {
+    margin: 0;
+    font-family: var(--f-sans);
+    font-weight: 400;
+    font-size: calc(18 * var(--u));
+    line-height: calc(22 / 18);
+    color: var(--c-ink-soft);
+  }
+
+  /* Figma: Boldonse 16px, uppercase (its text box is 31px tall) */
+  .project-facts__value {
+    margin: 0;
+    font-family: var(--f-display);
+    font-size: calc(16 * var(--u));
+    line-height: calc(31 / 16);
+    text-transform: uppercase;
+    color: var(--c-ink);
+  }
+
+  /* Figma: the icons start 6px under the label, about 10px apart */
+  .project-facts__tools {
+    display: flex;
+    gap: calc(10.1 * var(--u));
+    margin: calc(6 * var(--u)) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .project-facts__tool {
+    width: calc(var(--w) * var(--u));
+    height: calc(70 * var(--u));
+  }
+
+  .project-facts__icon {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .project-facts__corner {
+    position: absolute;
+    width: calc(12 * var(--u));
+    height: calc(14 * var(--u));
+    border: 0 solid var(--c-ink);
+    --stroke: max(1.5px, calc(2.5 * var(--u)));
+  }
+
+  .project-facts__corner--tl {
+    top: 0;
+    left: 0;
+    border-top-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .project-facts__corner--tr {
+    top: 0;
+    right: 0;
+    border-top-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  .project-facts__corner--bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .project-facts__corner--br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+</style>

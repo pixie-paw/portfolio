@@ -1,0 +1,139 @@
+---
+/*
+  A project page, after the story: the finished website itself, in a frame people can use right
+  here. It isn't in Figma; it uses the page's own card style (corner brackets) and spans the same
+  width as the facts and tools cards (Figma x 64 to 1340).
+
+  Scrolling over a website in a frame would scroll the website instead of the page, so the script
+  puts a clear cover on top (project-live__screen--guarded): the page scrolls past as usual, and a
+  click on the website lifts the cover so you can use it. Moving the mouse away puts it back.
+  Without JavaScript there's no cover, and the website can be used straight away.
+
+  While the mouse is over the covered website, a pink "{ Click to try it }" tag follows it, like the
+  cursor flower. With Reduce motion it stays in the middle instead.
+*/
+import Tag from './Tag.astro';
+
+interface Props {
+  url: string;
+  // What the frame shows, for screen readers
+  title: string;
+}
+
+const { url, title } = Astro.props;
+---
+
+<section class="project-live" aria-label={title} data-section="project-live">
+  <div class="project-live__frame">
+    <div class="project-live__screen" data-layer="live-screen" data-intro>
+      <iframe class="project-live__site" src={url} title={title} loading="lazy" data-layer="live-site"></iframe>
+      <button class="project-live__cover" type="button" aria-label={`Use ${title} here`} data-layer="live-cover"></button>
+      <span class="project-live__hint" data-layer="live-hint" aria-hidden="true">
+        <Tag name="live-hint-tag" text="{ Click to try it }" x={0} y={0} w={128} flow />
+      </span>
+      <span class="project-live__corner project-live__corner--tl" data-layer="live-corner"></span>
+      <span class="project-live__corner project-live__corner--tr" data-layer="live-corner"></span>
+      <span class="project-live__corner project-live__corner--bl" data-layer="live-corner"></span>
+      <span class="project-live__corner project-live__corner--br" data-layer="live-corner"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it.
+  */
+  .project-live {
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-areas: '. frame .';
+  }
+
+  .project-live__frame {
+    grid-area: frame;
+    padding: calc(40 * var(--u)) calc(100 * var(--u)) calc(60 * var(--u)) calc(64 * var(--u));
+  }
+
+  /* 1276 wide, 16:9, with the website's own frame line in ink like the buttons */
+  .project-live__screen {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    padding: calc(14 * var(--u));
+    background: var(--c-light);
+  }
+
+  .project-live__site {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--c-ink);
+    background: oklch(100% 0 0);
+  }
+
+  /* Clear, over the website, until you click it */
+  .project-live__cover {
+    display: none;
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .project-live__screen--guarded .project-live__cover {
+    display: block;
+  }
+
+  /*
+    The hint: centred by default (Reduce motion); with motion the script moves it to the mouse.
+    Hidden until the mouse is over the covered website.
+  */
+  .project-live__hint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    visibility: hidden;
+    z-index: 2;
+  }
+
+  .project-live__corner {
+    position: absolute;
+    width: calc(12 * var(--u));
+    height: calc(14 * var(--u));
+    border: 0 solid var(--c-ink);
+    pointer-events: none;
+    --stroke: max(1.5px, calc(2.5 * var(--u)));
+  }
+
+  .project-live__corner--tl {
+    top: 0;
+    left: 0;
+    border-top-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .project-live__corner--tr {
+    top: 0;
+    right: 0;
+    border-top-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+
+  .project-live__corner--bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: var(--stroke);
+    border-left-width: var(--stroke);
+  }
+
+  .project-live__corner--br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: var(--stroke);
+    border-right-width: var(--stroke);
+  }
+</style>

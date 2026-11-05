@@ -39,6 +39,8 @@ interface Project {
   kind: string;
   tags: string[];
   image: ImageMetadata;
+  // Its project page, once it has one (the others stay on the work section for now)
+  page?: string;
   // The hover card from Figma: card size, image size, image left edge, and how the image is cropped
   card: { w: number; h: number; iw: number; ih: number; ix: number; position?: string };
 }
@@ -49,6 +51,7 @@ const PROJECTS: Project[] = [
     kind: 'Web app platform',
     tags: ['Visual Design', 'UX', 'Development'],
     image: memome,
+    page: 'projects/memome/',
     card: { w: 339, h: 219, iw: 323, ih: 176.72, ix: 8 },
   },
   {
@@ -109,9 +112,9 @@ const PROJECTS: Project[] = [
     <!-- The projects. Hovering a row shows its card, turns the name blue and underlines its kind. -->
     <ul class="work__list" role="list">
       {
-        PROJECTS.map(({ name, kind, tags, image, card }) => (
+        PROJECTS.map(({ name, kind, tags, image, page, card }) => (
           <li class="work__item" data-layer="work-item">
-            <a class="work__row" href={`${base}/#work`} data-layer="work-row">
+            <a class="work__row" href={page ? `${base}/${page}` : `${base}/#work`} data-layer="work-row">
               <!-- Two copies of the name: on hover the dark one rolls up and out, the blue one rolls in -->
               <span class="work__name" data-layer="work-name">
                 <span class="work__name-text" data-layer="work-name-text">{name}</span>

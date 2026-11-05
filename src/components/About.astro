@@ -331,7 +331,7 @@ const SKILLS = [
     width: calc(287 * var(--u));
     padding: calc(35 * var(--u)) calc(17 * var(--u)) calc(35 * var(--u)) calc(23 * var(--u));
     background: var(--c-light);
-    box-shadow: calc(-5 * var(--u)) calc(-2 * var(--u)) calc(6 * var(--u)) rgb(30 36 51 / 0.1);
+    box-shadow: calc(-5 * var(--u)) calc(-2 * var(--u)) calc(6 * var(--u)) oklch(26.16% 0.0296 267.48 / 0.1);
     rotate: -1.37deg;
     transform-origin: bottom center;
     font-family: var(--f-type);
@@ -376,6 +376,19 @@ const SKILLS = [
     text-decoration-skip-ink: none;
   }
 
+  /*
+    With motion the name is typed letter by letter, so each letter carries its own piece of the
+    underline. Otherwise the whole underline would show before the letters are typed.
+  */
+  :global(html[data-motion]) .about__skills-name {
+    text-decoration: none;
+  }
+
+  :global(html[data-motion]) .about__skills-name :global(.about__char) {
+    text-decoration: underline;
+    text-decoration-skip-ink: none;
+  }
+
   /* the first line sits 30px under its heading, as in Figma */
   .about__skills-heading + .about__skills-line {
     margin-top: calc(9.2 * var(--u));
@@ -399,6 +412,6 @@ const SKILLS = [
     display: block;
     width: 100%;
     height: auto;
-    filter: drop-shadow(calc(-5 * var(--u)) calc(5 * var(--u)) calc(5.5 * var(--u)) rgb(30 36 51 / 0.1));
+    filter: drop-shadow(calc(-5 * var(--u)) calc(5 * var(--u)) calc(5.5 * var(--u)) oklch(26.16% 0.0296 267.48 / 0.1));
   }
 </style>

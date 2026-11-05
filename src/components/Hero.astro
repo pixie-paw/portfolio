@@ -33,7 +33,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     <span class="layer hero__plate" data-layer="title-plate" data-intro style={layer(351, 285.5, 641, -2.67, 345, 175)}>
       <span class="hero__plate-paper" data-layer="title-plate-paper"></span>
     </span>
-    <h1 class="layer hero__title" data-layer="title" data-intro style={layer(361.3, 287.4, 600, -2.67, 350, 177)}>
+    <h1 class="layer hero__title" id="hero-title" data-layer="title" data-intro style={layer(361.3, 287.4, 600, -2.67, 350, 177)}>
       Hi, I’m Irina.
     </h1>
 
@@ -247,7 +247,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   .cutout--outline-a { --cx: 77.75; --cy: 147.75; --cw: 316.5; }
   .cutout--photo     {
     --cx: 90; --cy: 153; --cw: 292.04;
-    filter: drop-shadow(calc(-4.83 * var(--u)) calc(3.86 * var(--u)) calc(3.86 * var(--u)) rgb(30 36 51 / 0.1));
+    filter: drop-shadow(calc(-4.83 * var(--u)) calc(3.86 * var(--u)) calc(3.86 * var(--u)) oklch(26.16% 0.0296 267.48 / 0.1));
   }
 
   .hero__camera {
@@ -258,7 +258,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     display: block;
     width: 100%;
     height: auto;
-    filter: drop-shadow(calc(-6 * var(--u)) calc(6 * var(--u)) calc(4 * var(--u)) rgb(30 36 51 / 0.1));
+    filter: drop-shadow(calc(-6 * var(--u)) calc(6 * var(--u)) calc(4 * var(--u)) oklch(26.16% 0.0296 267.48 / 0.1));
   }
 
   .hero__visual :global(.tag) {

@@ -8,6 +8,7 @@
  * w     = width in Figma pixels.
  * name  = its data-layer name.
  * newTab = opens in a new tab (for links to other sites, like LinkedIn).
+ * tone  = 'green' (the default) or 'dark' (ink with light text, like Read the process).
  */
 import Arrow from '../assets/home/svg/arrow.svg';
 
@@ -19,14 +20,15 @@ interface Props {
   class?: string;
   intro?: boolean;
   newTab?: boolean;
+  tone?: 'green' | 'dark';
 }
 
-const { href, text, w, name, class: className, intro = false, newTab = false } = Astro.props;
+const { href, text, w, name, class: className, intro = false, newTab = false, tone = 'green' } = Astro.props;
 ---
 
 <!-- Two copies of the text and the arrow: on hover the dark one rolls up and out, the light one rolls in -->
 <a
-  class:list={['button', className]}
+  class:list={['button', tone === 'dark' && 'button--dark', className]}
   href={href}
   target={newTab ? '_blank' : undefined}
   rel={newTab ? 'noopener noreferrer' : undefined}
@@ -43,6 +45,8 @@ const { href, text, w, name, class: className, intro = false, newTab = false } =
     <Arrow class="button__arrow" data-layer="button-arrow" />
     <Arrow class="button__arrow button__arrow--hover" data-layer="button-arrow-hover" />
   </span>
+  <!-- Screen readers hear that the link opens a new tab -->
+  {newTab && <span class="visually-hidden">(opens in a new tab)</span>}
 </a>
 
 <style>
@@ -86,6 +90,12 @@ const { href, text, w, name, class: className, intro = false, newTab = false } =
     color: var(--c-light);
     /* shown by the script once it has moved them below the window */
     visibility: hidden;
+  }
+
+  /* Ink button with light text and arrow */
+  .button--dark {
+    background: var(--c-ink);
+    color: var(--c-light);
   }
 
   .button__arrow {

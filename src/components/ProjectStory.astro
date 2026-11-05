@@ -1,0 +1,269 @@
+---
+import { Image } from 'astro:assets';
+import Button from './Button.astro';
+
+/*
+  A project page, section 3: the story. The chapters (Briefing, Process, Result) are on the left,
+  the images run down the right. Figma pixels from the 1440px "2.0 Projects page_MemoMe" frame,
+  measured from the top of this section (Figma y 1300, where the facts end).
+
+  Without JavaScript, and with Reduce motion, it's laid out as in Figma: every text is open and
+  the left column scrolls with the page. With motion, animations.ts turns it into a reading guide:
+  the left column stays in place, only the chapter and part you're looking at are open, and the
+  line under each chapter title fills green as you scroll through its images.
+
+  Every project page uses this; each one passes its own chapters.
+*/
+export interface StoryPart {
+  // The part's own name (no name for a chapter's first part, which sits right under its title)
+  title?: string;
+  text: string;
+  buttons?: { text: string; href: string; w: number }[];
+  images: { src: ImageMetadata; alt: string }[];
+}
+
+export interface StoryChapter {
+  id: string;
+  title: string;
+  parts: StoryPart[];
+}
+
+interface Props {
+  chapters: StoryChapter[];
+}
+
+const { chapters } = Astro.props;
+---
+
+<section class="project-story" aria-label="The project" data-section="project-story">
+  <div class="project-story__frame">
+    <!-- The chapters -->
+    <div class="project-story__rail" data-layer="story-rail" data-intro>
+      {
+        chapters.map((chapter) => (
+          <section class="story-chapter" aria-labelledby={`${chapter.id}-title`} data-layer="story-chapter" data-chapter={chapter.id}>
+            <h2 class="story-chapter__title" id={`${chapter.id}-title`}>
+              <a class="story-chapter__link" href={`#${chapter.id}`} data-layer="story-chapter-link">
+                {chapter.title}
+              </a>
+            </h2>
+            <!-- The line under the title; its green fill shows how far you are through the chapter -->
+            <span class="story-chapter__line" aria-hidden="true">
+              <span class="story-chapter__fill" data-layer="story-progress" />
+            </span>
+
+            <div class="story-chapter__parts" data-layer="story-chapter-parts">
+              {chapter.parts.map((part, i) => (
+                <div class="story-part" data-layer="story-part" data-part={`${chapter.id}-${i}`}>
+                  {part.title && <h3 class="story-part__title">{part.title}</h3>}
+                  <div class="story-part__body" data-layer="story-part-body">
+                    <div class="story-part__text">
+                      {part.text.split('\n\n').map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                    </div>
+                    {part.buttons && (
+                      <div class="story-part__buttons">
+                        {part.buttons.map(({ text, href, w }) => (
+                          <Button href={href} text={text} w={w} name="story-button" newTab />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <!-- The images, in the chapters' order. The first image of each chapter is where its links jump to. -->
+    <div class="project-story__images">
+      {
+        chapters.map((chapter) =>
+          chapter.parts.map((part, i) =>
+            part.images.map((image, j) => (
+              <figure
+                class="project-story__figure"
+                id={i === 0 && j === 0 ? chapter.id : undefined}
+                data-layer="story-image"
+                data-intro
+                data-part={`${chapter.id}-${i}`}
+              >
+                <Image class="project-story__image" src={image.src} alt={image.alt} widths={[575, 1150]} sizes="calc(575 * min(100vw, 1440px) / 1440)" />
+              </figure>
+            )),
+          ),
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it.
+  */
+  .project-story {
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-areas: '. frame .';
+  }
+
+  /*
+    Figma: the chapters from x 52 (their lines are 668px wide), the images from x 765, 575px wide.
+    The images start 15px down (y 1315) and end 60px above the marquee.
+  */
+  .project-story__frame {
+    grid-area: frame;
+    display: grid;
+    grid-template-columns: calc(52 * var(--u)) calc(668 * var(--u)) calc(45 * var(--u)) calc(575 * var(--u)) 1fr;
+    grid-template-areas: '. rail . images .';
+    align-items: start;
+    padding: calc(15 * var(--u)) 0 calc(60 * var(--u));
+  }
+
+  /* ---------- The chapters ---------- */
+  /* Figma: the first title at y 1331, 16px below the first image */
+  .project-story__rail {
+    grid-area: rail;
+    padding-top: calc(16 * var(--u));
+  }
+
+  /* Figma: 139px from the end of one chapter to the next title */
+  .story-chapter + .story-chapter {
+    margin-top: calc(139 * var(--u));
+  }
+
+  /* Figma: Boldonse 50px at x 62 (its text box is 96px tall) */
+  .story-chapter__title {
+    margin: 0 0 0 calc(10 * var(--u));
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(50 * var(--u));
+    line-height: calc(96 / 50);
+    text-transform: uppercase;
+    color: var(--c-ink);
+  }
+
+  .story-chapter__link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Figma: the line is 86px below the title's top, 1.5px, --c-ink-soft */
+  .story-chapter__line {
+    position: relative;
+    display: block;
+    margin-top: calc(-10 * var(--u));
+    height: max(1px, calc(1.5 * var(--u)));
+    background: var(--c-ink-soft);
+  }
+
+  /* Empty until the script fills it */
+  .story-chapter__fill {
+    position: absolute;
+    inset: 0;
+    background: var(--c-green);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  /* Figma: the text starts 19 to 22px under the line */
+  .story-chapter__parts {
+    padding-top: calc(20 * var(--u));
+  }
+
+  .story-part {
+    padding-left: calc(14 * var(--u));
+  }
+
+  /* Figma: 57px from a part's text to the next part's name */
+  .story-part + .story-part {
+    margin-top: calc(57 * var(--u));
+  }
+
+  /* Figma: a chapter that opens with a named part (Process) has its name 43px under the line */
+  .story-part:first-child .story-part__title {
+    margin-top: calc(23 * var(--u));
+  }
+
+  /* Figma: Boldonse 20px (its text box is 38px tall), the text 6px under it */
+  .story-part__title {
+    margin: 0 0 calc(6 * var(--u));
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(20 * var(--u));
+    line-height: calc(38 / 20);
+    color: var(--c-ink);
+  }
+
+  /* Figma: Akzidenz 20px, 508px wide, an empty line between paragraphs */
+  .story-part__text {
+    width: calc(508 * var(--u));
+    font-family: var(--f-sans);
+    font-size: calc(20 * var(--u));
+    line-height: 1.2;
+    color: var(--c-ink);
+  }
+
+  .story-part__text p {
+    margin: 0;
+  }
+
+  .story-part__text p + p {
+    margin-top: 1.2em;
+  }
+
+  /* Figma: the buttons 34px under the text, 14px apart, rows 18px apart */
+  .story-part__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(18 * var(--u)) calc(14 * var(--u));
+    /* two buttons per row, as in Figma */
+    width: calc(400 * var(--u));
+    padding-top: calc(34 * var(--u));
+  }
+
+  /*
+    With motion (set by animations.ts): the chapters stay in place while the images scroll,
+    the gaps are tighter so every title fits on the screen, and the script opens and closes
+    the chapters and parts.
+  */
+  .project-story[data-story='live'] .project-story__rail {
+    position: sticky;
+    top: calc(16 * var(--u));
+  }
+
+  .project-story[data-story='live'] .story-chapter + .story-chapter {
+    margin-top: calc(40 * var(--u));
+  }
+
+  .project-story[data-story='live'] .story-part + .story-part {
+    margin-top: calc(16 * var(--u));
+  }
+
+  .project-story[data-story='live'] .story-chapter__parts,
+  .project-story[data-story='live'] .story-part__body {
+    overflow: hidden;
+  }
+
+  /* ---------- The images ---------- */
+  .project-story__images {
+    grid-area: images;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project-story__figure {
+    margin: 0;
+  }
+
+  .project-story__image {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

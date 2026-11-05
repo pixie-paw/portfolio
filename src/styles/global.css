@@ -8,17 +8,17 @@
   so desktop layouts keep the exact proportions of the design.
 */
 :root {
-  --c-paper: #faf6f6;
-  --c-ink: #333232;
-  --c-ink-soft: #727070;
-  --c-light: #f6f5f5;
-  --c-tag: #fcf4f6;
-  --c-pink: #ffd1d9;
-  --c-yellow: #f3ce29;
-  --c-green: #00bf72;
-  --c-blue: #006fdc;
-  --c-marker: #f3ce56; /* highlighter bars behind the About title, same yellow as the flower */
-  --c-grey: #d9d9d9; /* highlight behind the headings on the skills paper */
+  --c-paper: oklch(97.62% 0.0043 17.23); /* #faf6f6 */
+  --c-ink: oklch(31.82% 0.0014 17.23); /* #333232 */
+  --c-ink-soft: oklch(54.69% 0.0025 17.23); /* #727070 */
+  --c-light: oklch(97.09% 0.0011 17.18); /* #f6f5f5 */
+  --c-tag: oklch(97.39% 0.009 0.13); /* #fcf4f6 */
+  --c-pink: oklch(90.24% 0.0527 6.45); /* #ffd1d9 */
+  --c-yellow: oklch(85.83% 0.1677 95); /* #f3ce29 */
+  --c-green: oklch(70.76% 0.1711 156.17); /* #00bf72 */
+  --c-blue: oklch(55.34% 0.1868 255.7); /* #006fdc */
+  --c-marker: oklch(86.13% 0.1424 91.91); /* #f3ce56, highlighter bars behind the About title, same yellow as the flower */
+  --c-grey: oklch(88.53% 0 0); /* #d9d9d9, highlight behind the headings on the skills paper */
 
   /* Akzidenz-Grotesk Next and Bulletin Typewriter MN come from Irina's Adobe Fonts kit (uit2fga). */
   --f-display: 'Boldonse', 'Arial Black', sans-serif;
@@ -115,6 +115,43 @@ svg {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/*
+  Keyboard focus: one ring for the whole site, in the blue, with a gap around the element.
+  Only for the keyboard (:focus-visible), so mouse clicks don't show it. The skip link's
+  target is focused by the script only to move the Tab position, so it gets no ring.
+*/
+:focus-visible {
+  outline: 3px solid var(--c-blue);
+  outline-offset: 4px;
+}
+
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
+/*
+  Skip link: off screen until it gets keyboard focus, then it shows in the top-left corner,
+  above the texture.
+*/
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--c-ink);
+  color: var(--c-light);
+  font-family: var(--f-display);
+  font-size: 16px;
+  text-transform: uppercase;
+  text-decoration: none;
+  translate: 0 calc(-100% - 32px);
+}
+
+.skip-link:focus-visible {
+  translate: none;
 }
 
 .visually-hidden {

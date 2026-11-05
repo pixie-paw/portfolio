@@ -1,0 +1,162 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectHero from '../../components/ProjectHero.astro';
+import ProjectFacts from '../../components/ProjectFacts.astro';
+import ProjectStory, { type StoryChapter } from '../../components/ProjectStory.astro';
+import ProjectLive from '../../components/ProjectLive.astro';
+import Marquee from '../../components/Marquee.astro';
+import Footer from '../../components/Footer.astro';
+
+import mockup from '../../assets/projects/memome/mockup.webp';
+import figma from '../../assets/projects/tools/figma.webp';
+import photoshop from '../../assets/projects/tools/photoshop.webp';
+import afterEffects from '../../assets/projects/tools/after-effects.webp';
+import react from '../../assets/projects/tools/react.webp';
+import vercel from '../../assets/projects/tools/vercel.webp';
+import strapi from '../../assets/projects/tools/strapi.webp';
+import github from '../../assets/projects/tools/github.webp';
+
+import brand from '../../assets/projects/memome/story/brand.webp';
+import photos from '../../assets/projects/memome/story/photos.webp';
+import interview from '../../assets/projects/memome/story/interview.webp';
+import principles from '../../assets/projects/memome/story/principles.webp';
+import journey from '../../assets/projects/memome/story/journey.webp';
+import storyboard from '../../assets/projects/memome/story/storyboard.webp';
+import styleboard from '../../assets/projects/memome/story/styleboard.webp';
+import stickers from '../../assets/projects/memome/story/stickers.webp';
+import testTemplates from '../../assets/projects/memome/story/test-templates.webp';
+import figjamFlows from '../../assets/projects/memome/story/figjam-flows.webp';
+import figjamStructure from '../../assets/projects/memome/story/figjam-structure.webp';
+import mapDesktop from '../../assets/projects/memome/story/map-desktop.webp';
+import phones from '../../assets/projects/memome/story/phones.webp';
+import discoverDesktop from '../../assets/projects/memome/story/discover-desktop.webp';
+
+/*
+  The story: Irina's copy, word for word. Each part lists the images that go with it. Compared
+  with Figma, the storyboard moves up before the two FigJam boards, and the test templates move
+  down after the styleboard and the stickers, so the images follow the text.
+*/
+const CHAPTERS: StoryChapter[] = [
+  {
+    id: 'briefing',
+    title: 'Briefing',
+    parts: [
+      {
+        text: 'Visit Antwerp challenged us to encourage young travellers (18–36) to choose Antwerp for a multi-day trip through a digital-first experience and campaign.',
+        images: [{ src: brand, alt: 'Visit Antwerp’s identity: its colours, campaign visuals and logos' }],
+      },
+      {
+        title: 'MY ROLE',
+        text: 'I managed our four-person team and contributed to UX research, concept development, branding, interface design, campaign visuals and the case movie.',
+        images: [{ src: photos, alt: 'Photos of Antwerp with handwritten notes' }],
+      },
+    ],
+  },
+  {
+    id: 'process',
+    title: 'Process',
+    parts: [
+      {
+        title: 'Research & Concept',
+        text: 'We interviewed 21 young people and found that personal recommendations felt more trustworthy than viral tourist spots.\n\nThat insight led to MemoMe: a map where visitors discover places through shared memories and leave their own stories behind.',
+        images: [
+          { src: interview, alt: 'The interview plan: the questions, the places and the changes between versions' },
+          { src: principles, alt: 'The four design principles: trusted by people, personal discovery, guided spontaneity and intuitive exploration' },
+          { src: journey, alt: 'The user journey board in FigJam' },
+          { src: storyboard, alt: 'Storyboard sketches of a visitor using MemoMe around the city' },
+        ],
+      },
+      {
+        title: 'Visual & Interaction design',
+        text: 'We combined Visit Antwerp’s identity with scrapbook-inspired visuals. I designed the map, Discover pages and add/edit memory flow, and reviewed the screens for visual consistency.',
+        images: [
+          { src: styleboard, alt: 'The MemoMe styleboard: fonts, colours, social media and sticker references' },
+          { src: stickers, alt: 'Sticker inspiration boards' },
+        ],
+      },
+      {
+        title: 'Usability testing',
+        text: 'Two rounds of testing helped us improve navigation, labels and interaction feedback. By the second round, almost every task was completed without help.',
+        images: [{ src: testTemplates, alt: 'The usability test templates in FigJam' }],
+      },
+      {
+        title: 'Full process',
+        text: 'Want to see more? Explore our UX process in FigJam and the complete designs in Figma.',
+        buttons: [
+          { text: 'FigJam', href: 'https://www.figma.com/board/IEKmtM7v4p5qi0Z23wdyeG/Integration4-FigJam?node-id=0-1&t=5c4XiTT6WHilbYv3-1', w: 145 },
+          { text: 'Figma', href: 'https://www.figma.com/design/R0vJwB9pHiYsvjgBLpcwlu/Integration4_appDesign?node-id=1-2&t=wMC4WFpZqtYYqAfp-1', w: 137 },
+        ],
+        images: [
+          { src: figjamFlows, alt: 'The user flows board in FigJam' },
+          { src: figjamStructure, alt: 'The app structure board in FigJam' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'result',
+    title: 'Result',
+    parts: [
+      {
+        text: 'MemoMe became a working web app, supported by QR-code stickers, posters and social media content. The client responded positively to how we incorporated their identity.',
+        buttons: [
+          { text: 'Website', href: 'https://memomeantwerp.vercel.app/', w: 153 },
+          { text: 'UX microsite', href: 'https://www.behance.net/gallery/251114319/MemoMe-Visit-Antwerp', w: 213 },
+          { text: 'Instagram', href: 'https://www.instagram.com/memomeantwerp/?hl=en', w: 182 },
+          { text: 'GitHub', href: 'https://github.com/elitsakutsarova/integration4-team3', w: 141 },
+        ],
+        images: [
+          { src: mapDesktop, alt: 'The finished MemoMe map on a desktop screen' },
+          { src: phones, alt: 'MemoMe on two phones: the Discover page and the map' },
+          { src: discoverDesktop, alt: 'The Discover page and the map on a desktop screen' },
+        ],
+      },
+    ],
+  },
+];
+
+/*
+  The MemoMe project page, built section by section from the Figma frame
+  "2.0 Projects page_MemoMe". Irina's copy, word for word.
+*/
+---
+
+<Base skipTo="project-title"
+  title="MemoMe · Irina Moldovan"
+  description="MemoMe, a web app for discovering Antwerp through the memories and recommendations of locals and travellers."
+>
+  <main>
+    <ProjectHero
+      title="MemoMe"
+      tags={[
+        { text: 'Visual Design', w: 121.05 },
+        { text: 'UX', w: 60 },
+        { text: 'Development', w: 121.05 },
+      ]}
+      summary="A web app for discovering Antwerp through the memories and recommendations of locals and travellers."
+      resultUrl="https://memomeantwerp.vercel.app/"
+      mockup={mockup}
+      mockupAlt="MemoMe on a laptop and a phone: a map of Antwerp full of memory pins"
+    />
+    <ProjectFacts
+      facts={[
+        { label: 'Client', value: 'visit Antwerp' },
+        { label: 'Year', value: '2026' },
+        { label: 'Project', value: 'school group project' },
+      ]}
+      tools={[
+        { name: 'Figma', image: figma, w: 70 },
+        { name: 'Photoshop', image: photoshop, w: 71.79 },
+        { name: 'After Effects', image: afterEffects, w: 71.79 },
+        { name: 'React', image: react, w: 70 },
+        { name: 'Vercel', image: vercel, w: 70 },
+        { name: 'Strapi', image: strapi, w: 70 },
+        { name: 'GitHub', image: github, w: 70 },
+      ]}
+    />
+    <ProjectStory chapters={CHAPTERS} />
+    <ProjectLive url="https://memomeantwerp.vercel.app/" title="MemoMe, the live website" />
+    <Marquee />
+  </main>
+  <Footer />
+</Base>
