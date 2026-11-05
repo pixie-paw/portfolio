@@ -1,0 +1,121 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectHero from '../../components/ProjectHero.astro';
+import ProjectFacts from '../../components/ProjectFacts.astro';
+import ProjectStory, { type StoryChapter } from '../../components/ProjectStory.astro';
+import ProjectLive from '../../components/ProjectLive.astro';
+import Marquee from '../../components/Marquee.astro';
+import Footer from '../../components/Footer.astro';
+
+import mockup from '../../assets/projects/bloom-ferments/mockup.webp';
+import figma from '../../assets/projects/tools/figma.webp';
+import illustrator from '../../assets/projects/tools/illustrator.webp';
+import afterEffects from '../../assets/projects/tools/after-effects.webp';
+import audition from '../../assets/projects/tools/audition.webp';
+
+import campaigns from '../../assets/projects/bloom-ferments/story/campaigns.webp';
+import concept from '../../assets/projects/bloom-ferments/story/concept.webp';
+import boards from '../../assets/projects/bloom-ferments/story/boards.webp';
+import textures from '../../assets/projects/bloom-ferments/story/textures.webp';
+import illustratorBoards from '../../assets/projects/bloom-ferments/story/illustrator.webp';
+import timeline from '../../assets/projects/bloom-ferments/story/timeline.webp';
+import composition from '../../assets/projects/bloom-ferments/story/composition.webp';
+import finalComposition from '../../assets/projects/bloom-ferments/story/final-composition.webp';
+
+/*
+  The Bloom Ferments project page, from the Figma frame "2.0 Projects page_Bloom". It uses the
+  project template exactly as the MemoMe page does: only the content is its own. Irina's copy,
+  word for word. The result is a video, so the frame at the end plays it from YouTube.
+*/
+const VIDEO_ID = 'd18p5E8yD90';
+const VIDEO = `https://www.youtube.com/watch?v=${VIDEO_ID}`;
+
+// The story. Each part lists the images that go with it, in Figma's order.
+const CHAPTERS: StoryChapter[] = [
+  {
+    id: 'briefing',
+    title: 'Briefing',
+    parts: [
+      {
+        text: 'Create a 30–60 second promotional video for an existing Kickstarter campaign, making the product and its story more engaging through motion design.',
+        images: [{ src: campaigns, alt: 'Three Kickstarter campaigns compared, and the brand research for the chosen one' }],
+      },
+    ],
+  },
+  {
+    id: 'process',
+    title: 'Process',
+    parts: [
+      {
+        title: 'Research & Concept',
+        text: 'I chose Bloom Ferments, a small brand producing fermented foods and drinks. My concept was to zoom into the products and bring the invisible fermentation process to life through animation.',
+        images: [{ src: concept, alt: 'The concept presentation: the brand, its customer and its product' }],
+      },
+      {
+        title: 'Visual design',
+        text: 'I explored colourful, textured motion graphics and illustrated every scene in Adobe Illustrator, creating a playful visual style inspired by the product itself.',
+        images: [
+          { src: boards, alt: 'The style board and the motion board' },
+          { src: textures, alt: 'Illustrations of bottles, peppers, cabbage and a delivery truck, textured with brushes' },
+          { src: illustratorBoards, alt: 'The video’s scenes as artboards in Adobe Illustrator' },
+        ],
+      },
+      {
+        title: 'Animation & Sound',
+        text: 'I brought the illustrations to life through animation, focusing on pacing, transitions and storytelling. I also used Adobe Audition for the first time to work on the audio and spoken narration.',
+        images: [
+          { src: timeline, alt: 'The animation timeline in Adobe After Effects' },
+          { src: composition, alt: 'A Bloom Ferments scene being animated in Adobe After Effects' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'result',
+    title: 'Result',
+    parts: [
+      {
+        text: 'A short animated promotional video introducing Bloom Ferments, highlighting its products and inviting viewers to support its Kickstarter campaign.',
+        buttons: [{ text: 'Video', href: VIDEO, w: 127 }],
+        images: [{ src: finalComposition, alt: 'The last scene of the video in Adobe After Effects' }],
+      },
+    ],
+  },
+];
+---
+
+<Base
+  skipTo="project-title"
+  title="Bloom Ferments · Irina Moldovan"
+  description="A short animated Kickstarter promo introducing Bloom Ferments and the tiny organisms behind their fermented foods and drinks."
+>
+  <main>
+    <ProjectHero
+      title="Bloom Ferments"
+      tags={[
+        { text: 'Visual Design', w: 121.05 },
+        { text: 'Motion Design', w: 121.05 },
+      ]}
+      summary="A short animated Kickstarter promo introducing Bloom Ferments and the tiny organisms behind their fermented foods and drinks."
+      resultUrl={VIDEO}
+      mockup={mockup}
+      mockupAlt="The Bloom Ferments video on a laptop and a phone: an illustrated jar of pickles and peppers"
+    />
+    <ProjectFacts
+      facts={[
+        { label: 'Year', value: '2026' },
+        { label: 'Project', value: 'school project' },
+      ]}
+      tools={[
+        { name: 'Figma', image: figma, w: 70 },
+        { name: 'Illustrator', image: illustrator, w: 70 },
+        { name: 'After Effects', image: afterEffects, w: 71.79 },
+        { name: 'Audition', image: audition, w: 71.78 },
+      ]}
+    />
+    <ProjectStory chapters={CHAPTERS} />
+    <ProjectLive youtube={VIDEO_ID} title="Bloom Ferments, the promo video" hint="{ Click to play }" />
+    <Marquee />
+  </main>
+  <Footer />
+</Base>
