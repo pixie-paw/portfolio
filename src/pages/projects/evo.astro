@@ -1,0 +1,134 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectHero from '../../components/ProjectHero.astro';
+import ProjectFacts from '../../components/ProjectFacts.astro';
+import ProjectStory, { type StoryChapter } from '../../components/ProjectStory.astro';
+import ProjectLive from '../../components/ProjectLive.astro';
+import Marquee from '../../components/Marquee.astro';
+import Footer from '../../components/Footer.astro';
+
+import mockup from '../../assets/projects/evo/mockup.webp';
+import figma from '../../assets/projects/tools/figma.webp';
+import madmapper from '../../assets/projects/tools/madmapper.webp';
+
+import brief from '../../assets/projects/evo/story/brief.webp';
+import researchNotes from '../../assets/projects/evo/story/research-notes.webp';
+import researchQuestion from '../../assets/projects/evo/story/research-question.webp';
+import thinkingHats from '../../assets/projects/evo/story/thinking-hats.webp';
+import contentFlows from '../../assets/projects/evo/story/content-flows.webp';
+import finalConcept from '../../assets/projects/evo/story/final-concept.webp';
+import testPlan from '../../assets/projects/evo/story/test-plan.webp';
+import testingIterating from '../../assets/projects/evo/story/testing-iterating.webp';
+import figmaPrototype from '../../assets/projects/evo/story/figma-prototype.webp';
+
+/*
+  The EVO project page, from the Figma frame "2.0 Projects page_EVO". It uses the project
+  template exactly as the MemoMe page does: only the content is its own. Irina's copy, word for
+  word. The result is a Figma prototype, so the frame at the end shows Figma's embed of it.
+*/
+const PROTOTYPE =
+  'https://www.figma.com/proto/5VfE3gBPrjhUZm2DjHufWw/XD4?node-id=679-16150&viewport=-3909%2C-28%2C0.3&t=Ig1BTuIczAQP7rwe-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=679%3A16150&page-id=679%3A15437';
+// Figma's embed of the same prototype (https://www.figma.com/developers/embed): its own host, and embed-host names this site
+const PROTOTYPE_EMBED =
+  'https://embed.figma.com/proto/5VfE3gBPrjhUZm2DjHufWw/XD4?node-id=679-16150&scaling=scale-down&content-scaling=fixed&starting-point-node-id=679%3A16150&page-id=679%3A15437&embed-host=irinamoldovan-portfolio';
+
+// The story. Each part lists the images that go with it, in Figma's order.
+const CHAPTERS: StoryChapter[] = [
+  {
+    id: 'briefing',
+    title: 'Briefing',
+    parts: [
+      {
+        text: 'We were challenged to design a human-centred experience for people living aboard a generation spaceship, combining digital and physical elements.',
+        images: [{ src: brief, alt: 'The brief: the interstellar spaceship description, a summary and the topics to explore' }],
+      },
+      {
+        title: 'MY ROLE',
+        text: 'As a team of three, we worked together on UX research, concept development, prototyping and usability testing. I also took on the role of project manager, coordinating tasks and keeping the team on track.',
+        images: [{ src: researchNotes, alt: 'Research notes and quotes, sorted by theme, with the affected areas of life aboard' }],
+      },
+    ],
+  },
+  {
+    id: 'process',
+    title: 'Process',
+    parts: [
+      {
+        title: 'Research & Concept',
+        text: 'We explored how repetitive routines and the absence of natural seasons could affect people’s well-being in space.\n\nOur solution was EVO, a system that recreates seasonal rhythms and encourages social interaction through shared events.',
+        images: [
+          { src: researchQuestion, alt: 'The research question board: what we already know, what we want to know, and converging' },
+          { src: thinkingHats, alt: 'A Six Thinking Hats session on the concept' },
+        ],
+      },
+      {
+        title: 'Experience design',
+        text: 'EVO combines a digital calendar for discovering, planning and creating events with environmental changes using light, temperature and immersive projections.',
+        images: [
+          { src: contentFlows, alt: 'The content lists and flowcharts for the calendar' },
+          { src: finalConcept, alt: 'The final concept: a digital calendar layer and a physical layer of immersive experiences' },
+        ],
+      },
+      {
+        title: 'Prototyping & Testing',
+        text: 'We designed and iterated on an interactive calendar prototype, testing navigation, event discovery and creation. We also used projection mapping to simulate the physical experience and gather feedback.',
+        images: [{ src: testPlan, alt: 'The test plan: what we test, the target user and the intro for the test' }],
+      },
+      {
+        title: 'Full process',
+        text: 'Want to see more? Explore our UX process in FigJam and the prototype designs in Figma.',
+        buttons: [
+          { text: 'FigJam', href: 'https://www.figma.com/board/RnoTXHMkfcNJPzSSswrt9P/XD4---Team-3?node-id=0-1&t=I200pPpZBBTenETX-1', w: 145 },
+          { text: 'Figma', href: 'https://www.figma.com/design/5VfE3gBPrjhUZm2DjHufWw/XD4?node-id=679-15437&t=Ouo2Fb75Wt37VrEc-1', w: 137 },
+        ],
+        images: [{ src: testingIterating, alt: 'The testing and iterating board in FigJam, with three rounds of tests' }],
+      },
+    ],
+  },
+  {
+    id: 'result',
+    title: 'Result',
+    parts: [
+      {
+        text: 'A digital and physical prototype exploring how seasonal changes and shared experiences could make long-term life in space feel less repetitive and more connected.',
+        buttons: [
+          { text: 'Prototype', href: PROTOTYPE, w: 177 },
+          { text: 'UX microsite', href: 'https://www.behance.net/gallery/249076791/Interstellar-Starship-Experience-Design', w: 213 },
+        ],
+        images: [{ src: figmaPrototype, alt: 'The EVO calendar prototype in Figma' }],
+      },
+    ],
+  },
+];
+---
+
+<Base
+  skipTo="project-title"
+  title="EVO · Irina Moldovan"
+  description="A digital and physical experience designed to bring seasonal changes and shared moments to life aboard a generation spaceship."
+>
+  <main>
+    <ProjectHero
+      title="EVO"
+      tags={[{ text: 'UX', w: 60 }]}
+      summary="A digital and physical experience designed to bring seasonal changes and shared moments to life aboard a generation spaceship."
+      resultUrl={PROTOTYPE}
+      mockup={mockup}
+      mockupAlt="EVO on a laptop and a phone: the seasonal experience system’s intro and its event calendar"
+    />
+    <ProjectFacts
+      facts={[
+        { label: 'Year', value: '2026' },
+        { label: 'Project', value: 'school project' },
+      ]}
+      tools={[
+        { name: 'Figma', image: figma, w: 70 },
+        { name: 'MadMapper', image: madmapper, w: 82.29 },
+      ]}
+    />
+    <ProjectStory chapters={CHAPTERS} />
+    <ProjectLive url={PROTOTYPE_EMBED} title="EVO, the calendar prototype" />
+    <Marquee />
+  </main>
+  <Footer />
+</Base>
