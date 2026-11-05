@@ -2139,11 +2139,25 @@ const createProjectLiveCover = (reduceMotion: boolean): Cleanup | undefined => {
     else gsap.to($hint, { scale: 0, duration: 0.25, ease: 'power2.in', overwrite: 'auto' });
   };
 
+  // ---------- A YouTube video: started by the click, paused when it leaves the screen ----------
+  // Commands go to YouTube's player through postMessage (https://developers.google.com/youtube/iframe_api_reference)
+  const $frame = getLayer<HTMLIFrameElement>('live-site', $screen);
+  const isVideo = $screen.dataset.liveKind === 'youtube';
+  const tellVideo = (func: 'playVideo' | 'pauseVideo') =>
+    $frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), 'https://www.youtube-nocookie.com');
+  const outOfView = isVideo
+    ? new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) tellVideo('pauseVideo');
+      })
+    : null;
+  outOfView?.observe($screen);
+
   // ---------- The cover ----------
   const guard = () => $screen.classList.add('project-live__screen--guarded');
   const lift = () => {
     $screen.classList.remove('project-live__screen--guarded');
     hideHint();
+    if (isVideo) tellVideo('playVideo');
   };
   guard();
 
@@ -2156,7 +2170,8 @@ const createProjectLiveCover = (reduceMotion: boolean): Cleanup | undefined => {
   ];
   events.forEach(([$target, type, handler]) => $target.addEventListener(type, handler));
   return () => {
-    lift();
+    $screen.classList.remove('project-live__screen--guarded');
+    outOfView?.disconnect();
     events.forEach(([$target, type, handler]) => $target.removeEventListener(type, handler));
   };
 };

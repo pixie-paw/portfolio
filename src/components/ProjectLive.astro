@@ -11,25 +11,45 @@
 
   While the mouse is over the covered website, a pink "{ Click to try it }" tag follows it, like the
   cursor flower. With Reduce motion it stays in the middle instead.
+
+  A YouTube video works the same way (pass youtube instead of url): it never plays on its own.
+  A click lifts the cover and starts it, YouTube's own controls pause it, and it pauses by itself
+  when it scrolls out of view. It uses YouTube's privacy-enhanced (no-cookie) player.
 */
 import Tag from './Tag.astro';
 
 interface Props {
-  url: string;
+  // A website (or Figma embed) to show, or a YouTube video's id
+  url?: string;
+  youtube?: string;
   // What the frame shows, for screen readers
   title: string;
+  // The pink tag that follows the mouse over the cover
+  hint?: string;
 }
 
-const { url, title } = Astro.props;
+const { url, youtube, title, hint = '{ Click to try it }' } = Astro.props;
+
+// enablejsapi lets the script start and pause the video; rel=0 keeps suggestions to this channel
+// (https://developers.google.com/youtube/player_parameters)
+const src = youtube ? `https://www.youtube-nocookie.com/embed/${youtube}?enablejsapi=1&rel=0&playsinline=1` : url;
 ---
 
 <section class="project-live" aria-label={title} data-section="project-live">
   <div class="project-live__frame">
-    <div class="project-live__screen" data-layer="live-screen" data-intro>
-      <iframe class="project-live__site" src={url} title={title} loading="lazy" data-layer="live-site"></iframe>
+    <div class="project-live__screen" data-layer="live-screen" data-live-kind={youtube ? 'youtube' : 'site'} data-intro>
+      <iframe
+        class="project-live__site"
+        src={src}
+        title={title}
+        loading="lazy"
+        allow={youtube ? 'autoplay; encrypted-media; picture-in-picture; fullscreen' : undefined}
+        allowfullscreen={youtube ? true : undefined}
+        data-layer="live-site"
+      ></iframe>
       <button class="project-live__cover" type="button" aria-label={`Use ${title} here`} data-layer="live-cover"></button>
       <span class="project-live__hint" data-layer="live-hint" aria-hidden="true">
-        <Tag name="live-hint-tag" text="{ Click to try it }" x={0} y={0} w={128} flow />
+        <Tag name="live-hint-tag" text={hint} x={0} y={0} w={128} flow />
       </span>
       <span class="project-live__corner project-live__corner--tl" data-layer="live-corner"></span>
       <span class="project-live__corner project-live__corner--tr" data-layer="live-corner"></span>
