@@ -1,0 +1,155 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectHero from '../../components/ProjectHero.astro';
+import ProjectFacts from '../../components/ProjectFacts.astro';
+import ProjectStory, { type StoryChapter } from '../../components/ProjectStory.astro';
+import ProjectLive from '../../components/ProjectLive.astro';
+import Marquee from '../../components/Marquee.astro';
+import Footer from '../../components/Footer.astro';
+
+import mockup from '../../assets/projects/marina-yee/mockup.webp';
+import figma from '../../assets/projects/tools/figma.webp';
+import photoshop from '../../assets/projects/tools/photoshop.webp';
+import astro from '../../assets/projects/tools/astro.webp';
+import gsapLogo from '../../assets/projects/tools/gsap.webp';
+import github from '../../assets/projects/tools/github.webp';
+
+import secondaryResearch from '../../assets/projects/marina-yee/story/secondary-research.webp';
+import howMightWe from '../../assets/projects/marina-yee/story/how-might-we.webp';
+import fishbone from '../../assets/projects/marina-yee/story/fishbone.webp';
+import museumVisit from '../../assets/projects/marina-yee/story/museum-visit.webp';
+import storyStructure from '../../assets/projects/marina-yee/story/story-structure.webp';
+import styleboard from '../../assets/projects/marina-yee/story/styleboard.webp';
+import moodboard from '../../assets/projects/marina-yee/story/moodboard.webp';
+import interactions from '../../assets/projects/marina-yee/story/interactions.webp';
+import cutOuts from '../../assets/projects/marina-yee/story/cut-outs.webp';
+import figmaDesigns from '../../assets/projects/marina-yee/story/figma-designs.webp';
+import desktop from '../../assets/projects/marina-yee/story/desktop.webp';
+import phones from '../../assets/projects/marina-yee/story/phones.webp';
+
+/*
+  The Marina Yee project page, from the Figma frame "2.0 Projects page_MarinaYee". It uses the
+  project template exactly as the MemoMe page does: only the content is its own. Irina's copy,
+  word for word.
+*/
+const SITE = 'https://pixie-paw.github.io/int3_retake/';
+
+/*
+  The story. Each part lists the images that go with it. Compared with Figma, the designs in
+  Figma move after the cut-outs, so Full process shows the complete design it points to.
+*/
+const CHAPTERS: StoryChapter[] = [
+  {
+    id: 'briefing',
+    title: 'Briefing',
+    parts: [
+      {
+        text: 'MoMu challenged us to create a longread that would spark interest in its Antwerp Six exhibition. I focused on Marina Yee, the group’s lesser-known member.',
+        images: [{ src: secondaryResearch, alt: 'Early secondary research about Marina Yee: photos of her and notes from articles' }],
+      },
+      {
+        title: 'MY ROLE',
+        text: 'I worked independently on the research, storytelling, visual and interaction design, and frontend development.',
+        images: [{ src: howMightWe, alt: 'A “How might we” question tree for the longread' }],
+      },
+    ],
+  },
+  {
+    id: 'process',
+    title: 'Process',
+    parts: [
+      {
+        title: 'Research & Story',
+        text: 'After visiting MoMu and testing different story topics with four people, I chose to explore Marina’s life beyond fashion. I structured the story into five chapters, from her childhood to her work as an artist.',
+        images: [
+          { src: fishbone, alt: 'A fishbone diagram exploring the story topics' },
+          { src: museumVisit, alt: 'Notes and photos from the visit to MoMu' },
+          { src: storyStructure, alt: 'The story structure: the five chapters and the interview questions' },
+        ],
+      },
+      {
+        title: 'Visual design',
+        text: 'Inspired by Marina’s own collages and typography, I combined photography, textures and mixed fonts into a layered visual style, while keeping the interface clean and easy to navigate.',
+        images: [
+          { src: styleboard, alt: 'The updated styleboard: images, fonts and colours' },
+          { src: moodboard, alt: 'A moodboard of collages and mixed typography' },
+        ],
+      },
+      {
+        title: 'Interaction design',
+        text: 'I added chapter navigation, an interview and hover interactions that reveal garment details, encouraging visitors to explore the story at their own pace.',
+        images: [{ src: interactions, alt: 'Notes on the loading animation, scrolling and hover interactions' }],
+      },
+      {
+        title: 'Frontend development',
+        text: 'I built the responsive website in Astro, using CSS Grid Areas for the collage layouts and GSAP for animations and interactions.',
+        images: [{ src: cutOuts, alt: 'The original images used and the final cut-outs for the collages' }],
+      },
+      {
+        title: 'Full process',
+        text: 'Want to see more? Check out my full process and the complete design in Figma.',
+        buttons: [
+          { text: 'Figma', href: 'https://www.figma.com/design/nx9a0ILNfMNt1I8IImavBk/INT3_irinaMoldovan_DressToImpress?node-id=484-11159&t=8jCiGME8Fbmwrqu1-1', w: 137 },
+        ],
+        images: [{ src: figmaDesigns, alt: 'The longread’s page designs in Figma' }],
+      },
+    ],
+  },
+  {
+    id: 'result',
+    title: 'Result',
+    parts: [
+      {
+        text: 'A live, interactive longread connecting Marina’s personal story to MoMu’s exhibition, available on desktop and mobile.',
+        buttons: [
+          { text: 'Website', href: SITE, w: 153 },
+          { text: 'GitHub', href: 'https://github.com/pixie-paw/int3_retake', w: 141 },
+        ],
+        images: [
+          { src: desktop, alt: 'The finished longread on desktop: Marina among pink flowers, with her name in mixed letters' },
+          { src: phones, alt: 'The longread on two phones: the opening page and the menu' },
+        ],
+      },
+    ],
+  },
+];
+---
+
+<Base
+  skipTo="project-title"
+  title="Marina Yee · Irina Moldovan"
+  description="An interactive longread about Marina Yee for MoMu, the Fashion Museum in Antwerp."
+>
+  <main>
+    <ProjectHero
+      title="Marina Yee"
+      tags={[
+        { text: 'Visual Design', w: 121.05 },
+        { text: 'UX', w: 60 },
+        { text: 'Development', w: 121.05 },
+      ]}
+      summary="An interactive longread about Marina Yee for MoMu, the Fashion Museum in Antwerp."
+      resultUrl={SITE}
+      mockup={mockup}
+      mockupAlt="The Marina Yee longread on a laptop and a phone: Marina in black among pink flowers, with her name in mixed letters"
+    />
+    <ProjectFacts
+      facts={[
+        { label: 'Client', value: 'MOMU FASHION MUSEUM Antwerp' },
+        { label: 'Year', value: '2026' },
+        { label: 'Project', value: 'school project' },
+      ]}
+      tools={[
+        { name: 'Figma', image: figma, w: 70 },
+        { name: 'Photoshop', image: photoshop, w: 71.79 },
+        { name: 'Astro', image: astro, w: 55.61 },
+        { name: 'GSAP', image: gsapLogo, w: 189 },
+        { name: 'GitHub', image: github, w: 70 },
+      ]}
+    />
+    <ProjectStory chapters={CHAPTERS} />
+    <ProjectLive url={SITE} title="Marina Yee, the live longread" />
+    <Marquee />
+  </main>
+  <Footer />
+</Base>
