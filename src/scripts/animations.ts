@@ -121,6 +121,20 @@ const INTRO_PHONE_SWAY_DEG = 3;
 const HOW_STEM_AFTER_S = 0.3; // the stem starts growing this long after section 1's text is in
 const HOW_STEM_S = 3.2; // longer than section 1's stems, so it grows as slowly
 
+// Project pages, hero
+const PROJECT_BAND_AT_S = 0.2; // the band starts wiping in
+const PROJECT_BAND_S = 0.8;
+const PROJECT_MOCKUP_S = 1.4; // the laptop and phone slide in from the right edge
+const PROJECT_MOCKUP_DRIFT_PX = 90; // as you scroll past the hero, they lag this far behind the page
+
+// Project pages, story
+const STORY_OPEN_S = 0.9; // a chapter's or a part's text slides open (its words fade in as it opens)
+const STORY_CLOSE_S = 0.7; // and folds back up (its words fade out first)
+
+// Project pages, facts
+const FACTS_LINE_S = 1.6; // the double blue line draws in from left to right
+const FACTS_TYPE_S = 0.04; // each letter of a fact's value is typed this long after the one before
+
 // About me page, section 3
 const GOING_BRANCH_S = 1.2; // the short branch down to the blue flower
 const GOING_BUBBLE_GROW = 0.12; // the bubble gum grows this much bigger, and never smaller than in Figma
@@ -152,6 +166,39 @@ let markIntroTextShown: () => void = () => {};
 const introTextShown = new Promise<void>((resolve) => {
   markIntroTextShown = resolve;
 });
+
+/*
+  On a project page the sections come in in order: the hero, then the facts, then the story.
+  projectHeroShown resolves once the hero is in, projectFactsShown once the facts are in.
+*/
+let markProjectHeroShown: () => void = () => {};
+const projectHeroShown = new Promise<void>((resolve) => {
+  markProjectHeroShown = resolve;
+});
+let markProjectFactsShown: () => void = () => {};
+const projectFactsShown = new Promise<void>((resolve) => {
+  markProjectFactsShown = resolve;
+});
+
+/*
+  Scrolling while a project page is still coming in: everything still arrives in order, just
+  faster, like the home page's hero. Each load animation is registered here; once the page has
+  scrolled, the ones still playing (and the ones that start later) run INTRO_HURRY_SPEED times faster.
+*/
+const projectIntros: gsap.core.Animation[] = [];
+let isProjectHurried = false;
+const trackProjectIntro = <T extends gsap.core.Animation>(animation: T): T => {
+  if (isProjectHurried) animation.timeScale(INTRO_HURRY_SPEED);
+  else projectIntros.push(animation);
+  return animation;
+};
+const hurryProjectIntros = () => {
+  if (isProjectHurried) return;
+  isProjectHurried = true;
+  projectIntros
+    .filter((animation) => animation.progress() < 1)
+    .forEach((animation) => gsap.to(animation, { timeScale: INTRO_HURRY_SPEED, duration: 0.3, ease: 'power1.in' }));
+};
 
 // The same for section 2's card text: section 3's long stem waits for it
 let markHowTextShown: () => void = () => {};
@@ -195,6 +242,19 @@ const createLogo = (): Cleanup | undefined => {
     $logo,
     () => gsap.to($flower, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
     () => gsap.to($flower, { scale: 1, duration: 0.3, ease: 'power2.out' }),
+  );
+};
+
+/* ---------- Project pages: the back arrow grows a bit on hover, like the flower logo ---------- */
+const createBackArrow = (): Cleanup | undefined => {
+  const $back = getLayer('back');
+  const $arrow = $back && getLayer<SVGElement>('back-arrow', $back);
+  if (!$back || !$arrow) return;
+
+  return onHover(
+    $back,
+    () => gsap.to($arrow, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
+    () => gsap.to($arrow, { scale: 1, duration: 0.3, ease: 'power2.out' }),
   );
 };
 
@@ -629,10 +689,24 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($about))));
 };
 
+/*
+  A colour variable from global.css as rgb(), for GSAP to tween. The colours are written in
+  OKLCH, which GSAP can't blend, so the browser draws one pixel in that colour and we read it back.
+*/
+const colorVar = (name: string) => {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!ctx) return value;
+  ctx.fillStyle = value;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
 /* ---------- Work section: project rows (name roll, kind underline, arrow) ---------- */
 const createWorkRows = ($work: Element, preview?: WorkPreview): Cleanup[] => {
-  const blue = getComputedStyle(document.documentElement).getPropertyValue('--c-blue').trim();
-  const ink = getComputedStyle(document.documentElement).getPropertyValue('--c-ink').trim();
+  const blue = colorVar('--c-blue');
+  const ink = colorVar('--c-ink');
 
   return getAll('[data-layer="work-row"]', $work).map(($row, index) => {
     const $text = getLayer('work-name-text', $row);
@@ -949,6 +1023,15 @@ const createFilmStrip = (context: gsap.Context) => {
 
   // The strip starts just past the right edge of the screen (the section clips it sideways)
   gsap.set($strip, { xPercent: 100 });
+
+  // The frames are lazy, so they don't slow the first load. The strip slides in from off the
+  // screen, where the browser wouldn't load them yet, so they're asked for a screen before it arrives.
+  ScrollTrigger.create({
+    trigger: $film,
+    start: 'top bottom+=100%',
+    once: true,
+    onEnter: () => getAll<HTMLImageElement>('[data-layer="film-frame"]', $film).forEach(($frame) => ($frame.loading = 'eager')),
+  });
 
   // One round of the six frames, as a share of the whole track. Everything scales with the
   // page, so this share stays the same at any width, and the loop never shows a gap.
@@ -1681,6 +1764,416 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
   };
 };
 
+/*
+  ---------- Project pages: the hero ----------
+  On load the band wipes in from left to right while the laptop and phone slide in from the right
+  edge. Then the name's letters stand up one by one like "HI, I'M IRINA.", the tags grow in where
+  they are, the line about the project rises in line by line, and the buttons rise in. As you
+  scroll past, the mockup drifts up a little slower than the page, so it feels layered over the band.
+*/
+const createProjectHero = (context: gsap.Context) => {
+  const $hero = document.querySelector('[data-section="project-hero"]');
+  if (!$hero) return;
+
+  const $band = getLayer('project-band', $hero);
+  const $mockup = getLayer('project-mockup', $hero);
+  const $title = getLayer('project-title', $hero);
+  const $tagBodies = getAll('[data-layer="project-tag"] [data-layer="tag-body"]', $hero);
+  const $summary = getLayer('project-summary', $hero);
+  const $buttons = getAll('[data-layer="project-buttons"] [data-roll-button]', $hero);
+
+  // ---------- Start states, set before the page appears ----------
+  if ($band) gsap.set($band, { clipPath: 'inset(0% 100% 0% 0%)' });
+  // The mockup starts just past the right edge of the screen, wherever the page is
+  if ($mockup) gsap.set($mockup, { x: window.innerWidth - $mockup.getBoundingClientRect().left });
+  if ($title) gsap.set($title, { autoAlpha: 0 });
+  gsap.set($tagBodies, { scale: 0 });
+  if ($summary) gsap.set($summary, { autoAlpha: 0 });
+  gsap.set($buttons, { y: 16, autoAlpha: 0 });
+
+  // As soon as the page has scrolled 1px (also when it loads already scrolled), the load hurries
+  ScrollTrigger.create({ start: 1, once: true, onEnter: hurryProjectIntros });
+
+  // ---------- As you scroll past the hero, the mockup lags a little behind the page ----------
+  if ($mockup) {
+    gsap.to($mockup, {
+      y: PROJECT_MOCKUP_DRIFT_PX,
+      ease: 'none',
+      scrollTrigger: { trigger: $hero, start: 'top top', end: 'bottom top', scrub: true },
+    });
+  }
+
+  // ---------- The load sequence (the name and the lines need the fonts in first) ----------
+  waitForFonts().then(() =>
+    context.add(() => {
+      const chars = $title ? SplitText.create($title, { type: 'chars' }).chars : [];
+      const lines = $summary ? SplitText.create($summary, { type: 'lines' }).lines : [];
+      gsap.set(chars, { autoAlpha: 0 });
+      if ($title) gsap.set($title, { autoAlpha: 1 });
+      gsap.set(lines, { y: 12, autoAlpha: 0 });
+      if ($summary) gsap.set($summary, { autoAlpha: 1 });
+
+      const titleAt = PROJECT_BAND_AT_S + PROJECT_BAND_S * 0.75;
+      const titleDoneAt = titleAt + Math.max(chars.length - 1, 0) * TITLE_STAGGER_S + TITLE_STAND_S * 0.6;
+
+      trackProjectIntro(gsap.timeline())
+        // The band wipes in from left to right, like the text cards
+        .to($band ?? [], { clipPath: 'inset(0% 0% 0% 0%)', duration: PROJECT_BAND_S, ease: 'power3.inOut', clearProps: 'clipPath' }, PROJECT_BAND_AT_S)
+        // The laptop and phone slide in from the right edge and settle
+        .to($mockup ?? [], { x: 0, duration: PROJECT_MOCKUP_S, ease: 'expo.out' }, PROJECT_BAND_AT_S)
+        // The name's letters stand up from lying flat, one after the other
+        .fromTo(
+          chars,
+          { rotationX: -100, autoAlpha: 0, transformOrigin: '50% 100%', transformPerspective: 500 },
+          { rotationX: 0, autoAlpha: 1, duration: TITLE_STAND_S, ease: 'back.out(1.7)', stagger: TITLE_STAGGER_S },
+          titleAt,
+        )
+        // The tags grow in where they are
+        .to($tagBodies, { scale: 1, duration: 0.5, ease: 'back.out(2)', stagger: 0.1 }, titleDoneAt)
+        // The line about the project rises in, line by line
+        .to(lines, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, titleDoneAt + 0.2)
+        // Then the buttons, and the sections below may come in
+        .to($buttons, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.12 }, titleDoneAt + 0.45)
+        .call(() => markProjectHeroShown(), [], titleDoneAt + 0.45);
+    }),
+  );
+};
+
+/*
+  ---------- Project pages: the facts ----------
+  When it comes into view, the double blue line draws in from left to right. The facts card wipes
+  in and its corners clamp, then each label fades in and its value is typed, one fact after
+  another. The tools card follows a moment later, and its icons pop in from left to right.
+  Hovering an icon grows it a little, like the back arrow.
+*/
+const createProjectFacts = (context: gsap.Context): Cleanup | undefined => {
+  const $section = document.querySelector('[data-section="project-facts"]');
+  if (!$section) {
+    markProjectFactsShown();
+    return;
+  }
+
+  const $lines = getAll<SVGPathElement>('[data-layer="facts-line"]', $section);
+  const $factsCard = getLayer('facts-card', $section);
+  const $factsCorners = getAll('[data-layer="facts-corner"]', $section);
+  const $labels = getAll('[data-layer="facts-label"]', $section);
+  const $values = getAll('[data-layer="facts-value"]', $section);
+  const $toolsCard = getLayer('tools-card', $section);
+  const $toolsCorners = getAll('[data-layer="tools-corner"]', $section);
+  const $toolsLabel = getLayer('tools-label', $section);
+  const $icons = getAll('[data-layer="tools-icon"]', $section);
+
+  // ---------- Start states ----------
+  $lines.forEach(($line) => {
+    const length = $line.getTotalLength();
+    gsap.set($line, { strokeDasharray: length, strokeDashoffset: length });
+  });
+  const cardStart = { clipPath: 'inset(-5% 105% -5% -5%)' };
+  const cornerStart = { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 };
+  if ($factsCard) gsap.set($factsCard, cardStart);
+  if ($toolsCard) gsap.set($toolsCard, cardStart);
+  gsap.set([...$factsCorners, ...$toolsCorners], cornerStart);
+  gsap.set([...$labels, ...$values], { autoAlpha: 0 });
+  if ($toolsLabel) gsap.set($toolsLabel, { autoAlpha: 0 });
+  gsap.set($icons, { scale: 0 });
+
+  // ---------- The double line draws in from left to right ----------
+  if ($lines[0]) {
+    ScrollTrigger.create({
+      trigger: $lines[0],
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        projectHeroShown.then(() =>
+          context.add(() => {
+            trackProjectIntro(gsap.to($lines, { strokeDashoffset: 0, duration: FACTS_LINE_S, ease: 'power2.inOut', stagger: 0.1 }));
+          }),
+        ),
+    });
+  }
+
+  // ---------- The cards, the facts and the icons ----------
+  if (!$factsCard) markProjectFactsShown();
+  if ($factsCard) {
+    ScrollTrigger.create({
+      trigger: $factsCard,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        Promise.all([waitForFonts(), projectHeroShown]).then(() =>
+          context.add(() => {
+            const cards = gsap.timeline({ onComplete: () => markProjectFactsShown() });
+            trackProjectIntro(cards);
+            const cardIn = { clipPath: 'inset(-5% -5% -5% -5%)', duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' };
+            const cornersIn = { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 };
+
+            cards.to($factsCard, cardIn, 0).to($factsCorners, cornersIn, 0.7);
+            if ($toolsCard) cards.to($toolsCard, cardIn, 0.15).to($toolsCorners, cornersIn, 0.85);
+
+            // Each label fades in, then its value is typed letter by letter, one fact after another
+            let at = 0.8;
+            $labels.forEach(($label, i) => {
+              const $value = $values[i];
+              cards.to($label, { autoAlpha: 1, duration: 0.3, ease: 'power1.out' }, at);
+              if (!$value) return;
+              const chars = SplitText.create($value, { type: 'words,chars' }).chars;
+              gsap.set(chars, { autoAlpha: 0 });
+              gsap.set($value, { autoAlpha: 1 });
+              cards.to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: FACTS_TYPE_S }, at + 0.2);
+              at += 0.2 + chars.length * FACTS_TYPE_S + 0.1;
+            });
+
+            // The tools label, then the icons pop in from left to right
+            if ($toolsLabel) cards.to($toolsLabel, { autoAlpha: 1, duration: 0.3, ease: 'power1.out' }, 0.95);
+            cards.to($icons, { scale: 1, duration: 0.5, ease: 'back.out(2)', stagger: 0.08 }, 1.05);
+          }),
+        ),
+    });
+  }
+
+  // ---------- Hovering an icon grows it a little ----------
+  const cleanups = $icons.map(($icon) =>
+    onHover(
+      $icon,
+      () => gsap.to($icon, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out', overwrite: 'auto' }),
+      () => gsap.to($icon, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: 'auto' }),
+    ),
+  );
+  return () => cleanups.forEach((cleanup) => cleanup());
+};
+
+/*
+  ---------- Project pages: the story ----------
+  The left column stays in place while the images scroll past. All the chapter titles stay on
+  screen; only the chapter you're in is open, and in it only the part whose images you're looking
+  at. Folding is only visual (height and opacity): screen readers still read every part in order,
+  and tabbing to a button in a folded part scrolls to that part's images, so it opens. A part opens when its first image reaches the middle of the screen, and the one before
+  folds back up; scrolling back up plays it in reverse. The line under each chapter title fills
+  green as you scroll through that chapter's images.
+  Without this (no JavaScript, or Reduce motion), every text is open and the column scrolls.
+*/
+const createProjectStory = (context: gsap.Context): Cleanup | undefined => {
+  const $story = document.querySelector<HTMLElement>('[data-section="project-story"]');
+  if (!$story) return;
+
+  const imagesOf = (partPrefix: string) => getAll(`[data-layer="story-image"][data-part^="${partPrefix}"]`, $story);
+
+  const chapters = getAll('[data-layer="story-chapter"]', $story).map(($chapter) => ({
+    id: $chapter.dataset.chapter ?? '',
+    $parts: getLayer('story-chapter-parts', $chapter),
+    $fill: getLayer('story-progress', $chapter),
+    $partEls: getAll('[data-layer="story-part"]', $chapter),
+  }));
+  const parts = chapters.flatMap((chapter) =>
+    chapter.$partEls.map(($part) => ({
+      id: $part.dataset.part ?? '',
+      $part,
+      chapter,
+      $body: getLayer('story-part-body', $part),
+      $buttons: getAll('[data-roll-button]', $part),
+    })),
+  );
+  if (!parts.length) return;
+
+  // Tighter gaps and a column that stays in place (see ProjectStory.astro)
+  $story.dataset.story = 'live';
+
+  // ---------- In order: after the facts, the chapters and then each image rise in as they come into view ----------
+  const $rail = getLayer('story-rail', $story);
+  const $images = getAll('[data-layer="story-image"]', $story);
+  if ($rail) gsap.set($rail, { y: 24, autoAlpha: 0 });
+  gsap.set($images, { y: 40, autoAlpha: 0 });
+  const riseIn = ($el: HTMLElement) =>
+    ScrollTrigger.create({
+      trigger: $el,
+      start: 'top 90%',
+      once: true,
+      onEnter: () =>
+        projectFactsShown.then(() =>
+          context.add(() => trackProjectIntro(gsap.to($el, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' }))),
+        ),
+    });
+  if ($rail) riseIn($rail);
+  $images.forEach(riseIn);
+
+  // ---------- Open one part (and its chapter), fold the others ----------
+  let activeIndex = -1;
+  const fold = ($el: HTMLElement | null, open: boolean, instant: boolean) => {
+    if (!$el) return;
+    // opacity, not autoAlpha: a folded part stays readable for screen readers
+    if (instant) {
+      gsap.set($el, { height: open ? 'auto' : 0, opacity: open ? 1 : 0 });
+      return;
+    }
+    // Stop whatever it was doing (including a fade that hasn't started yet), so a part can
+    // turn around halfway when you change direction
+    gsap.killTweensOf($el);
+    if (open) {
+      gsap.to($el, { height: 'auto', duration: STORY_OPEN_S, ease: 'power2.inOut' });
+      gsap.to($el, { opacity: 1, duration: STORY_OPEN_S * 0.6, delay: STORY_OPEN_S * 0.3, ease: 'power1.out' });
+    } else {
+      gsap.to($el, { opacity: 0, duration: STORY_CLOSE_S * 0.4, ease: 'power1.out' });
+      gsap.to($el, { height: 0, duration: STORY_CLOSE_S, delay: STORY_CLOSE_S * 0.1, ease: 'power2.inOut' });
+    }
+  };
+  const show = (index: number, instant = false) => {
+    if (index === activeIndex) return;
+    activeIndex = index;
+    const active = parts[index];
+    context.add(() => {
+      chapters.forEach((chapter) => fold(chapter.$parts, chapter === active.chapter, instant));
+      parts.forEach((part, i) => fold(part.$body, i === index, instant));
+      // The part's buttons rise in one by one once its text is in, like the text itself
+      if (!instant && active.$buttons.length) {
+        gsap.killTweensOf(active.$buttons);
+        gsap.fromTo(
+          active.$buttons,
+          { y: 14, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6, delay: STORY_OPEN_S * 0.6, ease: 'power3.out', stagger: 0.08 },
+        );
+      }
+    });
+  };
+  show(0, true);
+
+  // A part opens when its first image reaches the middle of the screen (and the one before it
+  // opens again when you scroll back up past that point)
+  parts.forEach((part, i) => {
+    const $first = imagesOf(part.id)[0];
+    if (i === 0 || !$first) return;
+    ScrollTrigger.create({
+      trigger: $first,
+      start: 'top center',
+      onEnter: () => show(i),
+      onLeaveBack: () => show(i - 1),
+    });
+  });
+
+  // ---------- Keyboard: tabbing into a folded part scrolls to its images, so it opens ----------
+  const cleanups = parts.map((part, i) => {
+    const $first = imagesOf(part.id)[0];
+    const onFocus = () => {
+      if (i === activeIndex || !$first) return;
+      // Its first image just past the middle of the screen, where the part opens
+      const top = $first.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + 2;
+      if (smoothScroll) smoothScroll.scrollTo(top);
+      else window.scrollTo({ top });
+    };
+    part.$part.addEventListener('focusin', onFocus);
+    return () => part.$part.removeEventListener('focusin', onFocus);
+  });
+
+  // ---------- The line under each chapter title fills as you scroll through its images ----------
+  chapters.forEach(({ id, $fill }) => {
+    const $images = imagesOf(`${id}-`);
+    if (!$fill || !$images.length) return;
+    gsap.to($fill, {
+      scaleX: 1,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: $images[0],
+        start: 'top center',
+        endTrigger: $images[$images.length - 1],
+        end: 'bottom center',
+        scrub: true,
+      },
+    });
+  });
+
+  return () => {
+    cleanups.forEach((cleanup) => cleanup());
+    delete $story.dataset.story;
+  };
+};
+
+/*
+  ---------- Project pages: the live website ----------
+  A clear cover keeps the page scrolling past the website. A click lifts it so you can use the
+  website; moving the mouse away puts it back. While the mouse is over the cover, the pink
+  "Click to try it" tag pops in and follows it like the cursor flower (with Reduce motion it
+  simply shows in the middle). The cover works with Reduce motion too, as it isn't motion.
+*/
+const createProjectLiveCover = (reduceMotion: boolean): Cleanup | undefined => {
+  const $screen = getLayer('live-screen');
+  const $cover = $screen && getLayer<HTMLButtonElement>('live-cover', $screen);
+  const $hint = $screen && getLayer('live-hint', $screen);
+  if (!$screen || !$cover) return;
+
+  // ---------- The hint ----------
+  const follows = !reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // With motion it's placed by its own top-left corner at the mouse, so the script owns its position
+  if ($hint) gsap.set($hint, follows ? { left: 0, top: 0, x: 0, y: 0, xPercent: -50, yPercent: -100, scale: 0, autoAlpha: 1 } : {});
+  const moveX = $hint && follows ? gsap.quickTo($hint, 'x', { duration: CURSOR_FLOWER_LAG_S, ease: 'power3.out' }) : null;
+  const moveY = $hint && follows ? gsap.quickTo($hint, 'y', { duration: CURSOR_FLOWER_LAG_S, ease: 'power3.out' }) : null;
+  let isShown = false;
+
+  // Just above the pointer, so it never covers what you're pointing at
+  const at = (event: PointerEvent) => {
+    const box = $screen.getBoundingClientRect();
+    return { x: event.clientX - box.left, y: event.clientY - box.top - CURSOR_FLOWER_OFFSET_PX };
+  };
+  const showHint = (event: PointerEvent) => {
+    if (!$hint || isShown) return;
+    isShown = true;
+    if (!follows) {
+      gsap.set($hint, { visibility: 'visible' });
+      return;
+    }
+    const { x, y } = at(event);
+    gsap.set($hint, { x, y });
+    gsap.to($hint, { scale: 1, duration: 0.4, ease: 'back.out(2)', overwrite: 'auto' });
+  };
+  const moveHint = (event: PointerEvent) => {
+    if (!isShown || !moveX || !moveY) return;
+    const { x, y } = at(event);
+    moveX(x);
+    moveY(y);
+  };
+  const hideHint = () => {
+    if (!$hint || !isShown) return;
+    isShown = false;
+    if (!follows) gsap.set($hint, { visibility: 'hidden' });
+    else gsap.to($hint, { scale: 0, duration: 0.25, ease: 'power2.in', overwrite: 'auto' });
+  };
+
+  // ---------- The cover ----------
+  const guard = () => $screen.classList.add('project-live__screen--guarded');
+  const lift = () => {
+    $screen.classList.remove('project-live__screen--guarded');
+    hideHint();
+  };
+  guard();
+
+  const events: [EventTarget, string, EventListener][] = [
+    [$cover, 'click', lift],
+    [$cover, 'pointerenter', showHint as EventListener],
+    [$cover, 'pointermove', moveHint as EventListener],
+    [$cover, 'pointerleave', hideHint],
+    [$screen, 'mouseleave', guard],
+  ];
+  events.forEach(([$target, type, handler]) => $target.addEventListener(type, handler));
+  return () => {
+    lift();
+    events.forEach(([$target, type, handler]) => $target.removeEventListener(type, handler));
+  };
+};
+
+// With motion: the website rises in when it comes into view, once the facts are in
+const createProjectLive = (context: gsap.Context) => {
+  const $screen = getLayer('live-screen');
+  if (!$screen) return;
+  gsap.set($screen, { y: 40, autoAlpha: 0 });
+  ScrollTrigger.create({
+    trigger: $screen,
+    start: 'top 90%',
+    once: true,
+    onEnter: () =>
+      projectFactsShown.then(() =>
+        context.add(() => trackProjectIntro(gsap.to($screen, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' }))),
+      ),
+  });
+};
+
 /* ---------- Page load: the hero comes into register ---------- */
 const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $html = document.documentElement;
@@ -1942,7 +2435,20 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   });
 };
 
+/*
+  The skip link jumps to the page's main title and moves the keyboard focus there too, so the
+  next Tab goes on from the content, not from the header (smooth scrolling would skip that).
+*/
+const createSkipLink = () => {
+  const $link = document.querySelector<HTMLAnchorElement>('[data-skip-link]');
+  const $target = $link && document.getElementById($link.hash.slice(1));
+  if (!$link || !$target) return;
+  $target.setAttribute('tabindex', '-1');
+  $link.addEventListener('click', () => $target.focus({ preventScroll: true }));
+};
+
 export const initAnimations = () => {
+  createSkipLink();
   const mm = gsap.matchMedia();
 
   mm.add(
@@ -1959,6 +2465,7 @@ export const initAnimations = () => {
 
       createNavLinks(reduceMotion).forEach(addCleanup);
       getAll('[data-roll-button]').forEach(($button) => addCleanup(createRollButton($button, reduceMotion)));
+      addCleanup(createProjectLiveCover(reduceMotion));
 
       if (reduceMotion) {
         // No spinning, floating, smooth scrolling or page-load sequence: everything is simply there
@@ -1966,6 +2473,7 @@ export const initAnimations = () => {
         markAboutTitleTyped();
       } else {
         addCleanup(createLogo());
+        addCleanup(createBackArrow());
         addCleanup(createCursorFlower());
         addCleanup(createSmoothScroll());
         createScrollDrift();
@@ -1980,6 +2488,10 @@ export const initAnimations = () => {
         createAboutIntro(context, addCleanup);
         createAboutHowItStarted(context, addCleanup);
         createAboutHowItsGoing(context);
+        createProjectHero(context);
+        addCleanup(createProjectFacts(context));
+        addCleanup(createProjectStory(context));
+        createProjectLive(context);
         if (document.querySelector('[data-section="hero"]')) {
           waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
         } else {

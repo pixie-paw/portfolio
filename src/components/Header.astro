@@ -1,20 +1,30 @@
 ---
 import Logo from '../assets/home/svg/logo-flower.svg';
+import BackArrow from '../assets/projects/svg/back-arrow.svg';
 import NavUnderline from '../assets/home/svg/nav-underline.svg';
 import Button from './Button.astro';
 
 /**
  * active = the page you're on ('about' on the About me page). Its link shows the
  * hover look for good: dark text and the blue underline.
+ *
+ * On a project page: back = where the back arrow goes (it takes the flower's place), and
+ * links = the page's own links (Briefing, Process, Result), which scroll to its sections.
  */
 interface Props {
   active?: 'projects' | 'about';
+  back?: string;
+  links?: { label: string; href: string }[];
 }
 
-const { active } = Astro.props;
+const { active, back, links } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const linkClass = (name: 'projects' | 'about') => ['site-header__link', active === name && 'site-header__link--active'];
-const current = (name: 'projects' | 'about') => (active === name ? 'page' : undefined);
+
+const NAV = links ?? [
+  { label: 'Projects', href: `${base}/#work`, name: 'projects' as const },
+  { label: 'About me', href: `${base}/about/`, name: 'about' as const },
+];
+const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name === active;
 ---
 
 <!--
@@ -22,23 +32,39 @@ const current = (name: 'projects' | 'about') => (active === name ? 'page' : unde
   The active link gets site-header__link--active and aria-current. On the homepage
   none is active. On the About me page, About me is.
 -->
-<header class="site-header" data-layer="header">
-  <a class="site-header__logo" href={`${base}/`} aria-label="Irina Moldovan, home" data-layer="logo" data-intro>
-    <Logo class="site-header__flower" aria-hidden="true" data-layer="logo-flower" />
-  </a>
+<header class:list={['site-header', back && 'site-header--project']} data-layer="header">
+  {
+    back ? (
+      <a class="site-header__back" href={back} aria-label="Back to my work" data-layer="back" data-intro>
+        <BackArrow class="site-header__back-arrow" aria-hidden="true" data-layer="back-arrow" />
+      </a>
+    ) : (
+      <a class="site-header__logo" href={`${base}/`} aria-label="Irina Moldovan, home" data-layer="logo" data-intro>
+        <Logo class="site-header__flower" aria-hidden="true" data-layer="logo-flower" />
+      </a>
+    )
+  }
 
-  <nav class="site-header__nav" aria-label="Main">
-    <a class:list={linkClass('projects')} href={`${base}/#work`} aria-current={current('projects')} data-layer="nav-projects" data-nav-link data-intro>
-      <span class="site-header__label" data-layer="nav-label">Projects</span>
-      <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
-    </a>
-    <a class:list={linkClass('about')} href={`${base}/about/`} aria-current={current('about')} data-layer="nav-about" data-nav-link data-intro>
-      <span class="site-header__label" data-layer="nav-label">About me</span>
-      <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
-    </a>
+  <nav class="site-header__nav" aria-label={back ? 'This project' : 'Main'}>
+    {
+      NAV.map((link) => (
+        <a
+          class:list={['site-header__link', isActive(link) && 'site-header__link--active']}
+          href={link.href}
+          aria-current={isActive(link) ? 'page' : undefined}
+          data-layer={`nav-${'name' in link ? link.name : link.label.toLowerCase()}`}
+          data-nav-link
+          data-intro
+        >
+          <span class="site-header__label" data-layer="nav-label">{link.label}</span>
+          <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
+        </a>
+      ))
+    }
   </nav>
 
-  <Button href={`${base}/#contact`} text="Get in touch" w={216} name="cta" intro class="site-header__cta" />
+  <!-- Opens a new email to Irina, from every page -->
+  <Button href="mailto:irinammoldovan@gmail.com" text="Get in touch" w={216} name="cta" intro class="site-header__cta" />
 </header>
 
 <style>
@@ -68,6 +94,21 @@ const current = (name: 'projects' | 'about') => (active === name ? 'page' : unde
     display: block;
   }
 
+  /* Project pages: the back arrow sits where the flower is, at x 50, y 56 in Figma */
+  .site-header__back {
+    grid-area: logo;
+    display: block;
+    width: calc(83.5 * var(--u));
+    margin-left: calc(5 * var(--u));
+    margin-top: calc(41 * var(--u));
+  }
+
+  .site-header__back-arrow {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
   .site-header__flower {
     display: block;
     width: 100%;
@@ -81,6 +122,12 @@ const current = (name: 'projects' | 'about') => (active === name ? 'page' : unde
     display: flex;
     gap: calc(53 * var(--u));
     margin-top: calc(47 * var(--u));
+  }
+
+  /* Project pages: Briefing, Process and Result are 56px apart and end 61px before the button */
+  .site-header--project .site-header__nav {
+    gap: calc(56 * var(--u));
+    margin-right: calc(11 * var(--u));
   }
 
   .site-header__link {

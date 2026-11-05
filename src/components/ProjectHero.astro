@@ -1,0 +1,169 @@
+---
+import { Image } from 'astro:assets';
+import Header from './Header.astro';
+import Tag from './Tag.astro';
+import Button from './Button.astro';
+
+/*
+  The top of a project page: the header with the back arrow and the page's own links, the dark
+  band with the project's name, its tags, one line about it, two buttons and the mockup.
+  Figma pixels from the 1440px "2.0 Projects page_MemoMe" frame, measured from its top-left.
+  Every project page uses this; each one passes its own content.
+*/
+interface Props {
+  title: string;
+  // Each tag's text, and its paper width at the home page's tag size (it's drawn 1.17 times bigger here)
+  tags: { text: string; w: number }[];
+  summary: string;
+  resultUrl: string;
+  mockup: ImageMetadata;
+  mockupAlt: string;
+}
+
+const { title, tags, summary, resultUrl, mockup, mockupAlt } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const LINKS = [
+  { label: 'Briefing', href: '#briefing' },
+  { label: 'Process', href: '#process' },
+  { label: 'Result', href: '#result' },
+];
+---
+
+<section class="project-hero" aria-labelledby="project-title" data-section="project-hero">
+  <!-- The dark band runs edge to edge, like in Figma where it runs off the frame -->
+  <div class="project-hero__band" data-layer="project-band" data-intro aria-hidden="true"></div>
+
+  <div class="project-hero__frame">
+    <div class="project-hero__header">
+      <Header back={`${base}/#work`} links={LINKS} />
+    </div>
+
+    <Image
+      class="project-hero__mockup"
+      data-layer="project-mockup"
+      data-intro
+      src={mockup}
+      alt={mockupAlt}
+      widths={[908, 1816]}
+      sizes="calc(908 * min(100vw, 1440px) / 1440)"
+      loading="eager"
+      fetchpriority="high"
+    />
+
+    <h1 class="project-hero__title" id="project-title" data-layer="project-title" data-intro>{title}</h1>
+
+    <div class="project-hero__tags" data-layer="project-tags" data-intro>
+      {tags.map(({ text, w }) => <Tag name="project-tag" text={`{ ${text} }`} x={0} y={0} w={w} h={32} flow />)}
+    </div>
+
+    <p class="project-hero__summary" data-layer="project-summary" data-intro>{summary}</p>
+
+    <div class="project-hero__buttons" data-layer="project-buttons" data-intro>
+      <Button href={resultUrl} text="See the result" w={209} name="project-see-result" newTab />
+      <Button href="#process" text="Read the process" w={250} name="project-read-process" tone="dark" />
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Desktop: the 1440 Figma frame sits in the middle column. The outer 1fr columns
+    are 0 up to 1440px and centre the frame above it. Only the band runs edge to edge.
+  */
+  .project-hero {
+    display: grid;
+    grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
+    grid-template-rows: [content-start] calc(790 * var(--u)) [content-end];
+    /* the mockup slides in from past the right edge: clip it sideways only */
+    overflow-x: clip;
+  }
+
+  .project-hero__frame {
+    grid-column: frame;
+    grid-row: content;
+    position: relative;
+  }
+
+  .project-hero__header {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Figma: y 322, 141px tall */
+  .project-hero__band {
+    grid-column: full;
+    grid-row: content;
+    align-self: start;
+    margin-top: calc(322 * var(--u));
+    height: calc(141 * var(--u));
+    background: var(--c-ink);
+  }
+
+  /*
+    Figma: x 631, y 223, 908px wide. The laptop runs past the right side of the 1440 frame, so
+    it reaches the right edge of the screen at any width. Above the band.
+  */
+  .project-hero__mockup {
+    position: absolute;
+    left: calc(631 * var(--u));
+    top: calc(223 * var(--u));
+    width: calc(908 * var(--u));
+    height: auto;
+    z-index: 2;
+  }
+
+  /* Figma: x 63, y 353, Boldonse 50px (its text box is 96px tall) */
+  .project-hero__title {
+    position: absolute;
+    left: calc(63 * var(--u));
+    top: calc(353 * var(--u));
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: calc(50 * var(--u));
+    line-height: calc(96 / 50);
+    white-space: nowrap;
+    text-transform: uppercase;
+    color: var(--c-light);
+    z-index: 1;
+  }
+
+  /* Figma: from x 66.44, y 469, 14.04px apart */
+  .project-hero__tags {
+    position: absolute;
+    left: calc(66.44 * var(--u));
+    top: calc(469 * var(--u));
+    display: flex;
+    gap: calc(14.04 * var(--u));
+  }
+
+  /* The tags are the home page's tags drawn 1.17 times bigger (37.45px tall instead of 32) */
+  .project-hero__tags :global(.tag) {
+    --k: calc(1.1703 * var(--u));
+  }
+
+  /* Figma: x 66, y 526, 508px wide, Akzidenz 20px */
+  .project-hero__summary {
+    position: absolute;
+    left: calc(66 * var(--u));
+    top: calc(526 * var(--u));
+    width: calc(508 * var(--u));
+    margin: 0;
+    font-family: var(--f-sans);
+    font-size: calc(20 * var(--u));
+    line-height: 1.2;
+    color: var(--c-ink);
+  }
+
+  /* Figma: x 66, y 614 and y 679 */
+  .project-hero__buttons {
+    position: absolute;
+    left: calc(66 * var(--u));
+    top: calc(614 * var(--u));
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(13 * var(--u));
+  }
+</style>

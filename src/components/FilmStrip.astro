@@ -58,7 +58,8 @@ const holesTile = `url("data:image/svg+xml,${encodeURIComponent(
                 alt=""
                 widths={[Math.round(w), image.width]}
                 sizes="(min-width: 1440px) 228px, 16vw"
-                loading={round === 0 ? 'eager' : 'lazy'}
+                loading="lazy"
+                data-layer="film-frame"
                 style={`--fw:${w}`}
               />
             ))}

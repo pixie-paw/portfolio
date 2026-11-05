@@ -48,3 +48,20 @@ export const lengthUpTo = (points: [number, number][], untilX: number) =>
   points
     .filter(([x]) => x <= untilX)
     .reduce((length, [x, y], i, kept) => (i === 0 ? 0 : length + Math.hypot(x - kept[i - 1][0], y - kept[i - 1][1])), 0);
+
+/*
+  The double blue line (the marquee's, and on project pages under the hero), measured from the
+  home page's Figma render (its marquee section starts at y 2878): the centre of the upper 7px line every
+  40px. The lower line is the same curve, 4px to the right and 14px lower (as in Figma).
+  Both ends run on past the frame, so the lines go edge to edge on wide screens too.
+*/
+export const DOUBLE_LINE_POINTS: [number, number][] = [
+  [-800, 3520], [-400, 3480], [-90, 3378], [0, 3288], [40, 3257.5], [80, 3234], [120, 3215],
+  [160, 3202], [200, 3195.5], [240, 3194.5], [280, 3196.5], [320, 3200], [360, 3204.5],
+  [400, 3208.5], [440, 3212.5], [480, 3216.5], [520, 3218.5], [560, 3218.5], [600, 3215],
+  [640, 3207.5], [680, 3198.5], [720, 3188.5], [760, 3178.5], [800, 3169], [840, 3161],
+  [880, 3155], [920, 3155.5], [960, 3159.5], [1000, 3166], [1040, 3173.5], [1080, 3181],
+  [1120, 3188], [1160, 3193.5], [1200, 3196.5], [1240, 3194.5], [1280, 3187.5], [1320, 3177.5],
+  [1360, 3166], [1400, 3153.5], [1534, 3118], [1800, 3060], [2240, 3040],
+];
+export const DOUBLE_LINE_LOWER = { x: 4, y: 14 };
