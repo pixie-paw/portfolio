@@ -132,7 +132,6 @@ const STORY_OPEN_S = 0.9; // a chapter's or a part's text slides open (its words
 const STORY_CLOSE_S = 0.7; // and folds back up (its words fade out first)
 
 // Project pages, facts
-const FACTS_LINE_S = 1.6; // the double blue line draws in from left to right
 const FACTS_TYPE_S = 0.04; // each letter of a fact's value is typed this long after the one before
 
 // About me page, section 3
@@ -1084,6 +1083,13 @@ const createFilmStrip = (context: gsap.Context) => {
   });
 };
 
+/*
+  The double blue line draws itself in from left to right. The marquee and the project pages'
+  facts both use this, so their lines always move the same way.
+*/
+const drawDoubleLine = ($lines: SVGPathElement[]) =>
+  gsap.to($lines, { strokeDashoffset: 0, duration: MARQUEE_LINE_DRAW_S, ease: 'power2.inOut', stagger: 0.1 });
+
 /* ---------- "Let's work together": words rise, stars pop, the lines draw, then it flows ---------- */
 const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $marquee = document.querySelector('[data-section="marquee"]');
@@ -1164,7 +1170,7 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
             .to($pinks, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.12 }, 0.3)
             .to($outlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.6, ease: 'expo.out', stagger: 0.12 }, 0.4)
             // The double line draws itself in from left to right
-            .to($lines, { strokeDashoffset: 0, duration: MARQUEE_LINE_DRAW_S, ease: 'power2.inOut', stagger: 0.1 }, 0);
+            .add(drawDoubleLine($lines), 0);
         }),
       ),
   });
@@ -1877,18 +1883,15 @@ const createProjectFacts = (context: gsap.Context): Cleanup | undefined => {
   if ($toolsLabel) gsap.set($toolsLabel, { autoAlpha: 0 });
   gsap.set($icons, { scale: 0 });
 
-  // ---------- The double line draws in from left to right ----------
-  if ($lines[0]) {
+  // ---------- The double line draws in exactly like the marquee's ----------
+  // Same trigger point as the marquee, and never hurried by an early scroll, so it always
+  // moves at the marquee's pace. It still waits for the hero, so the page comes in in order.
+  if ($lines.length) {
     ScrollTrigger.create({
-      trigger: $lines[0],
-      start: 'top 85%',
+      trigger: $section,
+      start: 'top 80%',
       once: true,
-      onEnter: () =>
-        projectHeroShown.then(() =>
-          context.add(() => {
-            trackProjectIntro(gsap.to($lines, { strokeDashoffset: 0, duration: FACTS_LINE_S, ease: 'power2.inOut', stagger: 0.1 }));
-          }),
-        ),
+      onEnter: () => projectHeroShown.then(() => context.add(() => drawDoubleLine($lines))),
     });
   }
 

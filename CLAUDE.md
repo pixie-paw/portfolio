@@ -51,6 +51,7 @@ For PR descriptions, commit messages, docs and code comments:
 - **Layout:** each section is a CSS grid with named areas (`grid-template-areas`). Overlapping collage layers sit in the same grid area and are positioned inside it.
 - **Placement by area, never by number:** place every element by its named area (`grid-area: title`). When an element has to overlap another area, use that area's lines (`grid-row: title-start / tag-end`). Never use column or row numbers like `grid-column: 2 / 3`, because they break as soon as a column or row is added.
 - **Layers:** every visual element (tags, stars, outlines, photo, camera) is its own element with a `data-layer` name, so it can be animated on its own.
+- **Project pages share one template:** `ProjectHero`, `ProjectFacts`, `ProjectStory` and `ProjectLive`, built from the MemoMe frame (`412:1070`). Every project page uses the same sizes, spacing and motion. Only the content changes: the text, tools, chapter and part names, images and links. Spacing differences between the project frames in Figma aren't intended (no auto layout there), so don't copy them.
 
 ## Background: grid paper and texture
 
