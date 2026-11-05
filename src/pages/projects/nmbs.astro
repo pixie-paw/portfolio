@@ -1,0 +1,109 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectHero from '../../components/ProjectHero.astro';
+import ProjectFacts from '../../components/ProjectFacts.astro';
+import ProjectStory, { type StoryChapter } from '../../components/ProjectStory.astro';
+import ProjectLive from '../../components/ProjectLive.astro';
+import Marquee from '../../components/Marquee.astro';
+import Footer from '../../components/Footer.astro';
+
+import mockup from '../../assets/projects/nmbs/mockup.webp';
+import photoshop from '../../assets/projects/tools/photoshop.webp';
+import afterEffects from '../../assets/projects/tools/after-effects.webp';
+import illustrator from '../../assets/projects/tools/illustrator.webp';
+
+import collagePieces from '../../assets/projects/nmbs/story/collage-pieces.webp';
+import collagePortrait from '../../assets/projects/nmbs/story/collage-portrait.webp';
+import collageDiamonds from '../../assets/projects/nmbs/story/collage-diamonds.webp';
+import collageBruges from '../../assets/projects/nmbs/story/collage-bruges.webp';
+import afterEffectsTimeline from '../../assets/projects/nmbs/story/after-effects.webp';
+
+/*
+  The NMBS project page, from the Figma frame "2.0 Projects page_NMBS". It uses the project
+  template exactly as the MemoMe page does: only the content is its own. Irina's copy, word for
+  word. The result is a vertical video (a YouTube Short), so the frame at the end is tall.
+*/
+const VIDEO_ID = 'gFPRHiIGhAQ';
+const VIDEO = `https://www.youtube.com/shorts/${VIDEO_ID}`;
+
+// The story. Each part lists the images that go with it, in Figma's order.
+const CHAPTERS: StoryChapter[] = [
+  {
+    id: 'briefing',
+    title: 'Briefing',
+    parts: [
+      {
+        text: 'Create a short, silent motion graphic celebrating NMBS’s 100th anniversary, inspired by the theme “The journey continues.”',
+        images: [{ src: collagePieces, alt: 'The folder of collage pieces made for the animation: trains, buildings, people and objects' }],
+      },
+    ],
+  },
+  {
+    id: 'process',
+    title: 'Process',
+    parts: [
+      {
+        title: 'Concept',
+        text: 'Inspired by Belgium’s railway history, I wanted to show how the work of earlier generations made today’s connections across Europe possible.',
+        images: [{ src: collagePortrait, alt: 'A collage portrait being made in Photoshop' }],
+      },
+      {
+        title: 'Visual design',
+        text: 'I chose a collage style and contacted NMBS for archival imagery. However, the old train photographs were too low-quality to use, so I adapted my concept to feature modern trains instead.',
+        images: [{ src: collageDiamonds, alt: 'Diamond pieces for the collage, cut out in Photoshop' }],
+      },
+      {
+        title: 'Animation',
+        text: 'I created the visual assets in Photoshop and brought them to life in After Effects, which I was using for the first time. I focused on transitions and rhythm to tell the story without sound.',
+        images: [{ src: collageBruges, alt: 'The houses of Bruges, cut out and turned black and white in Photoshop' }],
+      },
+    ],
+  },
+  {
+    id: 'result',
+    title: 'Result',
+    parts: [
+      {
+        text: 'A 30-second vertical animation that was selected by my teachers as one of 12 student works to be submitted to NMBS for its anniversary art competition.',
+        buttons: [{ text: 'Video', href: VIDEO, w: 127 }],
+        images: [{ src: afterEffectsTimeline, alt: 'The vertical animation in After Effects, with Antwerp’s central station and a train' }],
+      },
+    ],
+  },
+];
+---
+
+<Base
+  skipTo="project-title"
+  title="NMBS · Irina Moldovan"
+  description="A 30-second collage animation celebrating 100 years of NMBS and the journeys that connect people across Belgium and Europe."
+>
+  <main>
+    <ProjectHero
+      title="NMBS"
+      tags={[
+        { text: 'Visual Design', w: 121.05 },
+        { text: 'Motion Design', w: 121.05 },
+      ]}
+      summary="A 30-second collage animation celebrating 100 years of NMBS and the journeys that connect people across Belgium and Europe."
+      resultUrl={VIDEO}
+      mockup={mockup}
+      mockupAlt="The NMBS animation on a laptop and a phone: a collage poster in a bus shelter, and “100 years of connection”"
+    />
+    <ProjectFacts
+      facts={[
+        { label: 'Year', value: '2026' },
+        { label: 'Project', value: 'school project' },
+      ]}
+      tools={[
+        { name: 'Photoshop', image: photoshop, w: 71.79 },
+        { name: 'After Effects', image: afterEffects, w: 71.79 },
+        { name: 'Illustrator', image: illustrator, w: 70 },
+      ]}
+    />
+    <ProjectStory chapters={CHAPTERS} />
+    <ProjectLive youtube={VIDEO_ID} vertical title="NMBS, the anniversary animation" hint="{ Click to play }" />
+    <Marquee />
+  </main>
+  <Footer />
+</Base>

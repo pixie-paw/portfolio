@@ -26,9 +26,11 @@ interface Props {
   title: string;
   // The pink tag that follows the mouse over the cover
   hint?: string;
+  // A tall 9:16 frame in the middle, for a vertical video (a YouTube Short)
+  vertical?: boolean;
 }
 
-const { url, youtube, title, hint = '{ Click to try it }' } = Astro.props;
+const { url, youtube, title, hint = '{ Click to try it }', vertical = false } = Astro.props;
 
 // enablejsapi lets the script start and pause the video; rel=0 keeps suggestions to this channel
 // (https://developers.google.com/youtube/player_parameters)
@@ -37,7 +39,12 @@ const src = youtube ? `https://www.youtube-nocookie.com/embed/${youtube}?enablej
 
 <section class="project-live" aria-label={title} data-section="project-live">
   <div class="project-live__frame">
-    <div class="project-live__screen" data-layer="live-screen" data-live-kind={youtube ? 'youtube' : 'site'} data-intro>
+    <div
+      class:list={['project-live__screen', vertical && 'project-live__screen--vertical']}
+      data-layer="live-screen"
+      data-live-kind={youtube ? 'youtube' : 'site'}
+      data-intro
+    >
       <iframe
         class="project-live__site"
         src={src}
@@ -89,6 +96,16 @@ const src = youtube ? `https://www.youtube-nocookie.com/embed/${youtube}?enablej
     height: 100%;
     border: 2px solid var(--c-ink);
     background: oklch(100% 0 0);
+  }
+
+  /*
+    A vertical video: a tall 9:16 frame in the middle of the same row, 440px wide, so the video
+    fills it instead of sitting between black bars
+  */
+  .project-live__screen--vertical {
+    width: calc(440 * var(--u));
+    aspect-ratio: 9 / 16;
+    margin-inline: auto;
   }
 
   /* Clear, over the website, until you click it */
