@@ -134,12 +134,16 @@ const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
     padding: calc(14 * var(--u)) 0 0 calc(20 * var(--u));
   }
 
-  /* Figma: x 752, 588 x 138, the label at x 770, y 956 */
+  /*
+    Figma: 138px tall, its right edge at x 1340, the label 18px in. It's as wide as its tools
+    (18px on each side, up to MemoMe's seven), so a project with few tools gets a small card
+    on the right.
+  */
   .project-facts__card--tools {
-    left: calc(752 * var(--u));
-    width: calc(588 * var(--u));
+    right: calc(100 * var(--u));
+    width: max-content;
     height: calc(138 * var(--u));
-    padding: calc(14 * var(--u)) 0 0 calc(18 * var(--u));
+    padding: calc(14 * var(--u)) calc(18 * var(--u)) 0;
   }
 
   .project-facts__list {
