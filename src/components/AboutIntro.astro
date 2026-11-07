@@ -83,10 +83,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       loading="eager"
       style={place(289, 613, 218.49)}
     />
+    <!-- The hat can be tipped (see animations.ts): with the mouse, a tap or the keyboard -->
     <Image
       class="about-intro__layer about-intro__hat"
       data-layer="intro-hat"
       data-intro
+      role="button"
+      tabindex="0"
+      aria-label="Tip the cowboy hat"
       src={hat}
       alt=""
       widths={[228, 456]}
@@ -179,6 +183,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   .about-intro__hat {
     z-index: 5;
+    cursor: pointer;
   }
 
   /* Under the header, so its cord starts behind the Get in touch button */

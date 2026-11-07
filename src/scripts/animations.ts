@@ -116,6 +116,8 @@ const INTRO_HAT_DROP_AT_S = 1.4;
 const INTRO_FLOAT_PX = 7; // the open flowers float up and down this much
 const INTRO_PHONE_STRETCH = 0.06; // the phone bobs as its cord stretches this much
 const INTRO_PHONE_SWAY_DEG = 3;
+const COLLAGE_DRIFT_SCALE = 0.35; // the collage's scroll drift, as a share of the directions below
+const HAT_NUDGE_EVERY_S = 5; // until someone tips the hat, it tips a little by itself this often
 
 // About me page, section 2
 const HOW_STEM_AFTER_S = 0.3; // the stem starts growing this long after section 1's text is in
@@ -1376,6 +1378,83 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
     markTitleTyped = resolve;
   });
 
+  // ---------- Scroll and mouse: the collage pieces drift apart, each its own way ----------
+  /*
+    Like the home hero: as you scroll past section 1 the collage pieces drift apart, each in its
+    own direction (dx / dy, scaled by COLLAGE_DRIFT_SCALE, px at the end of the section), and they shift against the mouse,
+    the nearer ones more (depth, px at the edge of the window).
+    Both go through xPercent / yPercent, worked out from each piece's size every frame, so they add
+    to the pieces' own x / y motion (Kiki's run, the hat's drop and howdy, the flowers' float)
+    instead of fighting it.
+  */
+  const COLLAGE: { name: string; dx: number; dy: number; depth: number }[] = [
+    { name: 'intro-photo', dx: 0, dy: -40, depth: 4 },
+    { name: 'intro-arch-fill', dx: -30, dy: -60, depth: 3 },
+    { name: 'intro-arch-back', dx: -60, dy: -20, depth: 2 },
+    { name: 'intro-arch-front', dx: 40, dy: -80, depth: 6 },
+    { name: 'intro-flower-red-top', dx: -50, dy: -110, depth: 10 },
+    { name: 'intro-flower-red-low', dx: -80, dy: -30, depth: 8 },
+    // The blue flowers' stems are short, so they move almost exactly with the photo (at most 6px
+    // apart), and their roots stay hidden under it
+    { name: 'intro-flower-blue-left', dx: -6, dy: -40, depth: 4 },
+    { name: 'intro-flower-blue-right', dx: 6, dy: -40, depth: 4 },
+    { name: 'intro-kiki', dx: 80, dy: 10, depth: 7 },
+    { name: 'intro-hat', dx: 30, dy: -130, depth: 12 },
+  ];
+  const pieces = COLLAGE.map((piece) => ({ ...piece, $el: getLayer(piece.name, $intro), w: 1, h: 1 })).filter(
+    (piece): piece is (typeof piece) & { $el: HTMLElement } => piece.$el !== null,
+  );
+  // Sizes are read once, and again when the layout changes, not every frame
+  const measure = () =>
+    pieces.forEach((piece) => {
+      piece.w = piece.$el.offsetWidth || 1;
+      piece.h = piece.$el.offsetHeight || 1;
+    });
+  measure();
+
+  let scrolled = 0; // 0 to 1 through section 1
+  ScrollTrigger.create({
+    trigger: $intro,
+    start: 'top top',
+    end: 'bottom top',
+    onUpdate: (self) => {
+      scrolled = self.progress;
+    },
+    onRefresh: measure,
+  });
+
+  // The mouse, from -1 (left / top edge) to 1, eased so the pieces follow it softly
+  const mouse = { x: 0, y: 0 };
+  const eased = { x: 0, y: 0 };
+  const followsMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const onMouseMove = (event: PointerEvent) => {
+    if (event.pointerType !== 'mouse') return;
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = (event.clientY / window.innerHeight) * 2 - 1;
+  };
+  if (followsMouse) {
+    window.addEventListener('pointermove', onMouseMove);
+    addCleanup(() => window.removeEventListener('pointermove', onMouseMove));
+  }
+
+  const moveCollage = () => {
+    eased.x += (mouse.x - eased.x) * 0.06;
+    eased.y += (mouse.y - eased.y) * 0.06;
+    pieces.forEach(({ $el, dx, dy, depth, w, h }) => {
+      const x = dx * COLLAGE_DRIFT_SCALE * scrolled - eased.x * depth;
+      const y = dy * COLLAGE_DRIFT_SCALE * scrolled - eased.y * depth;
+      gsap.set($el, { xPercent: (x / w) * 100, yPercent: (y / h) * 100 });
+    });
+  };
+  // Only while section 1 is on screen
+  ScrollTrigger.create({
+    trigger: $intro,
+    start: 'top bottom',
+    end: 'bottom top',
+    onToggle: (self) => (self.isActive ? gsap.ticker.add(moveCollage) : gsap.ticker.remove(moveCollage)),
+  });
+  addCleanup(() => gsap.ticker.remove(moveCollage));
+
   // ---------- Hover: the hat tips up like saying howdy, then drops back on ----------
   const tipHat = () => {
     if (!$hat || gsap.isTweening($hat)) return;
@@ -1439,8 +1518,40 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
             });
           });
           if ($hat) {
-            $hat.addEventListener('mouseenter', tipHat);
-            addCleanup(() => $hat.removeEventListener('mouseenter', tipHat));
+            // Until someone tips the hat, it tips a little by itself every few seconds, to show
+            // it can be played with
+            let isFound = false;
+            const nudge = gsap.delayedCall(HAT_NUDGE_EVERY_S, function repeatNudge() {
+              if (isFound) return;
+              if (!gsap.isTweening($hat)) {
+                gsap
+                  .timeline()
+                  .to($hat, { y: -8, rotation: -5, duration: 0.22, ease: 'power2.out' })
+                  .to($hat, { y: 0, rotation: 0, duration: 0.45, ease: 'bounce.out' });
+              }
+              nudge.restart(true);
+            });
+            // Hover, a tap, a click, or Enter / Space with the keyboard all tip it
+            const tip = () => {
+              isFound = true;
+              nudge.kill();
+              tipHat();
+            };
+            const onKey = (event: KeyboardEvent) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
+              tip();
+            };
+            const events: [string, EventListener][] = [
+              ['mouseenter', tip],
+              ['click', tip],
+              ['keydown', onKey as EventListener],
+            ];
+            events.forEach(([type, handler]) => $hat.addEventListener(type, handler));
+            addCleanup(() => {
+              nudge.kill();
+              events.forEach(([type, handler]) => $hat.removeEventListener(type, handler));
+            });
           }
         },
       });
