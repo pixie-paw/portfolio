@@ -2,7 +2,6 @@
 import { Image } from 'astro:assets';
 import Header from './Header.astro';
 import Button from './Button.astro';
-import { CV_FILE } from '../data/cv';
 
 import irina from '../assets/about-page/irina-cowboy.webp';
 import hat from '../assets/about-page/cowboy-hat.webp';
@@ -114,8 +113,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         happens when design meets technology → from
         <strong> visual design and UX to creative coding and interactive installations</strong>.
       </p>
-      <!-- Opens the CV (a PDF in the public folder) in a new tab -->
-      <Button href={`${base}/${CV_FILE}`} text="Check my CV" w={216} name="intro-cv" newTab class="about-intro__cv" />
+      <!-- Goes to the CV page, where the CV can be read and downloaded -->
+      <Button href={`${base}/cv/`} text="Check my CV" w={216} name="intro-cv" class="about-intro__cv" />
       <span class="about-intro__corner about-intro__corner--tl" data-layer="intro-corner"></span>
       <span class="about-intro__corner about-intro__corner--tr" data-layer="intro-corner"></span>
       <span class="about-intro__corner about-intro__corner--bl" data-layer="intro-corner"></span>

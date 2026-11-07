@@ -9,6 +9,7 @@
  * name  = its data-layer name.
  * newTab = opens in a new tab (for links to other sites, like LinkedIn).
  * tone  = 'green' (the default) or 'dark' (ink with light text, like Read the process).
+ * download = downloads the file it links to (the CV) instead of opening it.
  */
 import Arrow from '../assets/home/svg/arrow.svg';
 
@@ -21,9 +22,10 @@ interface Props {
   intro?: boolean;
   newTab?: boolean;
   tone?: 'green' | 'dark';
+  download?: boolean;
 }
 
-const { href, text, w, name, class: className, intro = false, newTab = false, tone = 'green' } = Astro.props;
+const { href, text, w, name, class: className, intro = false, newTab = false, tone = 'green', download = false } = Astro.props;
 ---
 
 <!-- Two copies of the text and the arrow: on hover the dark one rolls up and out, the light one rolls in -->
@@ -32,6 +34,7 @@ const { href, text, w, name, class: className, intro = false, newTab = false, to
   href={href}
   target={newTab ? '_blank' : undefined}
   rel={newTab ? 'noopener noreferrer' : undefined}
+  download={download ? '' : undefined}
   data-layer={name}
   data-roll-button
   data-intro={intro ? '' : undefined}

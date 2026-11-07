@@ -10,14 +10,20 @@ import Button from './Button.astro';
  *
  * On a project page: back = where the back arrow goes (it takes the flower's place), and
  * links = the page's own links (Briefing, Process, Result), which scroll to its sections.
+ * backLabel = what the back arrow says to screen readers.
+ *
+ * On the CV page: download = a file to download. It shows a dark DOWNLOAD CV button in place of
+ * the nav links, 17px before Get in touch.
  */
 interface Props {
   active?: 'projects' | 'about';
   back?: string;
+  backLabel?: string;
   links?: { label: string; href: string }[];
+  download?: string;
 }
 
-const { active, back, links } = Astro.props;
+const { active, back, backLabel = 'Back to my work', links, download } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const NAV = links ?? [
@@ -32,10 +38,10 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
   The active link gets site-header__link--active and aria-current. On the homepage
   none is active. On the About me page, About me is.
 -->
-<header class:list={['site-header', back && 'site-header--project']} data-layer="header">
+<header class:list={['site-header', back && 'site-header--project', download && 'site-header--download']} data-layer="header">
   {
     back ? (
-      <a class="site-header__back" href={back} aria-label="Back to my work" data-layer="back" data-intro>
+      <a class="site-header__back" href={back} aria-label={backLabel} data-layer="back" data-intro>
         <BackArrow class="site-header__back-arrow" aria-hidden="true" data-layer="back-arrow" />
       </a>
     ) : (
@@ -45,6 +51,10 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
     )
   }
 
+  {
+    download ? (
+      <Button href={download} text="Download CV" w={216} name="header-download" tone="dark" download intro class="site-header__download" />
+    ) : (
   <nav class="site-header__nav" aria-label={back ? 'This project' : 'Main'}>
     {
       NAV.map((link) => (
@@ -62,6 +72,8 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
       ))
     }
   </nav>
+    )
+  }
 
   <!-- Opens a new email to Irina, from every page -->
   <Button href="mailto:irinammoldovan@gmail.com" text="Get in touch" w={216} name="cta" intro class="site-header__cta" />
@@ -83,6 +95,18 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
     padding-top: calc(15 * var(--u));
     position: relative;
     z-index: 10;
+  }
+
+  /* The CV page: DOWNLOAD CV sits 17px before Get in touch, as in Figma */
+  .site-header--download {
+    grid-template-columns:
+      calc(45 * var(--u)) calc(149 * var(--u)) 1fr auto calc(17 * var(--u)) calc(216 * var(--u))
+      calc(100 * var(--u));
+  }
+
+  .site-header :global(.site-header__download) {
+    grid-area: nav;
+    margin-top: calc(33 * var(--u));
   }
 
   .site-header__logo {
