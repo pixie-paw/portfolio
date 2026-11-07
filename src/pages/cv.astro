@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import CvSheet from '../components/CvSheet.astro';
+import Marquee from '../components/Marquee.astro';
+import Footer from '../components/Footer.astro';
+
+/*
+  The CV page, from the Figma frame "3.1 Check my CV": Irina's CV to read on the site, with a
+  button to download the PDF. The About me page's CHECK MY CV leads here.
+*/
+---
+
+<Base
+  skipTo="cv-name"
+  title="CV · Irina Moldovan"
+  description="Irina Moldovan’s CV: Digital Design and Development student at Howest, with her experience, education and skills."
+>
+  <main>
+    <CvSheet />
+    <Marquee />
+  </main>
+  <Footer />
+</Base>

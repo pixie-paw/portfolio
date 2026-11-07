@@ -11,6 +11,7 @@
   --c-paper: oklch(97.62% 0.0043 17.23); /* #faf6f6 */
   --c-ink: oklch(31.82% 0.0014 17.23); /* #333232 */
   --c-ink-soft: oklch(54.69% 0.0025 17.23); /* #727070 */
+  --c-ink-meta: oklch(44.51% 0.0039 17.3); /* #565353, the CV's places and dates */
   --c-light: oklch(97.09% 0.0011 17.18); /* #f6f5f5 */
   --c-tag: oklch(97.39% 0.009 0.13); /* #fcf4f6 */
   --c-pink: oklch(90.24% 0.0527 6.45); /* #ffd1d9 */
@@ -182,7 +183,7 @@ a {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  z-index: 90;
+  z-index: 102; /* above the CV page's sheet (101), which sits above the texture */
 }
 
 .cursor-flower__svg {
