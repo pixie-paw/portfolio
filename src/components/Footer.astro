@@ -1,10 +1,12 @@
 ---
-import fs from 'node:fs';
-import path from 'node:path';
 import Tag from './Tag.astro';
 import Button from './Button.astro';
 import ArrowTop from '../assets/footer/arrow-cv-top.svg';
 import ArrowBottom from '../assets/footer/arrow-cv-bottom.svg';
+import { CV_FILE, hasCv } from '../data/cv';
+
+// Checked on every render, so the link appears as soon as the PDF is added
+const cvIsThere = hasCv();
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -17,11 +19,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const SECTION_TOP = 3330;
 
 /*
-  The CV: when Irina adds her PDF to the public folder with this name, "DOWNLOAD CV"
-  becomes a download link by itself. Until then it's plain text, so there's never a broken link.
+  The CV (see src/data/cv.ts): once Irina's PDF is in the public folder, "DOWNLOAD CV" becomes
+  a download link by itself. Until then it's plain text, so there's never a broken link.
 */
-const CV_FILE = 'irina-moldovan-cv.pdf';
-const hasCv = fs.existsSync(path.join(process.cwd(), 'public', CV_FILE));
 
 const STICKERS = [
   { x: 264.75, y: 3072.21, rotate: -10.48 },
@@ -78,7 +78,7 @@ const LINKS = [
 
     <!-- DOWNLOAD CV, with the yellow bar behind "CV" -->
     {
-      hasCv ? (
+      cvIsThere ? (
         <a class="footer__cv" href={`${base}/${CV_FILE}`} download data-layer="footer-cv" data-intro>
           <span class="footer__cv-marker" data-layer="footer-cv-marker" />
           <span class="footer__cv-download" data-layer="footer-cv-download">Download</span>
