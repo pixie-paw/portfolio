@@ -257,6 +257,23 @@ const createBackArrow = (): Cleanup | undefined => {
   );
 };
 
+/* ---------- Footer: the big CV grows a bit on hover, like the flower logo, to show it's a link ---------- */
+const createCvHover = (): Cleanup | undefined => {
+  const $cv = getLayer('footer-cv');
+  // Only once the PDF is there: then DOWNLOAD CV is a link (see Footer.astro)
+  if (!($cv instanceof HTMLAnchorElement)) return;
+  // The letters and their yellow bar grow together, so the bar stays behind them
+  const $grow = [getLayer('footer-cv-letters', $cv), getLayer('footer-cv-marker', $cv)].filter(
+    ($el): $el is HTMLElement => $el !== null,
+  );
+
+  return onHover(
+    $cv,
+    () => gsap.to($grow, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
+    () => gsap.to($grow, { scale: 1, duration: 0.3, ease: 'power2.out' }),
+  );
+};
+
 /* ---------- The yellow flower follows the cursor across the whole site (mouse only, no spin) ---------- */
 const createCursorFlower = (): Cleanup | undefined => {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
@@ -1309,6 +1326,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
     .filter(($svg): $svg is SVGElement => $svg !== null);
   const $card = getLayer('intro-card', $intro);
   const $cardText = getLayer('intro-text', $intro);
+  const $cvButton = getLayer('intro-cv', $intro);
   const $corners = getAll('[data-layer="intro-corner"]', $intro);
 
   // The phone hangs from the top of its cord: it bobs as the cord stretches, and sways
@@ -1348,6 +1366,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
   gsap.set($markers, { clipPath: 'inset(0% 100% 0% 0%)' });
   gsap.set($stars, { scale: 0, rotation: -90, autoAlpha: 0 });
   if ($cardText) gsap.set($cardText, { autoAlpha: 0 });
+  if ($cvButton) gsap.set($cvButton, { y: 12, autoAlpha: 0 });
   if ($card) gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
   gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
 
@@ -1386,7 +1405,9 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
                 { y: 12, autoAlpha: 0 },
                 { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 },
                 '<0.2',
-              );
+              )
+              // The CV button rises in after the text, like the lines
+              .to($cvButton ?? [], { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3');
           }),
         ),
     });
@@ -2492,6 +2513,7 @@ export const initAnimations = () => {
       } else {
         addCleanup(createLogo());
         addCleanup(createBackArrow());
+        addCleanup(createCvHover());
         addCleanup(createCursorFlower());
         addCleanup(createSmoothScroll());
         createScrollDrift();
