@@ -20,6 +20,7 @@ These are the project rules. Follow them on every task in this repo. When Irina 
 | **Under 768px (phone)** | The mobile design, Figma frame `518:676` (393px wide) | `--m`, one Figma pixel at 393px, stops growing at 480px |
 
 - **Tablet text:** every font size is `max(var(--fs-min), calc(N * var(--u)))` or a bigger floor where the text is a heading. Text cards with a fixed Figma height use `min-height`, so they grow with their text.
+- **Zoom:** reading text (body text, labels, the nav, buttons, tags) uses `--t`, not `--u`. `--t` is `--u`, but never smaller than one pixel at the browser's text size, so desktop zoom makes the text bigger. Below 1440px the text cards grow with it (`min-height`). Phones and touch tablets keep their own sizes; pinch zoom works there. Titles, collages and decoration stay on `--u`.
 - **Phone:** built section by section from Figma with Irina. Above 480px the phone layout stays at its 480px size, centred, like the desktop above 1440px.
 
 ### Motion on phones

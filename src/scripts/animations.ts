@@ -3242,8 +3242,9 @@ const createMobileMenu = (reduceMotion: boolean) => {
 
 /*
   ---------- Tablets: the typewriter sits lower, so its paper clears the hero ----------
-  From 768 to 1023px the skills text has a minimum size, so the paper is taller than in the
-  design and, fully out, it would cover the hero's subtitle and internship sign. This measures the
+  From 768 to 1439px the skills text can be bigger than the design (a minimum size on tablets, and
+  text that grows when the page is zoomed), so the paper is taller and, fully out, it would cover
+  the hero's subtitle and internship sign. This measures the
   paper and moves the typewriter and its paper down (--typewriter-drop on the About section) just
   enough to keep the paper 16px under the sign. Desktop and phones keep their Figma position.
   It runs with and without motion, once the fonts are in and again when the window changes size.
@@ -3257,7 +3258,7 @@ const createTypewriterDrop = () => {
   const $window = $paper?.parentElement;
   const $sign = getLayer('tag-internship');
   if (!$about || !$sheet || !$window || !$sign) return;
-  const tablet = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
+  const tablet = window.matchMedia('(min-width: 768px) and (max-width: 1439px)');
   const $drift = $sign.closest<HTMLElement>('[data-drift]');
 
   const update = () => {

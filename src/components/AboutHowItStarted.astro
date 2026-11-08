@@ -261,7 +261,7 @@ const WAVE_BOX = { x: -800, y: 100, w: 3040, h: 820 };
   .how-started__text {
     margin: 0;
     font-family: var(--f-sans);
-    font-size: max(var(--fs-min), calc(20 * var(--u)));
+    font-size: max(var(--fs-min), calc(20 * var(--t)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -306,8 +306,8 @@ const WAVE_BOX = { x: -800, y: 100, w: 3040, h: 820 };
     border-right-width: var(--stroke);
   }
 
-  /* Tablet: the text is bigger than the design here, so the card grows with it */
-  @media (max-width: 1023px) {
+  /* Below 1440 (tablets, and a zoomed page): the text can be bigger than the design, so the card grows with it */
+  @media (max-width: 1439px) {
     .how-started__card {
       height: auto;
       min-height: calc(243 * var(--u));

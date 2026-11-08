@@ -178,9 +178,10 @@ const SKILLS = [
   .about {
     /*
       One Figma pixel of the typewriter and its skills paper. It follows the skills text size:
-      on desktop it's --u, on tablets the text has a minimum size, so it's bigger.
+      on desktop it's --t (--u, or bigger when the page is zoomed), on tablets the text has a minimum
+      size, so it's bigger.
     */
-    --pu: calc(max(var(--fs-min-small), calc(16 * var(--u))) / 16);
+    --pu: calc(max(var(--fs-min-small), calc(16 * var(--t))) / 16);
     position: relative;
     display: grid;
     grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
@@ -293,7 +294,7 @@ const SKILLS = [
   .about__text {
     margin: 0;
     font-family: var(--f-sans);
-    font-size: max(var(--fs-min), calc(20 * var(--u)));
+    font-size: max(var(--fs-min), calc(20 * var(--t)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -468,10 +469,11 @@ const SKILLS = [
   }
 
   /*
-    Tablet: the text is bigger than the design here, so the card grows with it.
+    Below 1440: on tablets, and when the page is zoomed, the text can be bigger than the design, so
+    the card grows with it. At 100% zoom it keeps its Figma height (min-height).
     The button keeps its Figma distance from the card's bottom (62px) and at least 24px above it.
   */
-  @media (max-width: 1023px) {
+  @media (max-width: 1439px) {
     /*
       The skills text is bigger than the design here, so the paper and the typewriter are bigger
       (see --pu). The script moves them down (--typewriter-drop) until the paper clears the hero.
@@ -479,7 +481,7 @@ const SKILLS = [
     .about__card {
       height: auto;
       min-height: calc(310 * var(--u));
-      padding-bottom: calc((62 + 52 + 24) * var(--u));
+      padding-bottom: calc((62 + 24) * var(--u) + 52 * max(var(--u), var(--t-min)));
     }
 
     .about__card :global(.about__button) {
