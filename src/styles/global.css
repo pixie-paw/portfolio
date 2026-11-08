@@ -63,6 +63,11 @@ html {
   background-color: var(--c-paper);
 }
 
+/* The phone menu is open: the page under it doesn't scroll */
+html[data-menu='open'] {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   color: var(--c-ink);
@@ -125,6 +130,21 @@ body::after {
   pointer-events: none;
 }
 
+/*
+  Phones: the desktop sizes follow the 1440 frame, so on a phone the grid squares would be about
+  5px. Here both layers are sized in phone pixels (--m) instead, so the squares are about 19px and
+  the grain is as coarse as on the desktop at 1440px.
+*/
+@media (max-width: 767px) {
+  body::before {
+    background-size: calc(758 * var(--m)) auto;
+  }
+
+  body::after {
+    background-size: calc(488 * var(--m)) auto;
+  }
+}
+
 img,
 svg {
   display: block;
@@ -174,6 +194,13 @@ a {
   width: calc(1440 * var(--u));
   margin-inline: auto;
   pointer-events: auto;
+}
+
+/* Phones: the header copy sits in the 393px phone frame, like the page's own header */
+@media (max-width: 767px) {
+  .sticky-header__frame {
+    width: calc(393 * var(--m));
+  }
 }
 
 /*
