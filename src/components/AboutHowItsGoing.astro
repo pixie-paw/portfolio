@@ -24,6 +24,8 @@ const SECTION_TOP = 1520;
 // x / y = top-left corner, w / h = size, r = tilt (Figma turns the other way, so its sign is flipped)
 const place = (x: number, y: number, w: number, h = 0, r = 0) =>
   `--x:${x};--y:${y - SECTION_TOP};--w:${w};--h:${h};--r:${r}deg`;
+import PhoneFlowerRed from '../assets/about-page/phone-flower-red.svg';
+import PhoneFlowerBlue from '../assets/about-page/phone-flower-blue.svg';
 ---
 
 <section class="how-going" aria-labelledby="how-going-title" data-section="how-going">
@@ -33,6 +35,24 @@ const place = (x: number, y: number, w: number, h = 0, r = 0) =>
       from section 2's card down into this card, the short branch from the long stem down to
       the blue flower, and the two statue stems out of the statue.
     -->
+    <!--
+      Phones only (Figma 538:3061): the long stem, its branch and the two flowers, drawn for the
+      phone. They sit between section 2's pictures and this title, so they start above this
+      section (phone frame px, this section starts at y 1664).
+    -->
+    <span class="how-going__phone how-going__phone-stem" data-intro data-layer="going-phone-stem" data-grow="end" aria-hidden="true">
+      <svg viewBox="0 0 174.5 345.1" fill="none">
+        <path data-layer="flower-stem" d="M174.47 339.67C91.46 344.9 56.5 345.06 14.52 277.61C-40.31 189.49 77.93 154.6 76 84.82C75.41 65.8 69.84 22.21 52.25 0" stroke="#047464" stroke-width="6.05" />
+      </svg>
+    </span>
+    <span class="how-going__phone how-going__phone-branch" data-intro data-layer="going-phone-branch" data-grow="start" aria-hidden="true">
+      <svg viewBox="220 1500 80 130" fill="none">
+        <path data-layer="flower-stem" d="M90.99 0C75.95 18.89 7.71 24.4 0 47.81" transform="matrix(0.526 -0.8505 0.8505 0.526 229.8174 1587.8086)" stroke="#047464" stroke-width="6.05" />
+      </svg>
+    </span>
+    <span class="how-going__phone how-going__phone-red" data-intro data-layer="going-phone-red" aria-hidden="true"><PhoneFlowerRed /></span>
+    <span class="how-going__phone how-going__phone-blue" data-intro data-layer="going-phone-blue" aria-hidden="true"><PhoneFlowerBlue /></span>
+
     <span class="how-going__layer how-going__stem" data-intro data-layer="going-stem-long" data-grow="end" style={place(142.08, 1209.57, 344)}>
       <StemCardLong />
     </span>
@@ -90,6 +110,8 @@ const place = (x: number, y: number, w: number, h = 0, r = 0) =>
       />
     </span>
 
+    <!-- Phones only: the yellow bar behind the title -->
+    <span class="how-going__marker" data-layer="going-marker" aria-hidden="true"></span>
     <h2 class="how-going__title" id="how-going-title" data-layer="going-title" data-intro>HOW IT’S GOING</h2>
 
     <!-- Text card with corner brackets -->
@@ -309,6 +331,104 @@ const place = (x: number, y: number, w: number, h = 0, r = 0) =>
       height: auto;
       min-height: calc(353 * var(--u));
       padding-bottom: calc(37 * var(--u));
+    }
+  }
+
+  /* The phone's stem, flowers and title bar only show on phones */
+  .how-going__phone,
+  .how-going__marker {
+    display: none;
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 538:3061 ----------
+    Phone frame px, from where this section starts (y 1664). The title over its yellow bar and the
+    text (no card). The statue, the disco ball and the desktop's stems aren't on phones; the phone's
+    own long stem, branch and flowers sit above, between section 2's pictures and this title, under
+    those pictures as in Figma.
+  */
+  @media (max-width: 767px) {
+    .how-going {
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      /* down to the marquee, which starts at y 2031 */
+      grid-template-rows: [content-start] calc(367 * var(--m)) [content-end];
+    }
+
+    .how-going__layer,
+    .how-going__corner {
+      display: none;
+    }
+
+    .how-going__phone {
+      display: block;
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .how-going__phone :global(svg) {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .how-going__phone-stem {
+      left: calc(197 * var(--m));
+      top: calc((1175 - 1664) * var(--m));
+      width: calc(174.5 * var(--m));
+    }
+
+    .how-going__phone-branch {
+      left: calc(220 * var(--m));
+      top: calc((1500 - 1664) * var(--m));
+      width: calc(80 * var(--m));
+    }
+
+    .how-going__phone-red {
+      left: calc(335.5 * var(--m));
+      top: calc((1480.4 - 1664) * var(--m));
+      width: calc(71.3 * var(--m));
+    }
+
+    .how-going__phone-blue {
+      left: calc(207.5 * var(--m));
+      top: calc((1553.6 - 1664) * var(--m));
+      width: calc(140 * var(--m));
+    }
+
+    /* Figma: Boldonse 24px at x 17, y 1685 */
+    .how-going__title {
+      left: calc(17 * var(--m));
+      top: calc(21 * var(--m));
+      font-size: calc(24 * var(--m));
+    }
+
+    /* Figma: a 13.37px bar from x 8, 272px long, centred on y 1715 */
+    .how-going__marker {
+      display: block;
+      position: absolute;
+      left: calc(8 * var(--m));
+      top: calc((1715 - 6.69 - 1664) * var(--m));
+      width: calc(272 * var(--m));
+      height: calc(13.37 * var(--m));
+      background: var(--c-marker);
+      z-index: 2;
+    }
+
+    /* Figma: Akzidenz 15.6px at x 8, y 1733, 377px wide, no card */
+    .how-going__card {
+      left: calc(8 * var(--m));
+      top: calc((1733 - 1664) * var(--m));
+      width: calc(377 * var(--m));
+      height: auto;
+      min-height: 0;
+      padding: 0;
+      background: none;
+    }
+
+    .how-going__text {
+      font-size: calc(15.6 * var(--m));
     }
   }
 </style>

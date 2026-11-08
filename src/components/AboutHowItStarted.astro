@@ -105,6 +105,8 @@ const WAVE_BOX = { x: -800, y: 100, w: 3040, h: 820 };
       />
     </span>
 
+    <!-- Phones only: the yellow bar behind the title (Figma 538:3061) -->
+    <span class="how-started__marker" data-layer="how-started-marker" aria-hidden="true"></span>
     <h2 class="how-started__title" id="how-started-title" data-layer="how-started-title" data-intro>HOW IT STARTED</h2>
 
     <!-- Text card with corner brackets -->
@@ -310,6 +312,92 @@ const WAVE_BOX = { x: -800, y: 100, w: 3040, h: 820 };
       height: auto;
       min-height: calc(243 * var(--u));
       padding-bottom: calc(37 * var(--u));
+    }
+  }
+
+  /* The phone's yellow bar behind the title only shows on phones */
+  .how-started__marker {
+    display: none;
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 538:3061 ----------
+    Phone frame px, from where this section starts (y 740). The title over its yellow bar, the text
+    (no card), then the camera, its photo and the strip: the desktop ones at 0.976 of their size,
+    at their phone places. The stem down from section 1 and the words on the wave aren't on phones.
+  */
+  @media (max-width: 767px) {
+    .how-started {
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      /* down to section 3, which starts at y 1664 */
+      grid-template-rows: [content-start] calc(924 * var(--m)) [content-end];
+    }
+
+    .how-started__wave,
+    .how-started__stem,
+    .how-started__bloom,
+    .how-started__corner {
+      display: none;
+    }
+
+    /* Figma: Boldonse 24px at x 13, y 761 */
+    .how-started__title {
+      left: calc(13 * var(--m));
+      top: calc(21 * var(--m));
+      font-size: calc(24 * var(--m));
+    }
+
+    /* Figma: a 13.37px bar from x 8, 233px long, centred on y 791 */
+    .how-started__marker {
+      display: block;
+      position: absolute;
+      left: calc(8 * var(--m));
+      top: calc((791 - 6.69 - 740) * var(--m));
+      width: calc(233 * var(--m));
+      height: calc(13.37 * var(--m));
+      background: var(--c-marker);
+      z-index: 2;
+    }
+
+    /* Figma: Akzidenz 15.6px at x 8, y 804, 376px wide, no card */
+    .how-started__card {
+      left: calc(8 * var(--m));
+      top: calc((804 - 740) * var(--m));
+      width: calc(376 * var(--m));
+      height: auto;
+      min-height: 0;
+      padding: 0;
+      background: none;
+    }
+
+    .how-started__text {
+      font-size: calc(15.6 * var(--m));
+    }
+
+    /* Figma: each placed by its own corner, with the desktop's tilt */
+    .how-started__camera {
+      left: calc(137.16 * var(--m));
+      top: calc((1050.73 - 740) * var(--m));
+      width: calc(264.96 * var(--m));
+      height: calc(172.32 * var(--m));
+    }
+
+    .how-started__photo {
+      left: calc(139.11 * var(--m));
+      top: calc((1036.21 - 740) * var(--m));
+      width: calc(174.9 * var(--m));
+      height: calc(233.2 * var(--m));
+    }
+
+    .how-started__strip {
+      left: calc(53.08 * var(--m));
+      top: calc((1144 - 740) * var(--m));
+      width: calc(133.31 * var(--m));
+      height: calc(365.72 * var(--m));
+    }
+
+    .how-started__camera .how-started__image {
+      filter: drop-shadow(calc(-3.2 * var(--m)) calc(3.2 * var(--m)) calc(2.14 * var(--m)) oklch(26.16% 0.0296 267.48 / 0.1));
     }
   }
 </style>

@@ -1798,6 +1798,9 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
 const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $section = document.querySelector('[data-section="how-started"]');
   if (!$section) return;
+  // Phones: the bar behind the title waits for the title (see the title below)
+  const $titleBar = getLayer('how-started-marker', $section);
+  if ($titleBar) gsap.set($titleBar, { clipPath: 'inset(0% 100% 0% 0%)' });
 
   // The stem and the flower are two copies of one SVG: the stem under the cards, the flower above
   const $flower = getLayer('how-started-flower', $section);
@@ -1860,6 +1863,11 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
             gsap.set($title, { autoAlpha: 1 });
             const typed = gsap.timeline({ onComplete: () => markHowTextShown() });
             typed.to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S });
+            // Phones: the yellow bar behind the title is drawn in right after it, like every bar
+            const $marker = getLayer('how-started-marker', $section);
+            if ($marker?.offsetParent) {
+              typed.fromTo($marker, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut' });
+            }
             // The camera comes in with the title, so it never shows before it (even after a reload
             // further down the page, when every trigger above fires at once)
             if ($camera) playCamera();
@@ -1944,11 +1952,16 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
 const createAboutHowItsGoing = (context: gsap.Context) => {
   const $section = document.querySelector('[data-section="how-going"]');
   if (!$section) return;
+  // Phones: the bar behind the title waits for the title (see the title below)
+  const $titleBar = getLayer('going-marker', $section);
+  if ($titleBar) gsap.set($titleBar, { clipPath: 'inset(0% 100% 0% 0%)' });
 
-  const $longStem = getLayer('going-stem-long', $section);
-  const $branch = getLayer('going-stem-branch', $section);
-  const $flowerRed = getLayer('going-flower-red', $section);
-  const $flowerBlue = getLayer('going-flower-blue', $section);
+  // Phones have their own long stem, branch and flowers (see AboutHowItsGoing.astro)
+  const isPhone = window.matchMedia('(max-width: 767px)').matches;
+  const $longStem = getLayer(isPhone ? 'going-phone-stem' : 'going-stem-long', $section);
+  const $branch = getLayer(isPhone ? 'going-phone-branch' : 'going-stem-branch', $section);
+  const $flowerRed = getLayer(isPhone ? 'going-phone-red' : 'going-flower-red', $section);
+  const $flowerBlue = getLayer(isPhone ? 'going-phone-blue' : 'going-flower-blue', $section);
   const $statueFlowers = [getLayer('going-statue-flower-red', $section), getLayer('going-statue-flower-blue', $section)].filter(
     ($el): $el is HTMLElement => $el !== null,
   );
@@ -2020,6 +2033,11 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
           gsap.set($title, { autoAlpha: 1 });
           const typed = gsap.timeline();
           typed.to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S });
+          // Phones: the yellow bar behind the title is drawn in right after it, like every bar
+          const $marker = getLayer('going-marker', $section);
+          if ($marker?.offsetParent) {
+            typed.fromTo($marker, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut' });
+          }
           // The statue comes in with the title, so nothing shows before it (even after a reload
           // further down the page, when every trigger above fires at once)
           playStatue();
@@ -3093,7 +3111,11 @@ const createMobileMenu = (reduceMotion: boolean) => {
     isLeaving = false;
     timeline?.kill();
     resetLinks();
+    // The sheet is in place before the dialog opens and focuses its close button, so the browser
+    // never scrolls anything to reach it; then it's moved off to the right to slide in
+    gsap.set($sheet, { xPercent: 0 });
     $menu.showModal();
+    $menu.scrollLeft = 0;
     $close.focus({ preventScroll: true });
     setExpanded(true);
     document.documentElement.dataset.menu = 'open';
