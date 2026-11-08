@@ -283,24 +283,35 @@ const layer = (x: number, y: number, w: number, r = 0, m?: [number, number, numb
 
   /*
     ---------- Phone (< 768px), Figma 518:676 ----------
-    One 393px frame (--m is one of its pixels), centred above 480px like the desktop above 1440px.
+    One 393px frame (--hm is one of its pixels, see below), centred above 480px like the desktop above 1440px.
     Every collage container starts at the frame's top-left corner, so each layer uses its Figma
     position: the centre of its bounding box (for a tilted layer, Figma's x / y is its own corner). The band runs edge to edge. The photo, the camera and the tags around it sit under the
     band, the plate, the title and the internship tag, as in Figma.
   */
   @media (max-width: 767px) {
     .hero {
-      grid-template-columns: 1fr calc(393 * var(--m)) 1fr;
-      grid-template-rows: calc(615.7 * var(--m)) calc(52.85 * var(--m)) calc(331.45 * var(--m));
+      /*
+        The hero's own phone unit: one Figma pixel, but smaller on short screens, so everything down
+        to the internship sign (y 726 in Figma, plus 16px) fits on the first screen. svh is the
+        screen height with the browser bars showing. The header keeps --m.
+      */
+      --hm: var(--m);
+      --hm: min(var(--m), calc(100svh / 742));
+      grid-template-columns: 1fr calc(393 * var(--hm)) 1fr;
+      grid-template-rows: calc(615.7 * var(--hm)) calc(52.85 * var(--hm)) calc(331.45 * var(--hm));
       grid-template-areas:
         '.    top    .'
         'band band   band'
         '.    bottom .';
     }
 
+    /* The header keeps its full phone size, across the band's width, centred */
     .hero :global(.site-header) {
-      grid-area: top;
+      grid-column: band;
+      grid-row: top;
+      justify-self: center;
       align-self: start;
+      width: calc(393 * var(--m));
     }
 
     .hero__title-area,
@@ -323,27 +334,27 @@ const layer = (x: number, y: number, w: number, r = 0, m?: [number, number, numb
     }
 
     .layer {
-      --k: var(--m);
-      left: calc(var(--mx) * var(--m));
-      top: calc(var(--my) * var(--m));
-      width: calc(var(--mw) * var(--m));
+      --k: var(--hm);
+      left: calc(var(--mx) * var(--hm));
+      top: calc(var(--my) * var(--hm));
+      width: calc(var(--mw) * var(--hm));
     }
 
     /* Figma: 415.17 x 73.72, tilted -2.67deg */
     .hero__plate {
-      height: calc(73.72 * var(--m));
+      height: calc(73.72 * var(--hm));
     }
 
     /* Figma: Boldonse 38px */
     .hero__title {
-      font-size: calc(38 * var(--m));
+      font-size: calc(38 * var(--hm));
     }
 
     /* Figma: Bona Nova 22px, centred on the band */
     .hero__subtitle {
       grid-area: band;
       justify-self: center;
-      font-size: calc(22 * var(--m));
+      font-size: calc(22 * var(--hm));
     }
 
     /*
@@ -352,42 +363,42 @@ const layer = (x: number, y: number, w: number, r = 0, m?: [number, number, numb
       x 62.22, y 232.91 with the desktop offsets.
     */
     .hero__visual {
-      --vu: calc(0.8633 * var(--m));
+      --vu: calc(0.8633 * var(--hm));
       height: auto;
-      margin: calc(100.83 * var(--m)) 0 0 calc(-15.48 * var(--m));
+      margin: calc(100.83 * var(--hm)) 0 0 calc(-15.48 * var(--hm));
     }
 
     /* Figma: 330.84px wide (0.666 of the desktop camera), so its shadow is 0.666 of it too */
     .hero__camera-image {
-      filter: drop-shadow(calc(-4 * var(--m)) calc(4 * var(--m)) calc(2.66 * var(--m)) oklch(26.16% 0.0296 267.48 / 0.1));
+      filter: drop-shadow(calc(-4 * var(--hm)) calc(4 * var(--hm)) calc(2.66 * var(--hm)) oklch(26.16% 0.0296 267.48 / 0.1));
     }
 
     /* The tags around the camera: the desktop size, at their phone positions and tilts */
     .hero__visual :global(.tag) {
-      --k: var(--m);
+      --k: var(--hm);
     }
 
     .hero__visual :global([data-layer='tag-visual-camera']) {
-      left: calc(299.24 * var(--m));
-      top: calc(81.57 * var(--m));
+      left: calc(299.24 * var(--hm));
+      top: calc(81.57 * var(--hm));
       rotate: 5.23deg;
     }
 
     .hero__visual :global([data-layer='tag-coding-camera']) {
-      left: calc(60.44 * var(--m));
-      top: calc(210.6 * var(--m));
+      left: calc(60.44 * var(--hm));
+      top: calc(210.6 * var(--hm));
     }
 
     .hero__visual :global([data-layer='tag-experience-camera']) {
-      left: calc(237.43 * var(--m));
-      top: calc(288.53 * var(--m));
+      left: calc(237.43 * var(--hm));
+      top: calc(288.53 * var(--hm));
     }
 
     /* Figma: 366.55 x 45.63, 0.8947 of the desktop tag, centred at x 201.53, y 693.35 */
     .hero__tag-area :global(.hero__internship) {
-      --k: calc(0.8947 * var(--m));
-      left: calc(201.53 * var(--m));
-      top: calc(693.35 * var(--m));
+      --k: calc(0.8947 * var(--hm));
+      left: calc(201.53 * var(--hm));
+      top: calc(693.35 * var(--hm));
     }
   }
 </style>
