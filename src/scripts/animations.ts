@@ -233,30 +233,33 @@ const onHover = ($el: HTMLElement, enter: () => void, leave: () => void): Cleanu
 
 /* ---------- 1. Flower logo: always spinning, grows a bit on hover ---------- */
 const createLogo = (): Cleanup | undefined => {
-  const $logo = getLayer('logo');
-  const $flower = $logo && getLayer<SVGElement>('logo-flower', $logo);
-  if (!$logo || !$flower) return;
-
-  gsap.to($flower, { rotation: 360, duration: LOGO_TURN_S, ease: 'none', repeat: -1 });
-
-  return onHover(
-    $logo,
-    () => gsap.to($flower, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
-    () => gsap.to($flower, { scale: 1, duration: 0.3, ease: 'power2.out' }),
-  );
+  // Every logo: the page's header and its scroll-up copy
+  const cleanups = getAll('[data-layer="logo"]').map(($logo) => {
+    const $flower = getLayer<SVGElement>('logo-flower', $logo);
+    if (!$flower) return () => {};
+    gsap.to($flower, { rotation: 360, duration: LOGO_TURN_S, ease: 'none', repeat: -1 });
+    return onHover(
+      $logo,
+      () => gsap.to($flower, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
+      () => gsap.to($flower, { scale: 1, duration: 0.3, ease: 'power2.out' }),
+    );
+  });
+  return () => cleanups.forEach((cleanup) => cleanup());
 };
 
 /* ---------- Project pages: the back arrow grows a bit on hover, like the flower logo ---------- */
 const createBackArrow = (): Cleanup | undefined => {
-  const $back = getLayer('back');
-  const $arrow = $back && getLayer<SVGElement>('back-arrow', $back);
-  if (!$back || !$arrow) return;
-
-  return onHover(
-    $back,
-    () => gsap.to($arrow, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
-    () => gsap.to($arrow, { scale: 1, duration: 0.3, ease: 'power2.out' }),
-  );
+  // Every back arrow: the page's header and its scroll-up copy
+  const cleanups = getAll('[data-layer="back"]').map(($back) => {
+    const $arrow = getLayer<SVGElement>('back-arrow', $back);
+    if (!$arrow) return () => {};
+    return onHover(
+      $back,
+      () => gsap.to($arrow, { scale: LOGO_HOVER_SCALE, duration: 0.3, ease: 'power2.out' }),
+      () => gsap.to($arrow, { scale: 1, duration: 0.3, ease: 'power2.out' }),
+    );
+  });
+  return () => cleanups.forEach((cleanup) => cleanup());
 };
 
 /* ---------- Footer: the big CV grows a bit on hover, like the flower logo, to show it's a link ---------- */
@@ -2368,7 +2371,11 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     return;
   }
 
-  const $headerItems = getLayers(['logo', 'nav-projects', 'nav-about', 'cta']);
+  // The page's own header (the scroll-up copy has the same parts, and comes first in the page)
+  const $pageHeader = document.querySelector('[data-layer="header"]') ?? document;
+  const $headerItems = ['logo', 'nav-projects', 'nav-about', 'cta']
+    .map((name) => getLayer(name, $pageHeader))
+    .filter(($el): $el is HTMLElement => $el !== null);
   const starNames = ['title-star-left', 'title-star-right', 'sparkle-big', 'sparkle-small'];
   // The SVG inside each star moves, so the star's own position and tilt stay put
   const getSvgs = (names: string[]) =>
@@ -2698,6 +2705,71 @@ const createPageTransitions = (reduceMotion: boolean) => {
 };
 
 /*
+  ---------- The header comes back when scrolling up ----------
+  A copy of the page's header waits just above the screen. Scrolling back up (past the page's own
+  header) slides it down, on a soft paper-coloured fade so it never clashes with what's under it.
+  Scrolling down slides it away again, and so does reaching the top, where the page's own header
+  is. Hidden, it's inert, so the keyboard and screen readers skip it.
+  It's made before the hovers are set up, so its links, buttons and logo get them too.
+*/
+const STICKY_HEADER_IN_S = 0.45;
+const STICKY_HEADER_OUT_S = 0.3;
+const STICKY_HEADER_NUDGE_PX = 4; // smaller scroll moves than this don't count as a direction
+
+const createStickyHeader = (reduceMotion: boolean) => {
+  const $header = document.querySelector<HTMLElement>('[data-layer="header"]');
+  if (!$header) return;
+
+  const $bar = document.createElement('div');
+  $bar.className = 'sticky-header';
+  $bar.dataset.layer = 'sticky-header';
+  const $frame = document.createElement('div');
+  $frame.className = 'sticky-header__frame';
+  const $copy = $header.cloneNode(true) as HTMLElement;
+  $copy.dataset.layer = 'sticky-header-copy';
+  // The copy is never part of the page-load animation
+  $copy.querySelectorAll('[data-intro]').forEach(($el) => $el.removeAttribute('data-intro'));
+  $frame.append($copy);
+  $bar.append($frame);
+  $bar.inert = true;
+  // Right after the skip link, so its links come first when it's showing
+  const $skip = document.querySelector('[data-skip-link]');
+  if ($skip) $skip.after($bar);
+  else document.body.prepend($bar);
+
+  gsap.set($bar, { yPercent: -100 });
+  let isShown = false;
+  const show = (shown: boolean) => {
+    if (shown === isShown) return;
+    isShown = shown;
+    $bar.inert = !shown;
+    gsap.to($bar, {
+      yPercent: shown ? 0 : -100,
+      duration: reduceMotion ? 0 : shown ? STICKY_HEADER_IN_S : STICKY_HEADER_OUT_S,
+      ease: shown ? 'power3.out' : 'power2.in',
+      overwrite: true,
+    });
+  };
+
+  let lastY = window.scrollY;
+  const onScroll = () => {
+    const y = window.scrollY;
+    const moved = y - lastY;
+    // Still where the page's own header shows: no copy needed
+    const headerEnd = $header.getBoundingClientRect().bottom + y;
+    if (y <= headerEnd) {
+      show(false);
+      lastY = y;
+      return;
+    }
+    if (Math.abs(moved) < STICKY_HEADER_NUDGE_PX) return;
+    show(moved < 0);
+    lastY = y;
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+};
+
+/*
   The skip link jumps to the page's main title and moves the keyboard focus there too, so the
   next Tab goes on from the content, not from the header (smooth scrolling would skip that).
 */
@@ -2712,6 +2784,7 @@ const createSkipLink = () => {
 export const initAnimations = () => {
   createSkipLink();
   createPageTransitions(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  createStickyHeader(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const mm = gsap.matchMedia();
 
   mm.add(
