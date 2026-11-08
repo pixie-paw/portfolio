@@ -22,6 +22,15 @@ const lowerLine = smoothPath(shiftPoints(DOUBLE_LINE_POINTS, DOUBLE_LINE_LOWER.x
 
 // The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
 const LINE_BOX = { x: -800, y: 120, w: 3040, h: 680 };
+
+/*
+  Phones: the phone frame (518:676) has its own, shorter double line. Its path is copied from
+  Figma, in phone frame px. The upper line starts at x -93.58, y 3012.97; the lower one is the
+  same curve 1.77px right and 6.19px lower (the desktop's offset at the phone size).
+*/
+const PHONE_LINE_PATH =
+  'M0 115.83C43.1 62.56 92.41 35.98 132.3 33.79C172.19 31.61 252.21 47.97 295.32 43.99C338.42 40.01 394.74 17.46 435.77 16.36C476.79 15.25 544.87 39.07 587.76 33.79C630.64 28.51 690.36 2.21 717.97 0';
+const PHONE_LINE_BOX = { x: -100, y: 3000, w: 730, h: 140 };
 ---
 
 <section class="marquee" aria-label="Let’s work together" data-section="marquee">
@@ -36,6 +45,20 @@ const LINE_BOX = { x: -800, y: 120, w: 3040, h: 680 };
     <path class="marquee__line" data-layer="marquee-line" d={upperLine} />
     <path class="marquee__line" data-layer="marquee-line" d={lowerLine} />
   </svg>
+
+  <!-- Phones only: the phone's double line, wrapped so the script can find its own lines -->
+  <div class="marquee__phone-lines" data-layer="marquee-phone">
+    <svg
+      class="marquee__lines marquee__lines--phone"
+      data-layer="marquee-lines"
+      viewBox={`${PHONE_LINE_BOX.x} ${PHONE_LINE_BOX.y} ${PHONE_LINE_BOX.w} ${PHONE_LINE_BOX.h}`}
+      style={`--lx:${PHONE_LINE_BOX.x};--ly:${PHONE_LINE_BOX.y};--lw:${PHONE_LINE_BOX.w};--lh:${PHONE_LINE_BOX.h}`}
+      aria-hidden="true"
+    >
+      <path class="marquee__line marquee__line--phone" data-layer="marquee-line" d={PHONE_LINE_PATH} transform="translate(-93.58 3012.97)" />
+      <path class="marquee__line marquee__line--phone" data-layer="marquee-line" d={PHONE_LINE_PATH} transform="translate(-91.81 3019.16)" />
+    </svg>
+  </div>
 
   <!-- The words are read once; the repeats are decoration -->
   <div class="marquee__band" data-intro style={`--section-h:${SECTION_H}`}>
@@ -131,5 +154,52 @@ const LINE_BOX = { x: -800, y: 120, w: 3040, h: 680 };
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  /* The phone's double line only shows on phones */
+  .marquee__phone-lines {
+    display: none;
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 518:676 ----------
+    Phone frame px, from where this section starts (y 2893.24, under the film strip). The text
+    and the stars are the desktop ones at 0.4421 of their size (Boldonse 21.22px, stars 20.61px),
+    so they use a smaller --u. The double line is the phone's own (3.47px), under the text.
+  */
+  @media (max-width: 767px) {
+    .marquee {
+      --u: calc(0.4421 * var(--m));
+      /* down to the footer, which starts at y 3090 */
+      height: calc(196.76 * var(--m));
+    }
+
+    .marquee > .marquee__lines {
+      display: none;
+    }
+
+    .marquee__phone-lines {
+      display: block;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .marquee__lines--phone {
+      left: calc(50% + (var(--lx) - 196.5) * var(--m));
+      top: calc((var(--ly) - 2893.24) * var(--m));
+      width: calc(var(--lw) * var(--m));
+      height: calc(var(--lh) * var(--m));
+    }
+
+    .marquee__line--phone {
+      stroke-width: 3.47;
+    }
+
+    /* Figma: the first "Let's work together" at x -140, y 2995.7 */
+    .marquee__band {
+      left: calc(50% + (-140 - 196.5) * var(--m));
+      top: calc((2995.7 - 2893.24) * var(--m));
+    }
   }
 </style>

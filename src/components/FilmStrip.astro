@@ -57,7 +57,7 @@ const holesTile = `url("data:image/svg+xml,${encodeURIComponent(
                 src={image}
                 alt=""
                 widths={[Math.round(w), image.width]}
-                sizes="(min-width: 1440px) 228px, 16vw"
+                sizes="(max-width: 767px) min(30vw, 143px), (min-width: 1440px) 228px, 16vw"
                 loading="lazy"
                 data-layer="film-frame"
                 style={`--fw:${w}`}
@@ -112,5 +112,16 @@ const holesTile = `url("data:image/svg+xml,${encodeURIComponent(
     width: calc(var(--fw) * var(--u));
     height: calc(148.91 * var(--u));
     object-fit: cover;
+  }
+
+  /*
+    Phone (< 768px), Figma 518:676: the same strip at 0.5124 of its size (113.24px tall, the
+    frames 76.3px), starting 31px under the last project line. Every size here is in --u, so
+    the strip only needs its own unit.
+  */
+  @media (max-width: 767px) {
+    .film {
+      --u: calc(0.5124 * var(--m));
+    }
   }
 </style>
