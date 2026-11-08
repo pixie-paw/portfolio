@@ -141,7 +141,7 @@ Don't use `landing-page-design`. Its font rules conflict with this design.
 
 ```sh
 npm install
-npm run dev      # http://localhost:4321/
+npm run dev      # http://localhost:4321/, and the Network address it prints for a phone or tablet on the same Wi-Fi
 npm run build    # always run before pushing
 ```
 
