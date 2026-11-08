@@ -45,11 +45,33 @@ const {
         setTimeout(() => delete $html.dataset.intro, 4000);
       }
     </script>
+    <!--
+      Page transitions: when the last page left through a transition, this page starts covered by
+      the tape strips in that colour, before the first paint, and animations.ts reveals it. If the
+      script never runs, the strips come away anyway after 2s.
+    -->
+    <script is:inline>
+      try {
+        const colour = sessionStorage.getItem('page-transition');
+        if (colour) {
+          const $html = document.documentElement;
+          $html.dataset.transition = 'in';
+          $html.style.setProperty('--transition-colour', colour);
+          setTimeout(() => delete $html.dataset.transition, 2000);
+        }
+      } catch (error) {
+        // no sessionStorage (private mode): no transition, the page simply shows
+      }
+    </script>
   </head>
   <body style={`--paper-url: url(${gridPaper.src}); --texture-url: url(${texture.src})`}>
     <!-- For keyboard and screen reader users: hidden until it gets focus, then jumps past the header -->
     <a class="skip-link" href={`#${skipTo}`} data-skip-link>Skip to content</a>
     <slot />
+    <!-- The page transition: five tape strips that cover the screen between pages (see animations.ts) -->
+    <div class="page-transition" aria-hidden="true" data-page-transition>
+      {Array.from({ length: 5 }, (_, i) => <span class="page-transition__strip" style={`--i:${i}`} data-transition-strip />)}
+    </div>
     <!-- The yellow flower from the logo follows the mouse across the whole site (desktop only, see animations.ts) -->
     <span class="cursor-flower" data-layer="cursor-flower" aria-hidden="true">
       <Flower class="cursor-flower__svg" />
