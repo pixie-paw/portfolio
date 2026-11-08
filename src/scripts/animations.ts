@@ -71,12 +71,16 @@ const TAG_DEPTH_PX = 8; // the other layers set their depth with data-depth
 
 // About section
 const MARKER_S = 0.6; // each yellow highlighter bar is drawn in this long
+const BUTTON_RISE_PX = 16; // every button rises in from this far below
 const TYPE_CHAR_S = 0.025; // time between two typed letters on the skills paper
 const TYPE_HEADING_CHAR_S = 0.06; // headings are typed a little slower
 const TYPE_HEADING_PAUSE_S = 0.35; // and the typist pauses after each one
 const PAPER_FEED_S = 0.28; // the paper moves up one line
-const WAVE_DRAW_S = 2.2;
+// Every long line and curve (the waves, the double lines) draws in this long. They're about the
+// same length, so they draw at the same pace.
+const LINE_DRAW_S = 1.6;
 const WAVE_FLOW_PX_S = 40; // the wave text's normal speed along the curve
+const WAVE_WORDS_IN_S = 0.6; // the words along a wave fade in, once it's their turn
 const WAVE_SCROLL_BOOST = 15; // extra px/s for each px/frame of scroll speed
 const WAVE_SEPARATOR = '   ·   ';
 
@@ -103,7 +107,6 @@ const FILM_FLOW_DIRECTION = -1; // -1 = right to left, 1 = left to right
 // "Let's work together" marquee
 const MARQUEE_FLOW_PX_S = 50; // its normal speed, right to left
 const MARQUEE_SCROLL_BOOST = 12; // extra px/s for each px/frame of scroll speed, up or down
-const MARQUEE_LINE_DRAW_S = 1.6;
 
 // Footer
 const FOOTER_ARROW_NUDGE_EVERY_S = 3; // the arrows nudge towards "CV" this often
@@ -188,6 +191,19 @@ const projectFactsShown = new Promise<void>((resolve) => {
   faster, like the home page's hero. Each load animation is registered here; once the page has
   scrolled, the ones still playing (and the ones that start later) run INTRO_HURRY_SPEED times faster.
 */
+/*
+  ---------- Reloading below the fold ----------
+  When an entrance's turn comes and its element is already above the screen (a reload or the back
+  button further down a page, a link like Projects, or a fast scroll), it's finished at once. The
+  chain behind it (title, then text, then the next section) catches up straight away, so the
+  section on screen never waits for the ones above it. $el is the lowest element the entrance shows.
+*/
+const isAboveScreen = ($el?: Element | null) => !!$el && $el.getBoundingClientRect().bottom <= 0;
+const entrance = <T extends gsap.core.Animation>(animation: T, $el?: Element | null): T => {
+  if (isAboveScreen($el)) animation.progress(1);
+  return animation;
+};
+
 const projectIntros: gsap.core.Animation[] = [];
 let isProjectHurried = false;
 const trackProjectIntro = <T extends gsap.core.Animation>(animation: T): T => {
@@ -202,6 +218,20 @@ const hurryProjectIntros = () => {
     .filter((animation) => animation.progress() < 1)
     .forEach((animation) => gsap.to(animation, { timeScale: INTRO_HURRY_SPEED, duration: 0.3, ease: 'power1.in' }));
 };
+
+/*
+  Home page: resolves once the About typewriter has landed. The work section below waits for it
+  (load order: top to bottom). workTitleShown resolves once the work title's bar is drawn, and the
+  rows wait for that.
+*/
+let markAboutShown: () => void = () => {};
+const aboutShown = new Promise<void>((resolve) => {
+  markAboutShown = resolve;
+});
+let markWorkTitleShown: () => void = () => {};
+const workTitleShown = new Promise<void>((resolve) => {
+  markWorkTitleShown = resolve;
+});
 
 // The same for section 2's card text: section 3's long stem waits for it
 let markHowTextShown: () => void = () => {};
@@ -604,7 +634,7 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       trigger: $markers[0],
       start: 'top 85%',
       once: true,
-      onEnter: () => aboutTitleTyped.then(() => firstScroll.play()),
+      onEnter: () => aboutTitleTyped.then(() => entrance(firstScroll.play(), $markers[$markers.length - 1])),
     });
   }
 
@@ -626,7 +656,7 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
     gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
     gsap.set($cardText, { autoAlpha: 0 });
     gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
-    if ($aboutButton) gsap.set($aboutButton, { scale: 0.8, autoAlpha: 0 });
+    if ($aboutButton) gsap.set($aboutButton, { y: BUTTON_RISE_PX, autoAlpha: 0 });
 
     ScrollTrigger.create({
       trigger: $card,
@@ -649,8 +679,10 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
               '<0.2',
             );
           if ($aboutButton) {
-            card.to($aboutButton, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2)' }, '-=0.2');
+            // The button rises in after the text, like every button
+            card.to($aboutButton, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3');
           }
+          entrance(card, $aboutButton ?? $card);
           }),
         ),
     });
@@ -659,16 +691,23 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   // Wave line: draws itself in from left to right, once
   const $wave = getLayer('wave', $waveRoot);
   const $waveLine = getLayer<SVGPathElement>('wave-line', $waveRoot);
+  // The words along it are hidden until the line is drawn, then fade in (they keep flowing meanwhile)
+  const $waveText = getLayer('wave-text', $waveRoot);
   if ($wave && $waveLine) {
     const length = $waveLine.getTotalLength();
     gsap.set($waveLine, { strokeDasharray: length, strokeDashoffset: length });
-    const draw = gsap.to($waveLine, { strokeDashoffset: 0, duration: WAVE_DRAW_S, ease: 'power2.inOut', paused: true });
+    if ($waveText) gsap.set($waveText, { autoAlpha: 0 });
+    const draw = gsap
+      .timeline({ paused: true })
+      .to($waveLine, { strokeDashoffset: 0, duration: LINE_DRAW_S, ease: 'power2.inOut' })
+      .to($waveText ?? [], { autoAlpha: 1, duration: WAVE_WORDS_IN_S, ease: 'power1.out' });
     ScrollTrigger.create({
       trigger: $wave,
       start: 'top 75%',
       once: true,
       // On phones the wave comes before the title, so it doesn't wait for it
-      onEnter: () => (isPhone ? draw.play() : aboutTitleTyped.then(() => draw.play())),
+      onEnter: () =>
+        isPhone ? entrance(draw.play(), $waveLine) : aboutTitleTyped.then(() => entrance(draw.play(), $waveLine)),
     });
   }
 
@@ -688,7 +727,12 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       once: true,
       onEnter: () =>
         cardShown.then(() =>
-          context.add(() => gsap.to($machine, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.4)' })),
+          context.add(() =>
+            entrance(
+              gsap.to($machine, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.4)', onComplete: () => markAboutShown() }),
+              $typewriter,
+            ),
+          ),
         ),
     });
   }
@@ -740,11 +784,15 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       onEnter: () =>
         aboutTitleTyped.then(() =>
           context.add(() => {
-            gsap
+            const landing = gsap
               .timeline()
               .to($typewriter, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.4)' })
               .set($paper, { autoAlpha: 1 })
-              .add(() => typing.play());
+              .add(() => {
+                markAboutShown();
+                entrance(typing.play(), $typewriter);
+              });
+            entrance(landing, $typewriter);
           }),
         ),
     });
@@ -1005,22 +1053,55 @@ const createWorkPreview = ($work: HTMLElement): WorkPreview | undefined => {
 
 /* ---------- Work section: the title bar, the sticker and the rows come in on scroll ---------- */
 const createWorkEntrance = (context: gsap.Context, $work: Element) => {
-  // Title: the yellow bar is drawn in from left to right, like the About highlighter
+  // Without the About typewriter above (or its section), nothing to wait for
+  const $typewriter = document.querySelector('[data-section="about"] [data-layer="typewriter"]');
+  if (!$typewriter) markAboutShown();
+
+  // Title: typed letter by letter like every section title, then its yellow bar is drawn in from
+  // left to right, then the sticker grows in. Phones have their own sticker ("Tap to see more").
+  const isPhone = window.matchMedia('(max-width: 767px)').matches;
+  const $title = getLayer('work-title', $work);
   const $marker = getLayer('work-marker', $work);
-  const $click = getLayer('tag-click', $work);
+  const $click = getLayer(isPhone ? 'tag-tap' : 'tag-click', $work);
   const $clickBody = $click && getLayer('tag-body', $click);
-  if ($marker) {
+  // The sparkles by the title (desktop and tablets): the SVG inside each one moves, so the
+  // sparkle's own position stays put
+  const getStarSvgs = (names: string[]) =>
+    names
+      .map((name) => getLayer(name, $work)?.querySelector<SVGElement>('svg'))
+      .filter(($svg): $svg is SVGElement => !!$svg);
+  const $stars = getStarSvgs(['work-sparkle-big', 'work-sparkle-small']);
+  const $starOutlines = getStarSvgs(['work-sparkle-big-outline', 'work-sparkle-small-outline']);
+  if ($marker && $title) {
+    // Hidden until its letters are split, so it never flashes in full before the typing
+    gsap.set($title, { autoAlpha: 0 });
     gsap.set($marker, { clipPath: 'inset(0% 100% 0% 0%)' });
     if ($clickBody) gsap.set($clickBody, { scale: 0.4, autoAlpha: 0 });
+    gsap.set($stars, { scale: 0, autoAlpha: 0 });
+    gsap.set($starOutlines, { x: (i: number) => (i % 2 ? 6 : -6), y: (i: number) => (i % 2 ? -6 : 6), autoAlpha: 0 });
 
     ScrollTrigger.create({
-      trigger: $marker,
+      trigger: $title,
       start: 'top 85%',
       once: true,
+      // After the About section above it, and once the title's font is in
       onEnter: () =>
-        context.add(() => {
-          const title = gsap.timeline();
-          title.to($marker, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power2.inOut' });
+        Promise.all([waitForFonts(), aboutShown]).then(() => context.add(() => {
+          const chars = SplitText.create($title, { type: 'words,chars' }).chars;
+          gsap.set(chars, { autoAlpha: 0 });
+          gsap.set($title, { autoAlpha: 1 });
+          const typedAt = chars.length * ABOUT_TITLE_TYPE_S;
+          const title = gsap
+            .timeline()
+            .to(chars, { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S })
+            .to(
+              $marker,
+              { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut', onComplete: () => markWorkTitleShown() },
+              typedAt,
+            )
+            // The sparkles pop in with the bar, like the About title's, and their outlines lock on
+            .to($stars, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2.2)', stagger: 0.1 }, typedAt + 0.2)
+            .to($starOutlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out', stagger: 0.1 }, typedAt + 0.3);
           // The sticker grows in like the camera tags, then floats like the hero tags
           if ($clickBody) {
             title.to(
@@ -1032,14 +1113,18 @@ const createWorkEntrance = (context: gsap.Context, $work: Element) => {
                 ease: 'back.out(1.7)',
                 onComplete: () => context.add(() => startFloat($clickBody)),
               },
-              0.5,
+              typedAt + 0.3,
             );
           }
-        }),
+          entrance(title, $click ?? $marker);
+        })),
     });
+  } else {
+    markWorkTitleShown();
   }
 
-  // Rows: each line is drawn in from left to right, then its row rises in, one row after another
+  // Rows: each line is drawn in from left to right, then its row rises in, one row after another,
+  // once the title's bar is drawn
   const $list = $work.querySelector('ul');
   const $items = getAll('[data-layer="work-item"]', $work);
   if (!$list || !$items.length) return;
@@ -1060,13 +1145,14 @@ const createWorkEntrance = (context: gsap.Context, $work: Element) => {
     start: 'top 80%',
     once: true,
     onEnter: () =>
-      context.add(() => {
+      workTitleShown.then(() => context.add(() => {
         const list = gsap.timeline();
         rows.forEach(({ $line, $parts }, i) => {
           if ($line) list.to($line, { scaleX: 1, duration: 0.7, ease: 'power2.inOut' }, i * 0.15);
           list.to($parts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.06 }, i * 0.15 + 0.1);
         });
-      }),
+        entrance(list, $list);
+      })),
   });
 };
 
@@ -1139,15 +1225,18 @@ const createFilmStrip = (context: gsap.Context) => {
     once: true,
     onEnter: () =>
       context.add(() => {
-        gsap.to($strip, {
-          xPercent: 0,
-          duration: FILM_ENTER_S,
-          ease: 'power3.out',
-          onComplete: () => {
-            hasArrived = true;
-            updateFlow();
-          },
-        });
+        entrance(
+          gsap.to($strip, {
+            xPercent: 0,
+            duration: FILM_ENTER_S,
+            ease: 'power3.out',
+            onComplete: () => {
+              hasArrived = true;
+              updateFlow();
+            },
+          }),
+          $film,
+        );
       }),
   });
 };
@@ -1157,7 +1246,7 @@ const createFilmStrip = (context: gsap.Context) => {
   facts both use this, so their lines always move the same way.
 */
 const drawDoubleLine = ($lines: SVGPathElement[]) =>
-  gsap.to($lines, { strokeDashoffset: 0, duration: MARQUEE_LINE_DRAW_S, ease: 'power2.inOut', stagger: 0.1 });
+  gsap.to($lines, { strokeDashoffset: 0, duration: LINE_DRAW_S, ease: 'power2.inOut', stagger: 0.1 });
 
 /* ---------- "Let's work together": words rise, stars pop, the lines draw, then it flows ---------- */
 const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
@@ -1174,7 +1263,7 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
 
   // Start states: words just below their line, stars at nothing, lines not drawn yet
   gsap.set($texts, { yPercent: 60, autoAlpha: 0 });
-  gsap.set($pinks, { scale: 0, rotation: -90, autoAlpha: 0 });
+  gsap.set($pinks, { scale: 0, autoAlpha: 0 });
   gsap.set($outlines, { x: -6, y: 6, autoAlpha: 0 });
   $lines.forEach(($line) => {
     const length = $line.getTotalLength();
@@ -1226,7 +1315,7 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
       waitForFonts().then(() =>
         context.add(() => {
           measure();
-          gsap
+          const arrive = gsap
             .timeline({
               onComplete: () => {
                 hasArrived = true;
@@ -1235,11 +1324,12 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
             })
             // Each "Let's work together" rises into its line, one after another from left to right
             .to($texts, { yPercent: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', stagger: 0.12 }, 0)
-            // The stars pop in with a quarter turn, the outline locks on just after
-            .to($pinks, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.12 }, 0.3)
-            .to($outlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.6, ease: 'expo.out', stagger: 0.12 }, 0.4)
+            // The stars pop in, the outline locks on just after (like every star)
+            .to($pinks, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2.2)', stagger: 0.1 }, 0.3)
+            .to($outlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out', stagger: 0.1 }, 0.4)
             // The double line draws itself in from left to right
             .add(drawDoubleLine($lines), 0);
+          entrance(arrive, $marquee);
         }),
       ),
   });
@@ -1261,13 +1351,16 @@ const createFooter = (context: gsap.Context) => {
       once: true,
       onEnter: () =>
         context.add(() => {
-          gsap.to($body, {
-            scale: 1,
-            autoAlpha: 1,
-            duration: 0.8,
-            ease: 'back.out(1.7)',
-            onComplete: () => context.add(() => startFloat($body)),
-          });
+          entrance(
+            gsap.to($body, {
+              scale: 1,
+              autoAlpha: 1,
+              duration: 0.8,
+              ease: 'back.out(1.7)',
+              onComplete: () => context.add(() => startFloat($body)),
+            }),
+            $sticker,
+          );
         }),
     });
   });
@@ -1287,7 +1380,7 @@ const createFooter = (context: gsap.Context) => {
     // so the same values move them out to the right. The top ones point down, the bottom ones up.
     const isTop = (i: number) => i < 2;
     gsap.set($arrows, { x: -40, y: (i: number) => (isTop(i) ? -20 : 20), autoAlpha: 0 });
-    gsap.set($buttons, { y: 20, autoAlpha: 0 });
+    gsap.set($buttons, { y: BUTTON_RISE_PX, autoAlpha: 0 });
 
     ScrollTrigger.create({
       trigger: $cv,
@@ -1298,7 +1391,7 @@ const createFooter = (context: gsap.Context) => {
           context.add(() => {
             const letters = SplitText.create($letters, { type: 'chars' }).chars;
             gsap.set($letters, { autoAlpha: 1 });
-            gsap
+            const cvIn = gsap
               .timeline({
                 // Then every few seconds the arrows nudge towards "CV" together, to draw the eye
                 onComplete: () =>
@@ -1324,11 +1417,12 @@ const createFooter = (context: gsap.Context) => {
                 0.2,
               )
               // and the yellow bar is drawn in behind it like a highlighter
-              .to($marker, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power2.inOut' }, 0.5)
+              .to($marker, { clipPath: 'inset(0% 0% 0% 0%)', duration: MARKER_S, ease: 'power2.inOut' }, 0.5)
               // The arrows shoot in and stop with a small overshoot, pointing at "CV"
               .to($arrows, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.6)', stagger: 0.08 }, 0.9)
               // The buttons rise in one after another
               .to($buttons, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.1 }, 1.2);
+            entrance(cvIn, $buttons[$buttons.length - 1] ?? $cv);
           }),
         ),
     });
@@ -1345,7 +1439,7 @@ const createFooter = (context: gsap.Context) => {
       once: true,
       onEnter: () =>
         context.add(() => {
-          gsap.to($bandTexts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.08 });
+          entrance(gsap.to($bandTexts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.08 }), $band);
         }),
     });
   }
@@ -1414,9 +1508,9 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
   // Hidden until its letters are split, so it never flashes in full before the typing
   if ($title) gsap.set($title, { autoAlpha: 0 });
   gsap.set($markers, { clipPath: 'inset(0% 100% 0% 0%)' });
-  gsap.set($stars, { scale: 0, rotation: -90, autoAlpha: 0 });
+  gsap.set($stars, { scale: 0, autoAlpha: 0 });
   if ($cardText) gsap.set($cardText, { autoAlpha: 0 });
-  if ($cvButton) gsap.set($cvButton, { y: 12, autoAlpha: 0 });
+  if ($cvButton) gsap.set($cvButton, { y: BUTTON_RISE_PX, autoAlpha: 0 });
   if ($card) gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
   gsap.set($corners, { x: (i: number) => (i % 2 ? 8 : -8), y: (i: number) => (i < 2 ? -8 : 8), autoAlpha: 0 });
 
@@ -1523,7 +1617,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
           context.add(() => {
             const lines = SplitText.create($cardText, { type: 'lines' }).lines;
             gsap.set($cardText, { autoAlpha: 1 });
-            gsap
+            const cardIn = gsap
               .timeline({ onComplete: () => markIntroTextShown() })
               .to($card, { clipPath: 'inset(-5% -5% -5% -5%)', duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
               .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
@@ -1535,6 +1629,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
               )
               // The CV button rises in after the text, like the lines
               .to($cvButton ?? [], { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3');
+            entrance(cardIn, $cvButton ?? $card);
           }),
         ),
     });
@@ -1628,8 +1723,8 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
         .to($kiki ?? [], { x: 0, rotation: 0, duration: 0.6, ease: 'power3.in' }, 0.8)
         .to($kiki ?? [], { scaleX: 0.86, scaleY: 1.1, duration: 0.1, ease: 'power2.out' }, 1.4)
         .to($kiki ?? [], { scaleX: 1, scaleY: 1, duration: 0.6, ease: 'elastic.out(1, 0.4)' }, 1.5)
-        // 1.4s: the stars pop
-        .to($stars, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.12 }, 1.4);
+        // 1.4s: the stars pop, like every star
+        .to($stars, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2.2)', stagger: 0.1 }, 1.4);
 
       // The stems grow slowly out from behind the photo, one after another, and each flower opens
       flowers.forEach(({ $stem, $head }, i) => {
@@ -1642,6 +1737,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
       if ($hat) {
         load.to($hat, { y: 0, rotation: 0, autoAlpha: 1, duration: 0.45, ease: 'power3.in' }, INTRO_HAT_DROP_AT_S);
       }
+      entrance(load, $intro);
     }),
   );
 };
@@ -1690,10 +1786,11 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
     // floats. It doesn't wait for the scroll, so it shows the way down the page. Once grown, it stays.
     introTextShown.then(() =>
       context.add(() => {
-        gsap
+        const grow = gsap
           .timeline({ delay: HOW_STEM_AFTER_S, onComplete: () => float.play() })
           .to($stem, { drawSVG: STEM_DRAWN, duration: HOW_STEM_S, ease: 'sine.inOut' })
           .to($head ?? [], { scale: 1, duration: 0.9, ease: 'back.out(1.6)' }, HOW_STEM_S * 0.9);
+        entrance(grow, $bloom ?? $flower);
       }),
     );
   }
@@ -1732,6 +1829,7 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
                 .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
                 .to(lines, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, '<0.2');
             }
+            entrance(typed, $card ?? $title);
           }),
         ),
     });
@@ -1747,7 +1845,7 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
   gsap.set($pictures, { clipPath: 'inset(50% 0% 50% 0%)', autoAlpha: 1 });
 
   const playCamera = () => {
-    gsap
+    const shot = gsap
       .timeline()
       .to($camera, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' })
       // a quick tilt and back, like pressing the shutter
@@ -1768,9 +1866,24 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
         },
         0.9, // just after the tilt starts
       );
+    entrance(shot, $strip ?? $camera);
   };
 
   // ---------- The words flow along the wave, like on the home page ----------
+  // They fade in once section 1's text is in and they're on screen (load order: top to bottom)
+  const $waveText = getLayer('wave-text', $section);
+  if ($waveText) {
+    gsap.set($waveText, { autoAlpha: 0 });
+    ScrollTrigger.create({
+      trigger: $waveText,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        introTextShown.then(() =>
+          context.add(() => entrance(gsap.to($waveText, { autoAlpha: 1, duration: WAVE_WORDS_IN_S, ease: 'power1.out' }), $waveText)),
+        ),
+    });
+  }
   waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($section, 'how-started-wave'))));
 };
 
@@ -1839,6 +1952,7 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
       // The branch leaves the long stem just before it reaches the card
       if ($branchPath) grow.to($branchPath, { drawSVG: STEM_DRAWN, duration: GOING_BRANCH_S, ease: 'sine.inOut' }, HOW_STEM_S * 0.8);
       if ($blueHead) grow.to($blueHead, openHead, HOW_STEM_S * 0.8 + GOING_BRANCH_S * 0.85);
+      entrance(grow, $flowerBlue ?? $longStem);
     }));
   }
 
@@ -1876,6 +1990,7 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
               .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
               .to(lines, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, '<0.2');
           }
+          entrance(typed, $card ?? $title);
         })),
     });
   }
@@ -1944,6 +2059,7 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
       if ($stem) statueIn.to($stem, { drawSVG: STEM_DRAWN, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
       if ($head) statueIn.to($head, openHead, at + INTRO_STEM_S * 0.85);
     });
+    entrance(statueIn, $statue);
   };
 };
 
@@ -1970,9 +2086,9 @@ const createProjectHero = (context: gsap.Context) => {
   // The mockup starts just past the right edge of the screen, wherever the page is
   if ($mockup) gsap.set($mockup, { x: window.innerWidth - $mockup.getBoundingClientRect().left });
   if ($title) gsap.set($title, { autoAlpha: 0 });
-  gsap.set($tagBodies, { scale: 0 });
+  gsap.set($tagBodies, { scale: 0.4, autoAlpha: 0 });
   if ($summary) gsap.set($summary, { autoAlpha: 0 });
-  gsap.set($buttons, { y: 16, autoAlpha: 0 });
+  gsap.set($buttons, { y: BUTTON_RISE_PX, autoAlpha: 0 });
 
   // As soon as the page has scrolled 1px (also when it loads already scrolled), the load hurries
   ScrollTrigger.create({ start: 1, once: true, onEnter: hurryProjectIntros });
@@ -1999,7 +2115,8 @@ const createProjectHero = (context: gsap.Context) => {
       const titleAt = PROJECT_BAND_AT_S + PROJECT_BAND_S * 0.75;
       const titleDoneAt = titleAt + Math.max(chars.length - 1, 0) * TITLE_STAGGER_S + TITLE_STAND_S * 0.6;
 
-      trackProjectIntro(gsap.timeline())
+      const heroIn = trackProjectIntro(gsap.timeline());
+      heroIn
         // The band wipes in from left to right, like the text cards
         .to($band ?? [], { clipPath: 'inset(0% 0% 0% 0%)', duration: PROJECT_BAND_S, ease: 'power3.inOut', clearProps: 'clipPath' }, PROJECT_BAND_AT_S)
         // The laptop and phone slide in from the right edge and settle
@@ -2012,12 +2129,13 @@ const createProjectHero = (context: gsap.Context) => {
           titleAt,
         )
         // The tags grow in where they are
-        .to($tagBodies, { scale: 1, duration: 0.5, ease: 'back.out(2)', stagger: 0.1 }, titleDoneAt)
+        .to($tagBodies, { scale: 1, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.7)', stagger: 0.1 }, titleDoneAt)
         // The line about the project rises in, line by line
         .to(lines, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, titleDoneAt + 0.2)
         // Then the buttons, and the sections below may come in
         .to($buttons, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.12 }, titleDoneAt + 0.45)
         .call(() => markProjectHeroShown(), [], titleDoneAt + 0.45);
+      entrance(heroIn, $hero);
     }),
   );
 };
@@ -2068,7 +2186,7 @@ const createProjectFacts = (context: gsap.Context): Cleanup | undefined => {
       trigger: $section,
       start: 'top 80%',
       once: true,
-      onEnter: () => projectHeroShown.then(() => context.add(() => drawDoubleLine($lines))),
+      onEnter: () => projectHeroShown.then(() => context.add(() => entrance(drawDoubleLine($lines), $lines[0]))),
     });
   }
 
@@ -2106,6 +2224,7 @@ const createProjectFacts = (context: gsap.Context): Cleanup | undefined => {
             // The tools label, then the icons pop in from left to right
             if ($toolsLabel) cards.to($toolsLabel, { autoAlpha: 1, duration: 0.3, ease: 'power1.out' }, 0.95);
             cards.to($icons, { scale: 1, duration: 0.5, ease: 'back.out(2)', stagger: 0.08 }, 1.05);
+            entrance(cards, $factsCard);
           }),
         ),
     });
@@ -2170,7 +2289,7 @@ const createProjectStory = (context: gsap.Context): Cleanup | undefined => {
       once: true,
       onEnter: () =>
         projectFactsShown.then(() =>
-          context.add(() => trackProjectIntro(gsap.to($el, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' }))),
+          context.add(() => entrance(trackProjectIntro(gsap.to($el, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' })), $el)),
         ),
     });
   if ($rail) riseIn($rail);
@@ -2364,7 +2483,7 @@ const createProjectLive = (context: gsap.Context) => {
     once: true,
     onEnter: () =>
       projectFactsShown.then(() =>
-        context.add(() => trackProjectIntro(gsap.to($screen, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' }))),
+        context.add(() => entrance(trackProjectIntro(gsap.to($screen, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' })), $screen)),
       ),
   });
 };
@@ -2627,13 +2746,16 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
       once: true,
       onEnter: () =>
         context.add(() =>
-          gsap.to(aboutTitleChars, {
-            autoAlpha: 1,
-            duration: 0.01,
-            ease: 'none',
-            stagger: ABOUT_TITLE_TYPE_S,
-            onComplete: () => markAboutTitleTyped(),
-          }),
+          entrance(
+            gsap.to(aboutTitleChars, {
+              autoAlpha: 1,
+              duration: 0.01,
+              ease: 'none',
+              stagger: ABOUT_TITLE_TYPE_S,
+              onComplete: () => markAboutTitleTyped(),
+            }),
+            $aboutTitle,
+          ),
         ),
     });
   }
@@ -2644,7 +2766,7 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   gsap.set($internshipBody, { transformOrigin: '50% 0%', transformPerspective: 600 });
   $internshipLabel.textContent = scrambledText;
   delete $html.dataset.intro;
-  intro.play();
+  entrance(intro.play(), document.querySelector('[data-section="hero"]'));
 
   // Scrolling while the hero still loads: everything still arrives in order, just faster.
   // start: 1 = as soon as the page has scrolled 1px (also true if it loads already scrolled).

@@ -111,6 +111,8 @@ const PROJECTS: Project[] = [
         font="sans"
         class="work__click"
       />
+      <!-- Phones: the same sticker says "Tap" (Figma 518:676), placed by the phone styles -->
+      <Tag name="tag-tap" text="{ Tap to see more }" x={0} y={0} w={134.41} rotate={3.25} font="sans" class="work__tap" />
     </div>
 
     <!-- The projects. Hovering a row shows its card, turns the name blue and underlines its kind. -->
@@ -275,6 +277,11 @@ const PROJECTS: Project[] = [
 
   .work__title-area :global(.work__click) {
     z-index: 2;
+  }
+
+  /* The phone's "Tap to see more" sticker only shows on phones */
+  .work__title-area :global(.work__tap) {
+    display: none;
   }
 
   /* ---------- Project list ---------- */
@@ -511,5 +518,126 @@ const PROJECTS: Project[] = [
   :global(html:not([data-motion])) .work__row:focus-visible .work__card {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* Touch screens never get a project card, only the name's look (Irina: the card is desktop only) */
+  @media (hover: none) {
+    .work__card {
+      display: none;
+    }
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 518:676 ----------
+    Phone frame px, from where this section starts (y 1909, 40px under the typewriter, as in Figma).
+    In Figma the rows' spacing varies a little (no auto layout), so every row uses the first one's:
+    44px from the line above to the name, the kind 52px under the name's top, the line 23px under
+    the kind. The tags are the desktop tags at 0.769 of their size, stacked on the right, 12px above
+    the line. The lines run edge to edge.
+  */
+  @media (max-width: 767px) {
+    .work {
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      /* Figma: the film strip starts 31px under the last line */
+      padding-bottom: calc(31 * var(--m));
+    }
+
+    .work__frame {
+      grid-template-rows: calc(117 * var(--m)) auto;
+    }
+
+    .work__star,
+    .work__title-area :global(.work__click) {
+      display: none;
+    }
+
+    /* Figma: Boldonse 24px at x 15, y 1964 (its box isn't trimmed here) */
+    .work__title {
+      left: calc(15 * var(--m));
+      top: calc(55 * var(--m));
+      font-size: calc(24 * var(--m));
+      line-height: calc(34 / 24);
+      text-box: normal;
+    }
+
+    /* Figma: a 13.37px bar from x 7, 302px long, centred on y 1991 */
+    .work__marker {
+      left: calc(7 * var(--m));
+      top: calc((82 - 6.69) * var(--m));
+      width: calc(302 * var(--m));
+      height: calc(13.37 * var(--m));
+    }
+
+    /* Figma: the desktop sticker's size (134.41 x 31.91), centred at x 266, y 2009.74 */
+    .work__title-area :global(.work__tap) {
+      --k: var(--m);
+      display: block;
+      left: calc(266 * var(--m));
+      top: calc(100.74 * var(--m));
+      z-index: 2;
+    }
+
+    .work__item {
+      margin-left: 0;
+      width: auto;
+    }
+
+    /* Edge to edge, like in Figma (the page clips what runs past the screen) */
+    .work__line {
+      left: -50vw;
+      right: -50vw;
+      height: calc(1.5 * var(--m));
+    }
+
+    .work__row {
+      height: auto;
+      padding: calc(44 * var(--m)) 0 calc(23 * var(--m)) calc(7 * var(--m));
+    }
+
+    /* Figma: Boldonse 18px in a 35px line */
+    .work__name {
+      font-size: calc(18 * var(--m));
+      line-height: calc(35 * var(--m));
+    }
+
+    /* Stacked on the right, 3px apart, 12px above the line */
+    .work__tags {
+      position: absolute;
+      right: calc(8 * var(--m));
+      bottom: calc(12 * var(--m));
+      flex-direction: column;
+      align-items: flex-end;
+      gap: calc(3.1 * var(--m));
+      height: auto;
+      margin-top: 0;
+    }
+
+    .work__tags :global(.tag) {
+      --k: calc(0.7686 * var(--m));
+    }
+
+    /* Figma: Akzidenz 18px, 52px under the name's top, the arrow 26px after it */
+    .work__kind {
+      position: relative;
+      right: auto;
+      top: auto;
+      width: max-content;
+      height: calc(22 * var(--m));
+      margin-top: calc((52 - 35) * var(--m));
+      gap: calc(26 * var(--m));
+      font-size: calc(18 * var(--m));
+    }
+
+    .work__arrow {
+      width: calc(19.5 * var(--m));
+    }
+
+    /* Figma: tapped, a 2.5px blue line 10px under the kind, 4px wider than it on each side */
+    .work__kind-line {
+      left: calc(-4 * var(--m));
+      right: calc(-4.5 * var(--m));
+      bottom: calc(-11.25 * var(--m));
+      height: calc(2.5 * var(--m));
+    }
   }
 </style>
