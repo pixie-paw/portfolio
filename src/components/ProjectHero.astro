@@ -46,7 +46,7 @@ const LINKS = [
       src={mockup}
       alt={mockupAlt}
       widths={[908, 1816]}
-      sizes="calc(908 * min(100vw, 1440px) / 1440)"
+      sizes="(max-width: 767px) min(123vw, 590px), calc(908 * min(100vw, 1440px) / 1440)"
       loading="eager"
       fetchpriority="high"
     />
@@ -179,6 +179,87 @@ const LINKS = [
     .project-hero__buttons {
       position: static;
       margin-top: calc(20 * var(--u));
+    }
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 529:2153 (393px frame) ----------
+    The same parts, stacked: the band with the centred name, the tags, the line about the project,
+    the two buttons, then the mockup running off the right edge. Phone frame px from the top.
+    Irina moved the band and everything under it up 65px from Figma (the gap under the header is
+    35px instead of 100px, every other gap is unchanged), so the mockup is on the first screen.
+    --hm is the hero's own phone unit: one phone pixel, but smaller on short screens, so everything
+    down to the bottom of the mockup (y 702, plus 16px) fits the first screen. svh is the screen
+    height with the browser bars showing. The header keeps --m.
+  */
+  @media (max-width: 767px) {
+    .project-hero {
+      --hm: var(--m);
+      --hm: min(var(--m), calc(100svh / 718));
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--hm)) [frame-end] 1fr [full-end];
+      grid-template-rows: [content-start] calc(725 * var(--hm)) [content-end];
+    }
+
+    /* The header keeps its full phone size, centred over the hero */
+    .project-hero__header {
+      width: calc(393 * var(--m));
+      margin-left: calc((393 * var(--hm) - 393 * var(--m)) / 2);
+    }
+
+    /* Figma: 76px tall, edge to edge (y 110, 65px higher than in Figma) */
+    .project-hero__band {
+      margin-top: calc(110 * var(--hm));
+      height: calc(76 * var(--hm));
+    }
+
+    /* Figma: Boldonse 24px, centred on the band */
+    .project-hero__title {
+      left: 0;
+      right: 0;
+      top: calc(126 * var(--hm));
+      font-size: calc(24 * var(--hm));
+      text-align: center;
+    }
+
+    /* Figma: the tags at 0.81 of the home page's size, from x 8, 8px under the band, 9.73px apart */
+    .project-hero__tags {
+      left: calc(8 * var(--hm));
+      top: calc(194 * var(--hm));
+      gap: calc(9.73 * var(--hm));
+    }
+
+    .project-hero__tags :global(.tag) {
+      --k: calc(0.8106 * var(--hm));
+    }
+
+    /* Figma: Akzidenz 15.6px at x 8, 297px wide, 16px under the tags */
+    .project-hero__intro {
+      left: calc(8 * var(--hm));
+      top: calc(236 * var(--hm));
+      width: calc(297 * var(--hm));
+    }
+
+    .project-hero__summary {
+      font-size: calc(15.6 * var(--hm));
+    }
+
+    /* Figma: the desktop buttons at 0.69 of their size, 16px under the text, 9px apart */
+    .project-hero__buttons {
+      --u: calc(0.6923 * var(--hm));
+      margin-top: calc(16 * var(--hm));
+      gap: calc(9 * var(--hm));
+    }
+
+    .project-hero__buttons :global(.button) {
+      font-size: calc(16 * var(--u));
+      border-width: calc(2 * var(--u));
+    }
+
+    /* Figma: x 8, 482.8px wide, running off the right edge, 30px under the buttons */
+    .project-hero__mockup {
+      left: calc(8 * var(--hm));
+      top: calc(420 * var(--hm));
+      width: calc(482.8 * var(--hm));
     }
   }
 </style>

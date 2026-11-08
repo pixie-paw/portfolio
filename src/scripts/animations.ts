@@ -2199,7 +2199,11 @@ const createProjectFacts = (context: gsap.Context): Cleanup | undefined => {
     return;
   }
 
-  const $lines = getAll<SVGPathElement>('[data-layer="facts-line"]', $section);
+  // Phones have their own double line, in its own wrapper
+  const $linesRoot = window.matchMedia('(max-width: 767px)').matches
+    ? getLayer('facts-phone', $section)
+    : getLayer('facts-lines', $section);
+  const $lines = getAll<SVGPathElement>('[data-layer="facts-line"]', $linesRoot ?? $section);
   const $factsCard = getLayer('facts-card', $section);
   const $factsCorners = getAll('[data-layer="facts-corner"]', $section);
   const $labels = getAll('[data-layer="facts-label"]', $section);
@@ -2318,6 +2322,37 @@ const createProjectStory = (context: gsap.Context): Cleanup | undefined => {
     })),
   );
   if (!parts.length) return;
+
+  /*
+    Phones: no reading guide. Everything stays open, one chapter after another. Each title, part
+    and image row rises in as it comes into view (after the facts), like the desktop's chapters and
+    images, and the line under each title fills green as you scroll through its chapter.
+  */
+  if (window.matchMedia('(max-width: 767px)').matches) {
+    const $pieces = getAll('[data-layer="story-title"], [data-layer="story-part"], [data-layer="story-row"]', $story);
+    gsap.set($pieces, { y: 24, autoAlpha: 0 });
+    $pieces.forEach(($el) =>
+      ScrollTrigger.create({
+        trigger: $el,
+        start: 'top 90%',
+        once: true,
+        onEnter: () =>
+          projectFactsShown.then(() =>
+            context.add(() => entrance(trackProjectIntro(gsap.to($el, { y: 0, autoAlpha: 1, duration: 0.9, ease: 'power3.out' })), $el)),
+          ),
+      }),
+    );
+    getAll('[data-layer="story-chapter"]', $story).forEach(($chapter) => {
+      const $fill = getLayer('story-progress', $chapter);
+      if (!$fill) return;
+      gsap.to($fill, {
+        scaleX: 1,
+        ease: 'none',
+        scrollTrigger: { trigger: $chapter, start: 'top center', end: 'bottom center', scrub: true },
+      });
+    });
+    return;
+  }
 
   // Tighter gaps and a column that stays in place (see ProjectStory.astro)
   $story.dataset.story = 'live';
@@ -2492,6 +2527,12 @@ const createProjectLiveCover = (reduceMotion: boolean): Cleanup | undefined => {
       })
     : null;
   outOfView?.observe($screen);
+  // Scrolled away (on a touch screen there's no mouse leaving it): the cover comes back, so a swipe
+  // over the website scrolls the page again
+  const offScreen = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) $screen.classList.add('project-live__screen--guarded');
+  });
+  offScreen.observe($screen);
 
   // ---------- The cover ----------
   const guard = () => $screen.classList.add('project-live__screen--guarded');
@@ -2513,6 +2554,7 @@ const createProjectLiveCover = (reduceMotion: boolean): Cleanup | undefined => {
   return () => {
     $screen.classList.remove('project-live__screen--guarded');
     outOfView?.disconnect();
+    offScreen.disconnect();
     events.forEach(([$target, type, handler]) => $target.removeEventListener(type, handler));
   };
 };
@@ -3191,6 +3233,32 @@ const createTypewriterDrop = () => {
 };
 
 /*
+  Project pages: Briefing, Process, Result and "Read the process" link to the first image of their
+  chapter. Phones don't show that column, so there the link goes to the chapter's title instead.
+  It works with and without motion. Capture phase, so it runs before smooth scrolling's own handler.
+*/
+const createStoryAnchors = () => {
+  const $story = document.querySelector('[data-section="project-story"]');
+  if (!$story) return;
+  document.addEventListener(
+    'click',
+    (event) => {
+      const $link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+      const id = $link?.hash.slice(1);
+      const $image = id ? $story.querySelector<HTMLElement>(`#${CSS.escape(id)}`) : null;
+      const $title = id ? document.getElementById(`${id}-title`) : null;
+      // Only when the image is hidden (phones)
+      if (!$link || !$image || !$title || $image.offsetParent !== null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (smoothScroll) smoothScroll.scrollTo($title, { offset: -16 });
+      else $title.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    },
+    true,
+  );
+};
+
+/*
   The skip link jumps to the page's main title and moves the keyboard focus there too, so the
   next Tab goes on from the content, not from the header (smooth scrolling would skip that).
 */
@@ -3208,6 +3276,7 @@ export const initAnimations = () => {
   createStickyHeader(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   createMobileMenu(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   createTypewriterDrop();
+  createStoryAnchors();
   const mm = gsap.matchMedia();
 
   mm.add(

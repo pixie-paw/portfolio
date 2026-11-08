@@ -31,6 +31,8 @@ interface Props {
 }
 
 const { url, youtube, title, hint = '{ Click to try it }', vertical = false } = Astro.props;
+// Touch screens say "Tap" instead of "Click"
+const touchHint = hint.replace('Click', 'Tap');
 
 // enablejsapi lets the script start and pause the video; rel=0 keeps suggestions to this channel
 // (https://developers.google.com/youtube/player_parameters)
@@ -56,7 +58,8 @@ const src = youtube ? `https://www.youtube-nocookie.com/embed/${youtube}?enablej
       ></iframe>
       <button class="project-live__cover" type="button" aria-label={`Use ${title} here`} data-layer="live-cover"></button>
       <span class="project-live__hint" data-layer="live-hint" aria-hidden="true">
-        <Tag name="live-hint-tag" text={hint} x={0} y={0} w={128} flow />
+        <span class="project-live__hint-mouse"><Tag name="live-hint-tag" text={hint} x={0} y={0} w={128} flow /></span>
+        <span class="project-live__hint-touch"><Tag name="live-hint-tag-touch" text={touchHint} x={0} y={0} w={128} flow /></span>
       </span>
       <span class="project-live__corner project-live__corner--tl" data-layer="live-corner"></span>
       <span class="project-live__corner project-live__corner--tr" data-layer="live-corner"></span>
@@ -137,6 +140,28 @@ const src = youtube ? `https://www.youtube-nocookie.com/embed/${youtube}?enablej
     z-index: 2;
   }
 
+  .project-live__hint-touch {
+    display: none;
+  }
+
+  /*
+    Touch screens have no mouse to follow: the hint says "Tap" and stays in the middle of the
+    covered website, until it's tapped
+  */
+  @media (hover: none) {
+    .project-live__hint-mouse {
+      display: none;
+    }
+
+    .project-live__hint-touch {
+      display: block;
+    }
+
+    .project-live__screen--guarded .project-live__hint {
+      visibility: visible;
+    }
+  }
+
   .project-live__corner {
     position: absolute;
     width: calc(12 * var(--u));
@@ -172,5 +197,15 @@ const src = youtube ? `https://www.youtube-nocookie.com/embed/${youtube}?enablej
     right: 0;
     border-bottom-width: var(--stroke);
     border-right-width: var(--stroke);
+  }
+
+  /*
+    Phone (< 768px): no live preview, it's too crammed on a small screen (Irina). The result's
+    images and the See the result button take you to it instead. The lazy frame never loads here.
+  */
+  @media (max-width: 767px) {
+    .project-live {
+      display: none;
+    }
   }
 </style>

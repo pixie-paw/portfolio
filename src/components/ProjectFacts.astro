@@ -27,6 +27,14 @@ const upperLine = smoothPath(LINE, SECTION_TOP);
 const lowerLine = smoothPath(shiftPoints(LINE, DOUBLE_LINE_LOWER.x, DOUBLE_LINE_LOWER.y), SECTION_TOP);
 // The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
 const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
+
+/*
+  Phones (Figma 529:2153): the phone's double line, the same curve as the marquee's on phones,
+  with the upper line at x -166, y 804 and the lower one 1.8px right and 6.2px lower. Phone px.
+*/
+const PHONE_LINE_PATH =
+  'M0 115.83C43.1 62.56 92.41 35.98 132.3 33.79C172.19 31.61 252.21 47.97 295.32 43.99C338.42 40.01 394.74 17.46 435.77 16.36C476.79 15.25 544.87 39.07 587.76 33.79C630.64 28.51 690.36 2.21 717.97 0';
+const PHONE_LINE_BOX = { x: -170, y: 795, w: 730, h: 140 };
 ---
 
 <section class="project-facts" aria-label="Project facts" data-section="project-facts">
@@ -41,6 +49,19 @@ const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
     <path class="project-facts__line" data-layer="facts-line" d={upperLine} />
     <path class="project-facts__line" data-layer="facts-line" d={lowerLine} />
   </svg>
+
+  <!-- Phones only: the phone's double line, wrapped so the script can find its own lines -->
+  <div class="project-facts__phone-lines" data-layer="facts-phone">
+    <svg
+      class="project-facts__lines project-facts__lines--phone"
+      viewBox={`${PHONE_LINE_BOX.x} ${PHONE_LINE_BOX.y} ${PHONE_LINE_BOX.w} ${PHONE_LINE_BOX.h}`}
+      style={`--lx:${PHONE_LINE_BOX.x};--ly:${PHONE_LINE_BOX.y};--lw:${PHONE_LINE_BOX.w};--lh:${PHONE_LINE_BOX.h}`}
+      aria-hidden="true"
+    >
+      <path class="project-facts__line project-facts__line--phone" data-layer="facts-line" d={PHONE_LINE_PATH} transform="translate(-166 804)" />
+      <path class="project-facts__line project-facts__line--phone" data-layer="facts-line" d={PHONE_LINE_PATH} transform="translate(-164.2 810.2)" />
+    </svg>
+  </div>
 
   <div class="project-facts__frame">
     <!-- Client, year and kind of project -->
@@ -249,6 +270,110 @@ const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
       height: auto;
       min-height: calc(138 * var(--u));
       padding-bottom: calc(14 * var(--u));
+    }
+  }
+
+  /* The phone's double line only shows on phones */
+  .project-facts__phone-lines {
+    display: none;
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 529:2153 ----------
+    Phone frame px, from where this section starts (y 790). No cards: the facts and the tools sit
+    straight on the page, the text at 0.927 of the desktop's size, the icons at 0.68.
+  */
+  @media (max-width: 767px) {
+    .project-facts {
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      grid-template-rows: [content-start] auto [content-end];
+    }
+
+    /*
+      The facts and the tools follow each other in the page's flow, so a project with fewer facts
+      keeps MemoMe's spacing: the first label 88px under the section's top, the tools 23px under
+      the last fact (like the gap between two facts), the story 58px under the icons.
+    */
+    .project-facts__frame {
+      padding: calc(88 * var(--m)) 0 calc(58 * var(--m)) calc(8 * var(--m));
+    }
+
+    .project-facts > .project-facts__lines {
+      display: none;
+    }
+
+    .project-facts__phone-lines {
+      display: block;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .project-facts__lines--phone {
+      left: calc(50% + (var(--lx) - 196.5) * var(--m));
+      top: calc((var(--ly) - 790) * var(--m));
+      width: calc(var(--lw) * var(--m));
+      height: calc(var(--lh) * var(--m));
+    }
+
+    .project-facts__line--phone {
+      stroke-width: 3.47;
+    }
+
+    .project-facts__card {
+      background: none;
+    }
+
+    .project-facts__corner {
+      display: none;
+    }
+
+    /* Figma: Client at x 8, y 878, the facts 23px apart */
+    .project-facts__card--facts {
+      position: static;
+      width: auto;
+      height: auto;
+      min-height: 0;
+      padding: 0;
+    }
+
+    .project-facts__list {
+      gap: calc(23 * var(--m));
+    }
+
+    .project-facts__fact {
+      gap: calc(6 * var(--m));
+    }
+
+    /* Figma: Akzidenz 16.68px */
+    .project-facts__label {
+      font-size: calc(16.68 * var(--m));
+    }
+
+    /* Figma: Boldonse 14.83px */
+    .project-facts__value {
+      font-size: calc(14.83 * var(--m));
+    }
+
+    /* Figma: Tools 23px under the last fact, the icons across the screen */
+    .project-facts__card--tools {
+      position: static;
+      width: auto;
+      height: auto;
+      min-height: 0;
+      margin-top: calc(23 * var(--m));
+      padding: 0;
+    }
+
+    /* Figma: the icons 47.64px tall (0.68 of the desktop's), 6px under the label, 6.87px apart */
+    .project-facts__tools {
+      gap: calc(6.87 * var(--m));
+      margin-top: calc(6 * var(--m));
+    }
+
+    .project-facts__tool {
+      width: calc(var(--w) * 0.6806 * var(--m));
+      height: calc(47.64 * var(--m));
     }
   }
 </style>
