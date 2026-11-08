@@ -66,7 +66,7 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
           data-nav-link
           data-intro
         >
-          <span class="site-header__label" data-layer="nav-label">{link.label}</span>
+          <span class="site-header__label" data-layer="nav-label" data-text={link.label}>{link.label}</span>
           <NavUnderline class="site-header__underline" aria-hidden="true" data-layer="nav-underline" />
         </a>
       ))
@@ -171,6 +171,29 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
 
   .site-header__link--active .site-header__label {
     opacity: 1;
+  }
+
+  /*
+    On hover, keyboard focus and for the active link, the label turns Medium (500) as well.
+    A hidden Medium copy of the label (::after) keeps the link as wide as its Medium text, so the
+    links beside it never shift when it changes.
+  */
+  .site-header__label {
+    display: inline-grid;
+  }
+
+  .site-header__label::after {
+    content: attr(data-text);
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-weight: 500;
+  }
+
+  .site-header__link:hover .site-header__label,
+  .site-header__link:focus-visible .site-header__label,
+  .site-header__link--active .site-header__label {
+    font-weight: 500;
   }
 
   /* 9px wider than the text on each side, as in Figma. Hidden until hover or active. */

@@ -119,6 +119,46 @@ a {
 }
 
 /*
+  The header copy that comes back when scrolling up (see animations.ts). It sits in the 1440
+  frame like the page's header, on a paper-coloured fade that hides the grid and whatever is
+  under it: solid behind the header, then fading out softly (eased stops, so no hard edge).
+  Above the CV sheet (101), below the cursor flower (104) and the page transition (150).
+*/
+.sticky-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 103;
+  padding-bottom: calc(72 * var(--u));
+  pointer-events: none;
+}
+
+.sticky-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--c-paper) 0%,
+    var(--c-paper) 55%,
+    oklch(97.62% 0.0043 17.23 / 0.85) 64%,
+    oklch(97.62% 0.0043 17.23 / 0.6) 74%,
+    oklch(97.62% 0.0043 17.23 / 0.3) 85%,
+    oklch(97.62% 0.0043 17.23 / 0.1) 93%,
+    oklch(97.62% 0.0043 17.23 / 0) 100%
+  );
+}
+
+.sticky-header__frame {
+  position: relative;
+  width: calc(1440 * var(--u));
+  margin-inline: auto;
+  pointer-events: auto;
+}
+
+/*
   Page transitions: five horizontal tape strips, one colour per transition. Hidden until the
   script uses them. A page reached through a transition starts covered (html[data-transition='in'],
   set before the first paint in Base.astro) and the script slides them away.
@@ -212,7 +252,7 @@ html[data-transition='in'] .page-transition {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  z-index: 102; /* above the CV page's sheet (101), which sits above the texture */
+  z-index: 104; /* above the CV page's sheet (101) and the scroll-up header (103) */
 }
 
 .cursor-flower__svg {
