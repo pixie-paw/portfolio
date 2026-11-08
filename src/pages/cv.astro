@@ -3,11 +3,15 @@ import Base from '../layouts/Base.astro';
 import CvSheet from '../components/CvSheet.astro';
 import Marquee from '../components/Marquee.astro';
 import Footer from '../components/Footer.astro';
+import { CV_FILE, hasCv } from '../data/cv';
 
 /*
   The CV page, from the Figma frame "3.1 Check my CV": Irina's CV to read on the site, with a
   button to download the PDF. The About me page's CHECK MY CV leads here.
+  Phones don't have this page (Irina: too crammed), so a phone that opens it anyway (a shared link,
+  a bookmark) goes straight to the PDF.
 */
+const pdf = hasCv() ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}/${CV_FILE}` : null;
 ---
 
 <Base
@@ -16,6 +20,11 @@ import Footer from '../components/Footer.astro';
   description="Irina Moldovan’s CV: Digital Design and Development student at Howest, with her experience, education and skills."
 >
   <main>
+    {pdf && (
+      <script is:inline define:vars={{ pdf }}>
+        if (window.matchMedia('(max-width: 767px)').matches) window.location.replace(pdf);
+      </script>
+    )}
     <CvSheet />
     <Marquee />
   </main>
