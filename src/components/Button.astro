@@ -53,17 +53,22 @@ const { href, text, w, name, class: className, intro = false, newTab = false, to
 </a>
 
 <style>
+  /*
+    --bu: the button's own unit. It's --u, but never smaller than one pixel at the browser's text
+    size (--t-min), so the button and its text grow when the page is zoomed (see global.css).
+  */
   .button {
+    --bu: max(var(--u), var(--t-min));
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: calc(10 * var(--u));
-    height: calc(52 * var(--u));
-    width: calc(var(--w) * var(--u));
+    gap: calc(10 * var(--bu));
+    height: calc(52 * var(--bu));
+    width: calc(var(--w) * var(--bu));
     background: var(--c-green);
     border: 2px solid var(--c-ink);
     font-family: var(--f-display);
-    font-size: max(var(--fs-min-small), calc(16 * var(--u)));
+    font-size: max(var(--fs-min-small), calc(16 * var(--bu)));
     text-transform: uppercase;
     color: var(--c-ink);
   }
@@ -103,7 +108,7 @@ const { href, text, w, name, class: className, intro = false, newTab = false, to
 
   .button__arrow {
     display: block;
-    width: calc(18 * var(--u));
+    width: calc(18 * var(--bu));
     height: auto;
   }
 
@@ -116,7 +121,7 @@ const { href, text, w, name, class: className, intro = false, newTab = false, to
   @media (max-width: 1023px) {
     .button {
       width: max-content;
-      min-width: calc(var(--w) * var(--u));
+      min-width: calc(var(--w) * var(--bu));
       padding-inline: 12px;
     }
   }

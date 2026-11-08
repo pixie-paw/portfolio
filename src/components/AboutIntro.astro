@@ -249,7 +249,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   .about-intro__text {
     margin: 0;
     font-family: var(--f-sans);
-    font-size: max(var(--fs-min), calc(20 * var(--u)));
+    font-size: max(var(--fs-min), calc(20 * var(--t)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -305,14 +305,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   }
 
   /*
-    Tablet: the text is bigger than the design here, so the card grows with it.
+    Below 1440: on tablets, and when the page is zoomed, the text can be bigger than the design, so
+    the card grows with it. At 100% zoom it keeps its Figma height (min-height).
     The button keeps its Figma spacing: 17px under the text, 33px above the card's bottom.
   */
-  @media (max-width: 1023px) {
+  @media (max-width: 1439px) {
     .about-intro__card {
       height: auto;
       min-height: calc(235 * var(--u));
-      padding-bottom: calc((33 + 52 + 17) * var(--u));
+      padding-bottom: calc((33 + 17) * var(--u) + 52 * max(var(--u), var(--t-min)));
     }
 
     .about-intro__card :global(.about-intro__cv) {

@@ -225,7 +225,7 @@ const MENU = [
 
   .site-header__link {
     position: relative;
-    font-size: max(var(--fs-min), calc(24 * var(--u)));
+    font-size: max(var(--fs-min), calc(24 * var(--t)));
     color: var(--c-ink);
     line-height: 1.2;
   }
@@ -265,12 +265,15 @@ const MENU = [
     font-weight: 500;
   }
 
-  /* 9px wider than the text on each side, as in Figma. Hidden until hover or active. */
+  /*
+    9px wider than the text on each side, as in Figma. Hidden until hover or active.
+    In em (of the 24px link text), so it grows with the text when the page is zoomed.
+  */
   .site-header__underline {
     position: absolute;
-    left: calc(-9 * var(--u));
-    top: calc(32 * var(--u));
-    width: calc(100% + 18 * var(--u));
+    left: -0.375em;
+    top: 1.3333em;
+    width: calc(100% + 0.75em);
     height: auto;
     transform: scaleX(0);
     transform-origin: left center;

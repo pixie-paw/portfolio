@@ -41,6 +41,19 @@
   */
   --fs-min: 0px;
   --fs-min-small: 0px;
+
+  /*
+    Zoom: --t is the unit for reading text (body text, labels, the nav, buttons, tags). It's --u,
+    but never smaller than --t-min, one pixel at the browser's own text size. Zooming in makes the
+    page narrower, so --u shrinks and cancels the zoom; --t-min grows with it, so text gets bigger
+    step by step. From 1440px up nothing changes (--u is already 1px). Below that, on a screen with
+    a mouse, text keeps its 1440 size while the layout around it scales down.
+    Touch tablets keep the minimum sizes above, and phones their own sizes (see the media queries).
+    A component that sets its own --u computes its own max() (Button, Tag), because a custom
+    property is worked out where it's declared.
+  */
+  --t-min: 0.0625rem;
+  --t: max(var(--u), var(--t-min));
 }
 
 /* Tablet (768 to 1023px): the desktop layout, but the text never gets too small to read */
@@ -48,6 +61,19 @@
   :root {
     --fs-min: 0.875rem; /* 14px: body text, links, card text */
     --fs-min-small: 0.75rem; /* 12px: buttons, notes, footer small print */
+  }
+}
+
+/* Touch tablets keep the minimum sizes above; phones have their own text sizes (--m) */
+@media (min-width: 768px) and (max-width: 1023px) and (hover: none) {
+  :root {
+    --t-min: 0px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --t-min: 0px;
   }
 }
 

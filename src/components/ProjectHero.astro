@@ -143,7 +143,7 @@ const LINKS = [
 
   /* The tags are the home page's tags drawn 1.17 times bigger (37.45px tall instead of 32) */
   .project-hero__tags :global(.tag) {
-    --k: calc(1.1703 * var(--u));
+    --k: calc(1.1703 * max(var(--u), var(--t-min)));
   }
 
   /* Figma: the summary at x 66, y 526, 508px wide */
@@ -158,7 +158,7 @@ const LINKS = [
   .project-hero__summary {
     margin: 0;
     font-family: var(--f-sans);
-    font-size: max(var(--fs-min), calc(20 * var(--u)));
+    font-size: max(var(--fs-min), calc(20 * var(--t)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -174,8 +174,15 @@ const LINKS = [
     gap: calc(13 * var(--u));
   }
 
-  /* Tablet: the text is bigger than the design here, so the buttons follow it, 20px under it */
-  @media (max-width: 1023px) {
+  /*
+    Below 1440 (tablets, and a zoomed page): the text can be bigger than the design, so the buttons
+    follow it, 20px under it. The summary's min-height keeps them at Figma's y 614 when it fits.
+  */
+  @media (max-width: 1439px) {
+    .project-hero__summary {
+      min-height: calc((614 - 526 - 20) * var(--u));
+    }
+
     .project-hero__buttons {
       position: static;
       margin-top: calc(20 * var(--u));
@@ -240,6 +247,7 @@ const LINKS = [
     }
 
     .project-hero__summary {
+      min-height: 0;
       font-size: calc(15.6 * var(--hm));
     }
 

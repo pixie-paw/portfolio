@@ -73,7 +73,8 @@ const {
 
 <style>
   .tag {
-    --k: var(--u);
+    /* never smaller than one pixel at the browser's text size, so tags grow when the page is zoomed */
+    --k: max(var(--u), var(--t-min));
     position: absolute;
     /* position always follows the page scale (--u); size can be scaled up with --k */
     left: calc(var(--x) * var(--u));
