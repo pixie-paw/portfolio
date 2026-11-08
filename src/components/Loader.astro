@@ -1,0 +1,239 @@
+---
+import yellow from '../assets/loading/flower-yellow.svg?url';
+import red from '../assets/loading/flower-red.svg?url';
+import blue from '../assets/loading/flower-blue.svg?url';
+
+/*
+  The loading screen (Figma 269:857 and 269:37, 1440 x 1024): IRINA in outline fills with ink
+  behind a wavy surface, among flowers that float around it and a bed of flowers along the bottom.
+  Shown every time a page is loaded fresh, not when it's reached through the site's own links
+  (Base.astro decides before the first paint, and animations.ts plays it and hands over to the
+  page with the tape strips).
+
+  Each flower: its kind, its box in the Figma frame (x, y, w), and whether it floats or sits in the
+  bed. The floating ones also have a phone place (p: centre x, centre y from the screen's middle, and
+  size, in phone px), because on a phone they have to fit around the name. In Figma's layer order.
+*/
+type Kind = 'yellow' | 'red' | 'blue';
+interface Flower {
+  kind: Kind;
+  x: number;
+  y: number;
+  w: number;
+  bed?: boolean;
+  p?: [number, number, number];
+}
+const FLOWERS: Flower[] = [
+  { kind: 'yellow', x: 192, y: 240, w: 148.9, p: [-135, -170, 64] },
+  { kind: 'yellow', x: 713, y: 640, w: 197.7, p: [10, 125, 80] },
+  { kind: 'red', x: 666, y: 800, w: 378.5, bed: true },
+  { kind: 'yellow', x: 507, y: 791, w: 361.7, bed: true },
+  { kind: 'red', x: 191, y: 713, w: 313.7, bed: true },
+  { kind: 'yellow', x: 821, y: 117, w: 110.4, p: [70, -290, 44] },
+  { kind: 'yellow', x: 243.9, y: 829, w: 237.9, bed: true },
+  { kind: 'yellow', x: 1057, y: 753, w: 197.7, bed: true },
+  { kind: 'yellow', x: 1198, y: 794, w: 197.7, bed: true },
+  { kind: 'yellow', x: 823, y: 816, w: 245.7, bed: true },
+  { kind: 'red', x: 1055.8, y: 245, w: 210, p: [130, -175, 86] },
+  { kind: 'red', x: 1204, y: 832, w: 306.3, bed: true },
+  { kind: 'red', x: 1245, y: 744, w: 306.3, bed: true },
+  { kind: 'red', x: 1010.8, y: 542.8, w: 236.3, p: [135, 112, 100] },
+  { kind: 'red', x: 912, y: 798, w: 302.9, bed: true },
+  { kind: 'red', x: 111, y: 817, w: 302.9, bed: true },
+  { kind: 'blue', x: 590, y: 235, w: 121.7, p: [-40, -235, 50] },
+  { kind: 'blue', x: 217.3, y: 569, w: 177, p: [-140, 112, 74] },
+  { kind: 'blue', x: 91.8, y: 735.8, w: 254, bed: true },
+  { kind: 'blue', x: 1036.9, y: 790.3, w: 348, bed: true },
+  { kind: 'blue', x: -61, y: 786, w: 348, bed: true },
+  { kind: 'blue', x: 369, y: 833, w: 258.4, bed: true },
+  { kind: 'blue', x: 1025, y: 361, w: 121.7, p: [100, -105, 50] },
+  { kind: 'yellow', x: 50, y: 758, w: 148.9, bed: true },
+];
+// Each drawing once, as a CSS variable the flowers use as their background (Vite inlines small SVGs,
+// so an <img> per flower would repeat the whole drawing 24 times in every page)
+const DRAWINGS = `--f-yellow:url("${yellow}");--f-red:url("${red}");--f-blue:url("${blue}")`;
+
+/*
+  The ink: Figma's wave (1642 x 232) with solid ink under it, as one image (1642 x 600). The script
+  moves it up through the letters (--ink-y) and rolls it sideways (--ink-x); the letters clip it.
+*/
+const WAVE =
+  'M0 76.32C96.7 40.08 269.8 -9.19 354.9 1.48C439.99 12.15 500.58 72.57 609.54 70.29C718.5 68.01 735.9 15.72 826.8 14.53C917.7 13.34 940.91 65.04 963.15 76.32C985.39 87.61 1033.74 117.32 1105.3 54.93C1176.86 -7.46 1350.93 -6.86 1423.45 54.93C1481.47 104.37 1593.33 109.99 1642 106.63L1642 600L0 600Z';
+const INK = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='1642' height='600' viewBox='0 0 1642 600'><path fill='#333232' d='${WAVE}'/></svg>`,
+)}")`;
+---
+
+<div class="loader" aria-hidden="true" data-loader style={`--ink:${INK};${DRAWINGS}`}>
+  {
+    FLOWERS.map(({ kind, x, y, w, bed, p }) => (
+      <span
+        class:list={['loader__flower', `loader__flower--${kind}`, bed ? 'loader__flower--bed' : 'loader__flower--float']}
+        data-loader-bed={bed ? '' : undefined}
+        data-loader-float={bed ? undefined : ''}
+        data-cx={(x + w / 2).toFixed(1)}
+        style={`--x:${x};--y:${y};--w:${w}${p ? `;--px:${p[0]};--py:${p[1]};--pw:${p[2]}` : ''}`}
+      />
+    ))
+  }
+  <div class="loader__name">
+    <span class="loader__ink" data-layer="loader-ink">IRINA</span>
+    <span class="loader__outline">IRINA</span>
+  </div>
+</div>
+
+<style>
+  /*
+    Hidden unless the page was loaded fresh (Base.astro sets html[data-loader='on']
+    before the first paint). Above the page and its texture, under the tape strips (150).
+    --lu is one pixel of the 1440 x 1024 frame: it fits the frame's width or height, whichever is
+    tighter, and never grows past 1, like the rest of the site above 1440.
+  */
+  .loader {
+    --lu: min(1px, calc(100vw / 1440), calc(100svh / 1024));
+    --nu: var(--lu);
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    overflow: hidden;
+    background-color: var(--c-paper);
+  }
+
+  :global(html[data-loader='on']) .loader {
+    display: block;
+  }
+
+  /* The same grid paper and texture as the rest of the site */
+  .loader::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: -100px;
+    width: calc(100% + 200px);
+    height: calc(100% + 200px);
+    background-image: var(--paper-url);
+    background-size: calc(758 * var(--u)) auto;
+    opacity: 0.43;
+    rotate: -2.22deg;
+  }
+
+  .loader::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background-image: var(--texture-url);
+    background-size: max(calc(488 * var(--u)), 320px) auto;
+    mix-blend-mode: lighten;
+    pointer-events: none;
+  }
+
+  /*
+    Floating flowers: placed from the screen's middle (the frame's centre is x 720, y 512).
+    The bed: placed from the bottom edge, so it always sits on it.
+  */
+  .loader__flower {
+    position: absolute;
+    left: calc(50% + (var(--x) - 720) * var(--lu));
+    width: calc(var(--w) * var(--lu));
+    aspect-ratio: 1;
+    background: no-repeat center / contain;
+  }
+
+  .loader__flower--yellow {
+    background-image: var(--f-yellow);
+  }
+
+  .loader__flower--red {
+    background-image: var(--f-red);
+  }
+
+  .loader__flower--blue {
+    background-image: var(--f-blue);
+  }
+
+  .loader__flower--float {
+    top: calc(50% + (var(--y) - 512) * var(--lu));
+  }
+
+  .loader__flower--bed {
+    top: calc(100% - (1024 - var(--y)) * var(--lu));
+  }
+
+  /* Figma: Boldonse 222.78px, 670 x 265, in the middle of the frame */
+  .loader__name {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    translate: -50% -50%;
+    font-family: var(--f-display);
+    font-size: calc(222.78 * var(--nu));
+    line-height: calc(265 / 222.78);
+    white-space: nowrap;
+  }
+
+  /*
+    Boldonse's letters reach past their line box, and the ink is only painted inside the box, so
+    both copies get 60px of room above and below (the ink's numbers count from that top edge)
+  */
+  .loader__ink,
+  .loader__outline {
+    display: block;
+    padding-block: calc(60 * var(--nu));
+    color: transparent;
+  }
+
+  /* The ink is clipped by the letters; --ink-x / --ink-y are in frame px (the script moves them) */
+  .loader__ink {
+    --ink-x: 0;
+    --ink-y: -130;
+    background-image: var(--ink);
+    background-repeat: no-repeat;
+    background-size: calc(1642 * var(--nu)) calc(600 * var(--nu));
+    background-position: calc(var(--ink-x) * var(--nu)) calc(var(--ink-y) * var(--nu));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  /* The outline on top: 2px ink, like Figma */
+  .loader__outline {
+    position: absolute;
+    inset: 0;
+    -webkit-text-stroke: max(1px, calc(2 * var(--nu))) var(--c-ink);
+  }
+
+  /*
+    Phone (< 768px): there's no phone frame, so this is the desktop one converted. The name is 335px
+    wide (half its desktop size). The bed keeps its order but closes up sideways to fit the
+    screen (x at 0.26, sizes at 0.42). The floating flowers have their own places around the name.
+  */
+  @media (max-width: 767px) {
+    .loader {
+      --nu: calc(0.5 * var(--m));
+      --lx: calc(0.26 * var(--m));
+      --ls: calc(0.42 * var(--m));
+    }
+
+    .loader::before {
+      background-size: calc(758 * var(--m)) auto;
+    }
+
+    .loader::after {
+      background-size: calc(488 * var(--m)) auto;
+    }
+
+    .loader__flower--bed {
+      left: calc(50% + (var(--x) + var(--w) / 2 - 720) * var(--lx) - var(--w) * var(--ls) / 2);
+      top: calc(100% - (1024 - var(--y) - var(--w) / 2) * var(--ls) - var(--w) * var(--ls) / 2);
+      width: calc(var(--w) * var(--ls));
+    }
+
+    .loader__flower--float {
+      left: calc(50% + (var(--px) - var(--pw) / 2) * var(--m));
+      top: calc(50% + (var(--py) - var(--pw) / 2) * var(--m));
+      width: calc(var(--pw) * var(--m));
+    }
+  }
+</style>

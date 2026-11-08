@@ -228,6 +228,12 @@ let markAboutShown: () => void = () => {};
 const aboutShown = new Promise<void>((resolve) => {
   markAboutShown = resolve;
 });
+// loaderDone resolves once the loading screen has handed over (or straight away without it):
+// the page's own intro waits for it
+let markLoaderDone: () => void = () => {};
+const loaderDone = new Promise<void>((resolve) => {
+  markLoaderDone = resolve;
+});
 // marqueeShown resolves once the marquee's words are in: the footer's CV block waits for it
 let markMarqueeShown: () => void = () => {};
 const marqueeShown = new Promise<void>((resolve) => {
@@ -1681,7 +1687,8 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
   }
 
   // ---------- The load sequence (the title needs the fonts in first) ----------
-  waitForFonts().then(() =>
+  // After the loading screen, on a fresh page load
+  Promise.all([waitForFonts(), loaderDone]).then(() =>
     context.add(() => {
       // Words too, so the title still breaks between words, never inside one
       const titleChars = $title ? SplitText.create($title, { type: 'words,chars' }).chars : [];
@@ -2166,7 +2173,8 @@ const createProjectHero = (context: gsap.Context) => {
   }
 
   // ---------- The load sequence (the name and the lines need the fonts in first) ----------
-  waitForFonts().then(() =>
+  // After the loading screen, on a fresh page load
+  Promise.all([waitForFonts(), loaderDone]).then(() =>
     context.add(() => {
       const chars = $title ? SplitText.create($title, { type: 'chars' }).chars : [];
       const lines = $summary ? SplitText.create($summary, { type: 'lines' }).lines : [];
@@ -3088,7 +3096,8 @@ const createMobileMenu = (reduceMotion: boolean) => {
   const $close = $menu?.querySelector<HTMLElement>('[data-menu-close]');
   if (!$menu || !$sheet || !$close) return;
   const $links = getAll<HTMLAnchorElement>('[data-menu-link]', $menu);
-  const $items = [...$links, ...getLayers(['menu-cta']).filter(($el) => $menu.contains($el))];
+  const $home = $menu.querySelector<HTMLAnchorElement>('[data-menu-home]');
+  const $items = [...($home ? [$home] : []), ...$links, ...getLayers(['menu-cta']).filter(($el) => $menu.contains($el))];
 
   let $opener: HTMLElement | null = null;
   let timeline: gsap.core.Timeline | null = null;
@@ -3199,6 +3208,26 @@ const createMobileMenu = (reduceMotion: boolean) => {
     });
   });
 
+  // The flower goes home, like the header's: from another page through the tape strips, on the home
+  // page itself by sliding the menu out and scrolling back to the top
+  $home?.addEventListener('click', (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (isLeaving) return;
+    const url = new URL($home.href, window.location.href);
+    if (url.pathname === window.location.pathname) {
+      close(() => {
+        if (smoothScroll) smoothScroll.scrollTo(0);
+        else window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      });
+      return;
+    }
+    isLeaving = true;
+    close();
+    if (leavePage) leavePage(url.href);
+    else window.location.href = url.href;
+  });
+
   // Turning a phone or widening the window past the phone layout closes it
   window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => {
     if (event.matches && $menu.open) {
@@ -3255,6 +3284,133 @@ const createTypewriterDrop = () => {
 };
 
 /*
+  ---------- Loading screen (every fresh page load, not the site's own links) ----------
+  1. The bed of flowers grows up from the bottom edge, from the middle out, and the floating flowers
+     pop in where they are, then turn slowly like the logo.
+  2. Ink rises inside the outlined IRINA, its wavy surface rolling sideways. It fills for at least
+     LOADER_FILL_S and waits for the page (fonts and images) before it reaches the top.
+  3. Full: a short pause.
+  4. The tape strips cover the screen in the next palette colour, the loading screen goes, and they
+     slide away to show the page, whose own intro then plays.
+  With Reduce motion: the full name and the flowers show at once, and fade out once the page is ready.
+*/
+const LOADER_FILL_S = 2.6; // the ink rises to 85% in at least this long
+const LOADER_FINISH_S = 0.7; // then to the top, once the page is ready
+const LOADER_PAUSE_S = 0.4;
+const LOADER_FLOW_S = 3.2; // the wave rolls from one side to the other and back
+// The ink's top, in frame px from the top of the letters' box (their 265px line plus 60px above and
+// below, see Loader.astro): below the letters (empty), and so high its waves clear them (full)
+const INK_EMPTY = 395;
+const INK_FULL = -130;
+
+const createLoader = (reduceMotion: boolean) => {
+  const $html = document.documentElement;
+  const $loader = document.querySelector<HTMLElement>('[data-loader]');
+  const $ink = $loader && getLayer('loader-ink', $loader);
+  if (!$loader || !$ink || $html.dataset.loader !== 'on') {
+    markLoaderDone();
+    return;
+  }
+  // The bed from the middle out (by each flower's centre)
+  const $bed = getAll('[data-loader-bed]', $loader).sort((a, b) => Number(a.dataset.cx) - Number(b.dataset.cx));
+  const $floats = getAll('[data-loader-float]', $loader);
+  const pageLoaded = new Promise<void>((resolve) => {
+    if (document.readyState === 'complete') resolve();
+    else window.addEventListener('load', () => resolve(), { once: true });
+  });
+  const ready = Promise.all([pageLoaded, waitForFonts()]);
+  // Smooth scrolling starts later in initAnimations: stop it once it exists
+  setTimeout(() => smoothScroll?.stop(), 0);
+  const close = () => {
+    delete $html.dataset.loader;
+    smoothScroll?.start();
+  };
+
+  if (reduceMotion) {
+    gsap.set($ink, { '--ink-y': INK_FULL });
+    ready.then(() =>
+      gsap.to($loader, {
+        autoAlpha: 0,
+        duration: 0.3,
+        ease: 'power1.out',
+        onComplete: () => {
+          close();
+          gsap.set($loader, { clearProps: 'opacity,visibility' });
+          markLoaderDone();
+        },
+      }),
+    );
+    return;
+  }
+
+  gsap.set($ink, { '--ink-y': INK_EMPTY, '--ink-x': 0 });
+  gsap.set($bed, { yPercent: 110 });
+  gsap.set($floats, { scale: 0.4, autoAlpha: 0 });
+  const flow = gsap.to($ink, { '--ink-x': -972, duration: LOADER_FLOW_S, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+  const spin = gsap.to($floats, { rotation: 360, duration: LOGO_TURN_S, ease: 'none', repeat: -1, paused: true });
+
+  const arrive = gsap
+    .timeline()
+    .to($bed, { yPercent: 0, duration: 0.7, ease: 'back.out(1.4)', stagger: { each: 0.04, from: 'center' } }, 0)
+    .to($floats, { scale: 1, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.7)', stagger: 0.06 }, 0.3)
+    .add(() => spin.play(), 0.3)
+    .to($ink, { '--ink-y': INK_EMPTY - (INK_EMPTY - INK_FULL) * 0.85, duration: LOADER_FILL_S, ease: 'power1.inOut' }, 0.6);
+  const arrived = new Promise<void>((resolve) => arrive.eventCallback('onComplete', () => resolve()));
+
+  // The handover: the tape strips of the page transitions, in the next colour
+  const handOver = () => {
+    const $layer = document.querySelector<HTMLElement>('[data-page-transition]');
+    const $strips = $layer ? getAll('[data-transition-strip]', $layer) : [];
+    if (!$layer || !$strips.length) {
+      flow.kill();
+      spin.kill();
+      close();
+      markLoaderDone();
+      return;
+    }
+    let index = 0;
+    try {
+      index = Number(sessionStorage.getItem('page-transition-index') ?? 0) % TRANSITION_COLOURS.length;
+      sessionStorage.setItem('page-transition-index', String(index + 1));
+    } catch {
+      // the first colour then
+    }
+    $html.style.setProperty('--transition-colour', `var(${TRANSITION_COLOURS[index]})`);
+    gsap.set($layer, { visibility: 'visible' });
+    gsap.fromTo(
+      $strips,
+      { xPercent: (i: number) => (i % 2 ? 101 : -101) },
+      {
+        xPercent: 0,
+        ...TRANSITION_IN,
+        onComplete: () => {
+          flow.kill();
+          spin.kill();
+          close();
+          // The page's own intro starts while the strips slide away
+          markLoaderDone();
+          gsap.to($strips, {
+            xPercent: (i: number) => (i % 2 ? -101 : 101),
+            ...TRANSITION_OUT,
+            onComplete: () => {
+              gsap.set($layer, { clearProps: 'visibility' });
+              gsap.set($strips, { clearProps: 'transform' });
+            },
+          });
+        },
+      },
+    );
+  };
+
+  Promise.all([arrived, ready]).then(() =>
+    gsap
+      .timeline()
+      .to($ink, { '--ink-y': INK_FULL, duration: LOADER_FINISH_S, ease: 'power2.out' })
+      .call(handOver, [], `+=${LOADER_PAUSE_S}`),
+  );
+};
+
+/*
   Project pages: Briefing, Process, Result and "Read the process" link to the first image of their
   chapter. Phones don't show that column, so there the link goes to the chapter's title instead.
   It works with and without motion. Capture phase, so it runs before smooth scrolling's own handler.
@@ -3294,6 +3450,7 @@ const createSkipLink = () => {
 
 export const initAnimations = () => {
   createSkipLink();
+  createLoader(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   createPageTransitions(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   createStickyHeader(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   createMobileMenu(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -3344,7 +3501,8 @@ export const initAnimations = () => {
         addCleanup(createProjectStory(context));
         createProjectLive(context);
         if (document.querySelector('[data-section="hero"]')) {
-          waitForFonts().then(() => context.add(() => playHeroIntro(context, addCleanup)));
+          // After the loading screen, on a fresh page load
+          Promise.all([waitForFonts(), loaderDone]).then(() => context.add(() => playHeroIntro(context, addCleanup)));
         } else {
           // A page without the hero (like About me): nothing to wait for, show the page at once
           delete document.documentElement.dataset.intro;

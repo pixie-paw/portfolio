@@ -18,6 +18,7 @@ const {
   description = 'Irina Moldovan, Digital Designer and Developer, studying Digital Design and Development at Howest.',
   skipTo,
 } = Astro.props;
+import Loader from '../components/Loader.astro';
 ---
 
 <!doctype html>
@@ -38,11 +39,31 @@ const {
       the animation starts. Skipped for reduced motion. If the animation script never
       runs, the layers show anyway after 4s.
     -->
+    <!--
+      The loading screen shows every time a page is loaded fresh (a first visit, a refresh, a link
+      from elsewhere), but not when it's reached through the site's own links, which have the tape
+      strips. It's decided here, before the first paint, so the page never flashes before it.
+      If the script never runs, it goes after 12s.
+    -->
+    <script is:inline>
+      let fromTransition = false;
+      try {
+        fromTransition = Boolean(sessionStorage.getItem('page-transition'));
+      } catch (error) {
+        // no sessionStorage: treat it as a fresh load
+      }
+      if (!fromTransition) {
+        const $html = document.documentElement;
+        $html.dataset.loader = 'on';
+        setTimeout(() => delete $html.dataset.loader, 12000);
+      }
+    </script>
     <script is:inline>
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         const $html = document.documentElement;
         $html.dataset.intro = 'pending';
-        setTimeout(() => delete $html.dataset.intro, 4000);
+        // longer when the loading screen plays first
+        setTimeout(() => delete $html.dataset.intro, $html.dataset.loader === 'on' ? 12000 : 4000);
       }
     </script>
     <!--
@@ -68,6 +89,8 @@ const {
     <!-- For keyboard and screen reader users: hidden until it gets focus, then jumps past the header -->
     <a class="skip-link" href={`#${skipTo}`} data-skip-link>Skip to content</a>
     <slot />
+    <!-- The loading screen, on every fresh page load (see Loader.astro and animations.ts) -->
+    <Loader />
     <!-- The page transition: five tape strips that cover the screen between pages (see animations.ts) -->
     <div class="page-transition" aria-hidden="true" data-page-transition>
       {Array.from({ length: 5 }, (_, i) => <span class="page-transition__strip" style={`--i:${i}`} data-transition-strip />)}
