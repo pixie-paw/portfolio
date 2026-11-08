@@ -121,6 +121,29 @@ When a version in `package.json` goes up, update this table too.
 - **Hero sections are the exception:** their load intro is choreographed, so it doesn't have to go top to bottom. The load order applies to everything below the hero.
 - Everything goes inside the `gsap.matchMedia` reduced motion check, so visitors who ask for less motion get the content without the movement.
 
+## Motion system
+
+Irina's brand: the same kind of element always moves the same way, on every page and every breakpoint. A new element of one of these types uses its animation, and the shared values in `animations.ts` (`TITLE_STAND_S`, `ABOUT_TITLE_TYPE_S`, `MARKER_S`, `BUTTON_RISE_PX`, `LINE_DRAW_S`, `WAVE_WORDS_IN_S`).
+
+| Type | Animation | Where |
+| --- | --- | --- |
+| **Hero titles** | Letters stand up from flat, one by one (0.9s each, 0.05s apart, `back.out(1.7)`) | HI, I'M IRINA., the About me title, project names, the footer CV |
+| **Section titles** | Typed letter by letter (0.045s per letter) | Good looks and good experiences, Some of my work, How it started, How it's going |
+| **Yellow highlight bars** | Drawn from left to right right after their title (0.6s, `power2.inOut`) | Every bar |
+| **Text** | The card wipes in (0.8s, `power3.inOut`), its corners clamp (0.4s, `back.out(3)`), the lines rise one by one (12px, 0.7s, 0.08s apart, `power3.out`). Without a card, just the lines. | Every text card, project summaries, the phone About text |
+| **Buttons** | Rise in after the text above them (16px, 0.6s, `power3.out`) | Every green and dark button |
+| **Cut-out photos and objects** | Pressed down like a sticker (from 106% and tilted 3deg, 0.9s, `back.out(1.4)`). Their yellow fill and outlines slide into place behind them (1.1s, `expo.out`). | Irina's photos, the camera, the statue, the disco ball, the typewriter's landing |
+| **Flat pictures and screens** | Rise in (0.9s, `power3.out`) | Project story images, the live result |
+| **Stickers and tags** | Grow in where they are (from 40%, 0.8s, `back.out(1.7)`). Loose stickers then float. Tags inside a row rise with the row. | Camera tags, the Click / Tap to see more sticker, the footer sticker, project hero tags |
+| **Stars** | The pink star pops in, no turn (0.5s, `back.out(2.2)`), then its outline locks on (0.7s, `expo.out`) | Every star |
+| **Lines and curves** | Drawn from left to right (`power2.inOut`). Long curves take 1.6s. | Waves, double lines, row lines, the project facts line |
+| **Words on a wave** | Fade in once their line is drawn (0.6s), then flow | Both waves |
+| **Stems and flowers** | The stem grows slowly (2.2s, or 3.2s for long guiding stems), then its flower opens | Every stem |
+| **Hovers** | Green buttons and project names: the letters roll. Links and kinds: a blue line grows under them. Logo, arrows, CV and icons: grow to 110%. | Everywhere |
+
+- **One-offs on purpose:** hero intros (choreographed), the hat drop, Kiki running in, the internship sign hanging, the typewriter typing, the camera's pictures opening from the middle, and DOWNLOAD rising above the footer CV.
+- **Reloading below the fold:** an entrance whose element is already above the screen when its turn comes is finished at once (`entrance()` in `animations.ts`), so the section on screen never waits for the ones above it. Every new entrance goes through `entrance()`.
+
 ## Fonts
 
 - **Boldonse, Bona Nova and Inter:** loaded through Fontsource. Inter (Regular, 24px) is only for the text along the blue wave.
