@@ -320,4 +320,75 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       bottom: calc(33 * var(--u));
     }
   }
+
+  /*
+    ---------- Phone (< 768px), Figma 538:3061 (393px frame) ----------
+    The title with its two bars, the text (no card, and no CHECK MY CV: on phones the CV is only
+    downloaded from the footer), then the collage under it. The collage is the desktop one at
+    0.528 of its size (--cu), placed so the photo lands at x 88.9, y 381.2 as in Figma. There's no
+    hanging phone and no stars. Phone frame px from the top of the page.
+  */
+  @media (max-width: 767px) {
+    .about-intro {
+      --cu: calc(0.52818 * var(--m));
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      /* down to section 2, which starts at y 740 */
+      grid-template-rows: [content-start] calc(740 * var(--m)) [content-end];
+    }
+
+    .about-intro__layer {
+      left: calc(36.08 * var(--m) + var(--x) * var(--cu));
+      top: calc(219.58 * var(--m) + var(--y) * var(--cu));
+      width: calc(var(--w) * var(--cu));
+    }
+
+    .about-intro__phone,
+    .about-intro__star,
+    .about-intro__corner,
+    .about-intro__card :global(.about-intro__cv) {
+      display: none;
+    }
+
+    /* Figma: Boldonse 24px, the lines at y 155 and y 198, from x 15 */
+    .about-intro__title {
+      left: calc(15 * var(--m));
+      top: calc(155 * var(--m));
+      font-size: calc(24 * var(--m));
+    }
+
+    .about-intro__title-line {
+      height: calc(43 * var(--m));
+    }
+
+    /* Figma: 13.37px bars from x 8, centred on y 185 (302px) and y 228 (254px) */
+    .about-intro__marker {
+      left: calc(8 * var(--m));
+      height: calc(13.37 * var(--m));
+    }
+
+    .about-intro__marker--first {
+      top: calc((185 - 6.69) * var(--m));
+      width: calc(302 * var(--m));
+    }
+
+    .about-intro__marker--second {
+      top: calc((228 - 6.69) * var(--m));
+      width: calc(254 * var(--m));
+    }
+
+    /* Figma: Akzidenz 15.5px at x 8, y 241, 295px wide, with no card behind it */
+    .about-intro__card {
+      left: calc(8 * var(--m));
+      top: calc(241 * var(--m));
+      width: calc(295 * var(--m));
+      height: auto;
+      min-height: 0;
+      padding: 0;
+      background: none;
+    }
+
+    .about-intro__text {
+      font-size: calc(15.5 * var(--m));
+    }
+  }
 </style>
