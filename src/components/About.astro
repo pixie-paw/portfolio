@@ -130,7 +130,7 @@ const SKILLS = [
         src={typewriter}
         alt="A pink typewriter typing out Irina’s skills"
         widths={[466, 932]}
-        sizes="466px"
+        sizes="(max-width: 1023px) 350px, 466px"
       />
     </div>
   </div>
@@ -142,6 +142,11 @@ const SKILLS = [
     are 0 up to 1440px and centre the frame above it. Only the wave runs edge to edge.
   */
   .about {
+    /*
+      One Figma pixel of the typewriter and its skills paper. It follows the skills text size:
+      on desktop it's --u, on tablets the text has a minimum size, so it's bigger.
+    */
+    --pu: calc(max(var(--fs-min-small), calc(16 * var(--u))) / 16);
     position: relative;
     display: grid;
     grid-template-columns: [full-start] 1fr [frame-start] calc(1440 * var(--u)) [frame-end] 1fr [full-end];
@@ -304,9 +309,8 @@ const SKILLS = [
   /*
     The paper keeps its Figma left edge (x 688), its Figma width (287px) and its
     bottom inside the typewriter (y 1185). It grows upwards to fit the full list.
-    Its sizes use --pu, one Figma pixel of the paper, which follows its text size. On desktop that's
-    --u. On tablets the text has a minimum size, so the whole paper grows with it and every line
-    breaks exactly as on desktop.
+    Its sizes use --pu (see .about). On tablets the whole paper grows with its text, so every line
+    breaks exactly as on desktop, and the typewriter grows with it.
   */
   /*
     A window around the paper with its bottom edge at the roller (y 1185). Whatever is
@@ -314,7 +318,6 @@ const SKILLS = [
     It's wider than the paper so the shadow and the tilt are never cut.
   */
   .about__paper-window {
-    --pu: 0.0625em; /* 1px on 16px text */
     position: absolute;
     left: calc((688 - 40) * var(--u));
     /* --typewriter-drop: how far the script moves the typewriter down on tablets (see below) */
@@ -322,7 +325,7 @@ const SKILLS = [
     width: calc((287 + 80) * var(--pu));
     height: calc(700 * var(--pu));
     font-family: var(--f-type);
-    font-size: max(var(--fs-min-small), calc(16 * var(--u)));
+    font-size: calc(16 * var(--pu));
     overflow: hidden;
     z-index: 5;
     pointer-events: none;
@@ -404,12 +407,17 @@ const SKILLS = [
     line-height: 1.3; /* 20.8px on 16px, as in Figma */
   }
 
-  /* ---------- Typewriter ---------- */
+  /*
+    ---------- Typewriter ----------
+    Figma: 466px wide at x 562, y 1159. It's placed from the paper (x 688, roller at y 1185), 126px
+    left of it and 26px above the roller, in --pu, so on tablets it grows around the paper with the
+    same proportions. On desktop --pu is --u, so it's exactly the Figma position.
+  */
   .about__typewriter {
     position: absolute;
-    left: calc((553 + 9) * var(--u));
-    top: calc((1152 + 7 - 720) * var(--u) + var(--typewriter-drop, 0px));
-    width: calc(466 * var(--u));
+    left: calc(688 * var(--u) - 126 * var(--pu));
+    top: calc((1185 - 720) * var(--u) - 26 * var(--pu) + var(--typewriter-drop, 0px));
+    width: calc(466 * var(--pu));
     z-index: 6;
   }
 
@@ -417,7 +425,7 @@ const SKILLS = [
     display: block;
     width: 100%;
     height: auto;
-    filter: drop-shadow(calc(-5 * var(--u)) calc(5 * var(--u)) calc(5.5 * var(--u)) oklch(26.16% 0.0296 267.48 / 0.1));
+    filter: drop-shadow(calc(-5 * var(--pu)) calc(5 * var(--pu)) calc(5.5 * var(--pu)) oklch(26.16% 0.0296 267.48 / 0.1));
   }
 
   /*
@@ -426,8 +434,8 @@ const SKILLS = [
   */
   @media (max-width: 1023px) {
     /*
-      The skills text is bigger than the design here, so the whole paper is bigger (see --pu). The
-      script moves the typewriter and its paper down (--typewriter-drop) until the paper clears the hero.
+      The skills text is bigger than the design here, so the paper and the typewriter are bigger
+      (see --pu). The script moves them down (--typewriter-drop) until the paper clears the hero.
     */
     .about__card {
       height: auto;
