@@ -326,10 +326,10 @@ const MENU = [
       margin: calc(13 * var(--m)) 0 0 calc(-4 * var(--m));
     }
 
-    /* Project pages aren't designed for phones yet: the back arrow keeps the logo's scale (0.62) */
+    /* Project pages (Figma 529:2153): the back arrow, 54px wide at x 9, y 37 */
     .site-header__back {
-      width: calc(52 * var(--m));
-      margin: calc(36 * var(--m)) 0 0 calc(16 * var(--m));
+      width: calc(54 * var(--m));
+      margin: calc(37 * var(--m)) 0 0 calc(9 * var(--m));
     }
 
     .site-header__nav,
@@ -342,6 +342,27 @@ const MENU = [
     .site-header__menu {
       display: flex;
       margin-top: calc(37 * var(--m));
+    }
+
+    /*
+      Project pages (Figma 529:2153): the back arrow on the left and Get in touch on the right,
+      no menu. The button is the desktop one at 0.7824 of its size (169 x 40.7), at x 216, y 34.
+    */
+    .site-header--project {
+      grid-template-columns: auto 1fr auto calc(8 * var(--m));
+      grid-template-areas: 'logo . cta .';
+    }
+
+    .site-header--project .site-header__menu {
+      display: none;
+    }
+
+    .site-header--project :global(.site-header__cta) {
+      --u: calc(0.7824 * var(--m));
+      display: inline-flex;
+      margin-top: calc(34 * var(--m));
+      font-size: calc(16 * var(--u));
+      border-width: calc(2 * var(--u));
     }
   }
 

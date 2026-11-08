@@ -88,6 +88,8 @@ const CHAPTERS: StoryChapter[] = [
   {
     id: 'result',
     title: 'Result',
+    // On phones its image (part of the process, not the finished work) joins the Process row
+    phoneImagesIn: 'process',
     parts: [
       {
         text: 'A digital and physical prototype exploring how seasonal changes and shared experiences could make long-term life in space feel less repetitive and more connected.',
@@ -119,7 +121,7 @@ const CHAPTERS: StoryChapter[] = [
     <ProjectFacts
       facts={[
         { label: 'Year', value: '2026' },
-        { label: 'Project', value: 'school project' },
+        { label: 'Project', value: 'school group project' },
       ]}
       tools={[
         { name: 'Figma', image: figma, w: 70 },

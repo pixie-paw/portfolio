@@ -71,7 +71,7 @@ For PR descriptions, commit messages, docs and code comments:
 - **Placement by area, never by number:** place every element by its named area (`grid-area: title`). When an element has to overlap another area, use that area's lines (`grid-row: title-start / tag-end`). Never use column or row numbers like `grid-column: 2 / 3`, because they break as soon as a column or row is added.
 - **Layer order:** stack the elements in the same order as their layers in Figma (bottom to top), on every breakpoint. Ask before changing anything in the design.
 - **Layers:** every visual element (tags, stars, outlines, photo, camera) is its own element with a `data-layer` name, so it can be animated on its own.
-- **Project pages share one template:** `ProjectHero`, `ProjectFacts`, `ProjectStory` and `ProjectLive`, built from the MemoMe frame (`412:1070`). Every project page uses the same sizes, spacing and motion. Only the content changes: the text, tools, chapter and part names, images and links. Spacing differences between the project frames in Figma aren't intended (no auto layout there), so don't copy them.
+- **Project pages share one template:** `ProjectHero`, `ProjectFacts`, `ProjectStory` and `ProjectLive`, built from the MemoMe frame (`412:1070`), and on phones from the MemoMe phone frame (`529:2153`). Every project page uses the same sizes, spacing and motion. Only the content changes: the text, tools, chapter and part names, images and links. Spacing differences between the project frames in Figma aren't intended (no auto layout there), so don't copy them.
 
 ## Background: grid paper and texture
 

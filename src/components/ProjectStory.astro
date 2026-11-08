@@ -26,6 +26,9 @@ export interface StoryChapter {
   id: string;
   title: string;
   parts: StoryPart[];
+  // Phones only: this chapter's images join another chapter's row instead (its id). For a Result
+  // whose images show the process rather than the finished work (Irina: EVO, Bloom Ferments, NMBS).
+  phoneImagesIn?: string;
 }
 
 interface Props {
@@ -33,6 +36,36 @@ interface Props {
 }
 
 const { chapters } = Astro.props;
+
+/*
+  Phones (Figma 529:2153): each chapter ends with its images in one row you swipe sideways,
+  191.2px tall. An image wider than 3:1 stacks on top of the next one, both as wide as each other,
+  so the pair is exactly as tall as the row (in Figma: the principles over the user journey).
+  w = the item's width in phone frame px; each image's h = its height in the pair.
+*/
+const ROW_H = 191.2;
+type StoryImage = StoryPart['images'][number];
+const ratio = (image: StoryImage) => image.src.width / image.src.height;
+const imagesOf = (chapter: StoryChapter) => chapter.parts.flatMap((part) => part.images);
+const rowOf = (chapter: StoryChapter) => {
+  const images = [
+    ...(chapter.phoneImagesIn ? [] : imagesOf(chapter)),
+    ...chapters.filter((other) => other.phoneImagesIn === chapter.id).flatMap(imagesOf),
+  ];
+  const items: { w: number; images: { image: StoryImage; h: number }[] }[] = [];
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
+    const next = images[i + 1];
+    if (ratio(image) > 3 && next) {
+      const w = ROW_H / (1 / ratio(image) + 1 / ratio(next));
+      items.push({ w, images: [image, next].map((img) => ({ image: img, h: w / ratio(img) })) });
+      i++;
+    } else {
+      items.push({ w: ROW_H * ratio(image), images: [{ image, h: ROW_H }] });
+    }
+  }
+  return items;
+};
 ---
 
 <section class="project-story" aria-label="The project" data-section="project-story">
@@ -42,7 +75,7 @@ const { chapters } = Astro.props;
       {
         chapters.map((chapter) => (
           <section class="story-chapter" aria-labelledby={`${chapter.id}-title`} data-layer="story-chapter" data-chapter={chapter.id}>
-            <h2 class="story-chapter__title" id={`${chapter.id}-title`}>
+            <h2 class="story-chapter__title" id={`${chapter.id}-title`} data-layer="story-title">
               <a class="story-chapter__link" href={`#${chapter.id}`} data-layer="story-chapter-link">
                 {chapter.title}
               </a>
@@ -73,6 +106,27 @@ const { chapters } = Astro.props;
                 </div>
               ))}
             </div>
+
+            <!-- Phones only: the chapter's images in a row you swipe sideways (none if they show elsewhere) -->
+            {rowOf(chapter).length > 0 && (
+            <div class="story-row" data-layer="story-row" tabindex="0" role="group" aria-label={`${chapter.title} images`}>
+              {rowOf(chapter).map(({ w, images }) => (
+                <div class="story-row__item" style={`--iw:${w.toFixed(2)}`}>
+                  {images.map(({ image, h }) => (
+                    <Image
+                      class="story-row__image"
+                      src={image.src}
+                      alt={image.alt}
+                      widths={[Math.round(w * 1.25), Math.round(w * 2.5)]}
+                      sizes={`calc(${w.toFixed(1)} * min(100vw, 480px) / 393)`}
+                      loading="lazy"
+                      style={`--ih:${h.toFixed(2)}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+            )}
           </section>
         ))
       }
@@ -265,5 +319,128 @@ const { chapters } = Astro.props;
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  /* The phone image rows only show on phones */
+  .story-row {
+    display: none;
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 529:2153 ----------
+    Everything is open, one chapter after another: the title, its line (which fills green as you
+    scroll through the chapter), the parts, then the chapter's images in a row you swipe sideways.
+    The images column on the right isn't used. Phone frame px.
+    Figma's gaps vary a little between chapters (no auto layout), so every chapter uses Briefing's.
+  */
+  @media (max-width: 767px) {
+    .project-story {
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+    }
+
+    /* Figma: BRIEFING at y 1284, 44px under the facts. 60px above the marquee, like the desktop. */
+    .project-story__frame {
+      grid-template-columns: 100%;
+      grid-template-areas: 'rail';
+      padding: calc(44 * var(--m)) 0 calc(60 * var(--m));
+    }
+
+    .project-story__rail {
+      padding-top: 0;
+    }
+
+    .project-story__images {
+      display: none;
+    }
+
+    /* Figma: the next title 88px under the image row */
+    .story-chapter + .story-chapter {
+      margin-top: calc(88 * var(--m));
+    }
+
+    /* Figma: Boldonse 24px at x 7 */
+    .story-chapter__title {
+      margin-left: calc(7 * var(--m));
+      font-size: calc(24 * var(--m));
+    }
+
+    /* Figma: 6px under the title, 1.5px, to the right edge */
+    .story-chapter__line {
+      margin-top: calc(6 * var(--m));
+      height: calc(1.5 * var(--m));
+    }
+
+    /* Figma: the text 16px under the line, a named first part 33px under it */
+    .story-chapter__parts {
+      padding-top: calc(16 * var(--m));
+    }
+
+    .story-part {
+      padding-left: calc(9 * var(--m));
+    }
+
+    .story-part:first-child .story-part__title {
+      margin-top: calc(17 * var(--m));
+    }
+
+    /* Figma: 33px from a part's text to the next part's name */
+    .story-part + .story-part {
+      margin-top: calc(33 * var(--m));
+    }
+
+    /* Figma: Boldonse 20px, the text 6px under it */
+    .story-part__title {
+      margin-bottom: calc(6 * var(--m));
+      font-size: calc(20 * var(--m));
+    }
+
+    /* Figma: Akzidenz 15.6px, 376px wide */
+    .story-part__text {
+      width: calc(376 * var(--m));
+      font-size: calc(15.6 * var(--m));
+    }
+
+    /* Figma: the desktop buttons at 0.80 of their size, 34px under the text, two to a row */
+    .story-part__buttons {
+      --u: calc(0.8027 * var(--m));
+      width: calc(330 * var(--m));
+      padding-top: calc(34 * var(--m));
+    }
+
+    .story-part__buttons :global(.button) {
+      font-size: calc(16 * var(--u));
+      border-width: calc(2 * var(--u));
+    }
+
+    /* 24px under the chapter's last part, from x 9, running off the right edge */
+    .story-row {
+      display: flex;
+      margin-top: calc(24 * var(--m));
+      padding-left: calc(9 * var(--m));
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-left: calc(9 * var(--m));
+      scrollbar-width: none;
+    }
+
+    .story-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .story-row__item {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      width: calc(var(--iw) * var(--m));
+      scroll-snap-align: start;
+    }
+
+    .story-row__image {
+      display: block;
+      width: 100%;
+      height: calc(var(--ih) * var(--m));
+      object-fit: cover;
+    }
   }
 </style>
