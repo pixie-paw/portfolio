@@ -313,7 +313,8 @@ const SKILLS = [
   .about__paper-window {
     position: absolute;
     left: calc((688 - 40) * var(--u));
-    bottom: calc((720 + 980 - 1185) * var(--u));
+    /* --typewriter-drop: how far the script moves the typewriter down on tablets (see below) */
+    bottom: calc((720 + 980 - 1185) * var(--u) - var(--typewriter-drop, 0px));
     width: calc((287 + 80) * var(--u));
     height: calc(700 * var(--u));
     overflow: hidden;
@@ -403,7 +404,7 @@ const SKILLS = [
   .about__typewriter {
     position: absolute;
     left: calc((553 + 9) * var(--u));
-    top: calc((1152 + 7 - 720) * var(--u));
+    top: calc((1152 + 7 - 720) * var(--u) + var(--typewriter-drop, 0px));
     width: calc(466 * var(--u));
     z-index: 6;
   }
@@ -420,6 +421,15 @@ const SKILLS = [
     The button keeps its Figma distance from the card's bottom (62px) and at least 24px above it.
   */
   @media (max-width: 1023px) {
+    /*
+      The skills text is bigger than the design here, so the paper is taller. The script moves the
+      typewriter and its paper down (--typewriter-drop) until the paper clears the hero, and the
+      window gets taller so the top of the paper is never cut.
+    */
+    .about__paper-window {
+      height: calc(700 * var(--u) + 200px);
+    }
+
     .about__card {
       height: auto;
       min-height: calc(310 * var(--u));

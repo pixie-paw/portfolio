@@ -18,10 +18,11 @@ import PhotoOutlineB from '../assets/home/svg/photo-outline-b.svg';
 /*
   Coordinates below are Figma pixels from the 1440px "1.0 Home page" frame,
   measured from the top-left of the grid area each layer lives in.
-  x/y = centre of the layer; mx/my = the same for the mobile layout.
+  x/y = centre of the layer, w = its width, r = its tilt.
+  m = [x, y, w] of the same layer in the phone frame (518:676, 393px wide), for layers the phone has.
 */
-const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
-  `--x:${x};--y:${y};--w:${w};--r:${r}deg;--mx:${mx};--my:${my}`;
+const layer = (x: number, y: number, w: number, r = 0, m?: [number, number, number]) =>
+  `--x:${x};--y:${y};--w:${w};--r:${r}deg` + (m ? `;--mx:${m[0]};--my:${m[1]};--mw:${m[2]}` : '');
 ---
 
 <section class="hero" aria-label="Introduction" data-section="hero">
@@ -30,22 +31,22 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   <!-- Title area: black paper plate, "HI, I'M IRINA.", stars, floating tags -->
   <div class="hero__title-area" data-drift="-120">
     <!-- The paper is its own layer, so it can wipe in without moving the plate's tilt point -->
-    <span class="layer hero__plate" data-layer="title-plate" data-intro style={layer(351, 285.5, 641, -2.67, 345, 175)}>
+    <span class="layer hero__plate" data-layer="title-plate" data-intro style={layer(351, 285.5, 641, -2.67, [198.19, 582.47, 415.17])}>
       <span class="hero__plate-paper" data-layer="title-plate-paper"></span>
     </span>
-    <h1 class="layer hero__title" id="hero-title" data-layer="title" data-intro style={layer(361.3, 287.4, 600, -2.67, 350, 177)}>
+    <h1 class="layer hero__title" id="hero-title" data-layer="title" data-intro style={layer(361.3, 287.4, 600, -2.67, [204.48, 587.09, 269])}>
       Hi, I’m Irina.
     </h1>
 
-    <span class="layer layer--svg" data-layer="title-star-left" data-intro style={layer(83.2, 290.4, 37.79, -4.26, 77, 180)}><StarPinkMd data-depth="12" /></span>
-    <span class="layer layer--svg" data-layer="title-star-left-outline" data-intro style={layer(84.3, 289.2, 37.79, -4.26, 78, 179)}><StarOutlineMd data-depth="12" /></span>
-    <span class="layer layer--svg" data-layer="title-star-right" data-intro style={layer(623.2, 269.4, 37.79, -4.26, 617, 159)}><StarPinkMd data-depth="12" /></span>
-    <span class="layer layer--svg" data-layer="title-star-right-outline" data-intro style={layer(624.3, 268.2, 37.79, -4.26, 618, 158)}><StarOutlineMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-left" data-intro style={layer(83.2, 290.4, 37.79, -4.26, [45.64, 592.13, 18])}><StarPinkMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-left-outline" data-intro style={layer(84.3, 289.2, 37.79, -4.26, [46.17, 591.56, 18])}><StarOutlineMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-right" data-intro style={layer(623.2, 269.4, 37.79, -4.26, [343.64, 577.13, 18])}><StarPinkMd data-depth="12" /></span>
+    <span class="layer layer--svg" data-layer="title-star-right-outline" data-intro style={layer(624.3, 268.2, 37.79, -4.26, [344.17, 576.56, 18])}><StarOutlineMd data-depth="12" /></span>
 
-    <span class="layer layer--svg" data-layer="sparkle-big" data-intro style={layer(663.2, 91.8, 56.35, 0, 655, 35)}><StarPinkLg data-depth="12" /></span>
-    <span class="layer layer--svg" data-layer="sparkle-big-outline" data-intro style={layer(665, 90.2, 56.35, 0, 657, 33)}><StarOutlineLg data-depth="12" /></span>
-    <span class="layer layer--svg" data-layer="sparkle-small" data-intro style={layer(683.4, 71, 22.62, 0, 675, 14)}><StarPinkSm data-depth="12" /></span>
-    <span class="layer layer--svg" data-layer="sparkle-small-outline" data-intro style={layer(684.1, 70.3, 22.62, 0, 676, 13)}><StarOutlineSm data-depth="12" /></span>
+    <span class="layer layer--svg hero__desktop-only" data-layer="sparkle-big" data-intro style={layer(663.2, 91.8, 56.35)}><StarPinkLg data-depth="12" /></span>
+    <span class="layer layer--svg hero__desktop-only" data-layer="sparkle-big-outline" data-intro style={layer(665, 90.2, 56.35)}><StarOutlineLg data-depth="12" /></span>
+    <span class="layer layer--svg hero__desktop-only" data-layer="sparkle-small" data-intro style={layer(683.4, 71, 22.62)}><StarPinkSm data-depth="12" /></span>
+    <span class="layer layer--svg hero__desktop-only" data-layer="sparkle-small-outline" data-intro style={layer(684.1, 70.3, 22.62)}><StarOutlineSm data-depth="12" /></span>
 
     <Tag name="tag-coding-top" text="{ Coding }" x={393.5} y={-8.6} w={84.83} rotate={-13.31} intro="travel" class="hero__tag" />
     <Tag name="tag-experience-left" text="{ Experience Design }" x={225.1} y={111.9} w={156.34} rotate={4.15} intro="travel" class="hero__tag" />
@@ -90,11 +91,11 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
       src={irina}
       alt="Irina, cut out like a collage, wearing a long beige coat"
       widths={[300, 600, 900]}
-      sizes="(max-width: 899px) 45vw, 292px"
+      sizes="(max-width: 767px) min(64vw, 308px), 292px"
       loading="eager"
     />
     <!-- The image is its own layer, so it can swing in from its corner without moving the camera's tilt point -->
-    <span class="layer hero__camera" data-layer="camera" data-intro style={layer(264.2, 239.1, 496.69, -6.13)}>
+    <span class="layer hero__camera" data-layer="camera" data-intro style={layer(264.2, 239.1, 496.69, -6.13, [212.44, 184.79, 330.84])}>
       <Image
         class="hero__camera-image"
         data-layer="camera-image"
@@ -102,7 +103,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
         src={camera}
         alt=""
         widths={[500, 735]}
-        sizes="(max-width: 899px) 70vw, 497px"
+        sizes="(max-width: 767px) min(84vw, 404px), 497px"
         loading="eager"
       />
     </span>
@@ -114,7 +115,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
 </section>
 
 <style>
-  /* ---------- Desktop (≥ 900px): grid areas on the 1440 Figma frame ---------- */
+  /* ---------- Desktop and tablet (768px and up): grid areas on the 1440 Figma frame ---------- */
   /*
     The middle four columns are the 1440 Figma frame (94 + 699 + 528 + 119).
     The outer 1fr columns are 0 up to 1440px and split the extra width above it,
@@ -181,6 +182,8 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     it uses the lines of the areas it spans (top of "title" to bottom of "tag").
   */
   .hero__visual {
+    /* the photo stack's unit: one Figma pixel, smaller on phones */
+    --vu: var(--u);
     grid-column: visual;
     grid-row: title-start / tag-end;
     align-self: start;
@@ -231,9 +234,9 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   /* Photo stack: positioned from its top-left corner like in Figma */
   .cutout {
     position: absolute;
-    left: calc(var(--cx) * var(--u));
-    top: calc(var(--cy) * var(--u));
-    width: calc(var(--cw) * var(--u));
+    left: calc(var(--cx) * var(--vu));
+    top: calc(var(--cy) * var(--vu));
+    width: calc(var(--cw) * var(--vu));
     height: auto;
   }
 
@@ -247,7 +250,7 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
   .cutout--outline-a { --cx: 77.75; --cy: 147.75; --cw: 316.5; }
   .cutout--photo     {
     --cx: 90; --cy: 153; --cw: 292.04;
-    filter: drop-shadow(calc(-4.83 * var(--u)) calc(3.86 * var(--u)) calc(3.86 * var(--u)) oklch(26.16% 0.0296 267.48 / 0.1));
+    filter: drop-shadow(calc(-4.83 * var(--vu)) calc(3.86 * var(--vu)) calc(3.86 * var(--vu)) oklch(26.16% 0.0296 267.48 / 0.1));
   }
 
   .hero__camera {
@@ -278,73 +281,113 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     pointer-events: auto;
   }
 
-  /* ---------- Mobile first try (< 768px, rejected): replaced once the mobile hero is built ---------- */
+  /*
+    ---------- Phone (< 768px), Figma 518:676 ----------
+    One 393px frame (--m is one of its pixels), centred above 480px like the desktop above 1440px.
+    Every collage container starts at the frame's top-left corner, so each layer uses its Figma
+    position: the centre of its bounding box (for a tilted layer, Figma's x / y is its own corner). The band runs edge to edge. The photo, the camera and the tags around it sit under the
+    band, the plate, the title and the internship tag, as in Figma.
+  */
   @media (max-width: 767px) {
     .hero {
-      /* 690 Figma px fit the screen between 16px gutters */
-      --u: calc((100vw - 2 * var(--gutter)) / 690);
-      grid-template-columns: var(--gutter) 1fr var(--gutter);
-      grid-template-rows: auto calc(260 * var(--u)) auto calc(80 * var(--u)) auto;
+      grid-template-columns: 1fr calc(393 * var(--m)) 1fr;
+      grid-template-rows: calc(615.7 * var(--m)) calc(52.85 * var(--m)) calc(331.45 * var(--m));
       grid-template-areas:
-        'header header header'
-        '.      title  .'
-        'band   band   band'
-        '.      tag    .'
-        '.      visual .';
-      row-gap: 0;
+        '.    top    .'
+        'band band   band'
+        '.    bottom .';
     }
 
-    .hero__title-area {
-      margin-top: 12px;
+    .hero :global(.site-header) {
+      grid-area: top;
+      align-self: start;
+    }
+
+    .hero__title-area,
+    .hero__tag-area,
+    .hero__visual {
+      grid-column: top;
+      grid-row: top-start / bottom-end;
+      align-self: stretch;
+    }
+
+    .hero__visual { z-index: 1; }
+    .hero__band { z-index: 2; }
+    .hero__subtitle { z-index: 3; }
+    .hero__title-area { z-index: 4; }
+    .hero__tag-area { z-index: 5; }
+
+    .hero__desktop-only,
+    .hero__title-area :global(.tag) {
+      display: none;
     }
 
     .layer {
-      left: calc(var(--mx) * var(--k));
-      top: calc(var(--my) * var(--k));
+      --k: var(--m);
+      left: calc(var(--mx) * var(--m));
+      top: calc(var(--my) * var(--m));
+      width: calc(var(--mw) * var(--m));
     }
 
+    /* Figma: 415.17 x 73.72, tilted -2.67deg */
+    .hero__plate {
+      height: calc(73.72 * var(--m));
+    }
+
+    /* Figma: Boldonse 38px */
+    .hero__title {
+      font-size: calc(38 * var(--m));
+    }
+
+    /* Figma: Bona Nova 22px, centred on the band */
     .hero__subtitle {
-      grid-column: 2;
-      padding: 14px 0;
-      font-size: max(18px, calc(40 * var(--u)));
-      white-space: normal;
-    }
-
-    .hero__tag-area :global(.tag) {
-      --k: calc(var(--u) * 1.3);
-      left: 50%;
-      top: calc(10 * var(--u));
-    }
-
-    .hero__title-area :global(.tag),
-    .hero__visual :global(.tag) {
-      --k: calc(var(--u) * 1.6);
-    }
-
-    .hero__title-area :global([data-layer='tag-coding-top']) {
-      left: calc(410 * var(--u));
-      top: calc(25 * var(--u));
-    }
-
-    .hero__title-area :global([data-layer='tag-experience-left']) {
-      left: calc(165 * var(--u));
-      top: calc(50 * var(--u));
-    }
-
-    .hero__title-area :global([data-layer='tag-visual-left']) {
-      left: calc(540 * var(--u));
-      top: calc(95 * var(--u));
-    }
-
-    .hero__visual {
-      grid-row: visual;
-      grid-column: visual;
-      width: calc(528 * var(--u));
+      grid-area: band;
       justify-self: center;
-      height: calc(1040 * var(--u));
-      margin-bottom: 0;
-      margin-top: calc(-120 * var(--u));
+      font-size: calc(22 * var(--m));
     }
 
+    /*
+      The photo stack is the desktop one at 0.8633 of its size (252.11px wide instead of 292).
+      The container starts 15.48px left of the frame and 100.83px down, so the photo lands at
+      x 62.22, y 232.91 with the desktop offsets.
+    */
+    .hero__visual {
+      --vu: calc(0.8633 * var(--m));
+      height: auto;
+      margin: calc(100.83 * var(--m)) 0 0 calc(-15.48 * var(--m));
+    }
+
+    /* Figma: 330.84px wide (0.666 of the desktop camera), so its shadow is 0.666 of it too */
+    .hero__camera-image {
+      filter: drop-shadow(calc(-4 * var(--m)) calc(4 * var(--m)) calc(2.66 * var(--m)) oklch(26.16% 0.0296 267.48 / 0.1));
+    }
+
+    /* The tags around the camera: the desktop size, at their phone positions and tilts */
+    .hero__visual :global(.tag) {
+      --k: var(--m);
+    }
+
+    .hero__visual :global([data-layer='tag-visual-camera']) {
+      left: calc(299.24 * var(--m));
+      top: calc(81.57 * var(--m));
+      rotate: 5.23deg;
+    }
+
+    .hero__visual :global([data-layer='tag-coding-camera']) {
+      left: calc(60.44 * var(--m));
+      top: calc(210.6 * var(--m));
+    }
+
+    .hero__visual :global([data-layer='tag-experience-camera']) {
+      left: calc(237.43 * var(--m));
+      top: calc(288.53 * var(--m));
+    }
+
+    /* Figma: 366.55 x 45.63, 0.8947 of the desktop tag, centred at x 201.53, y 693.35 */
+    .hero__tag-area :global(.hero__internship) {
+      --k: calc(0.8947 * var(--m));
+      left: calc(201.53 * var(--m));
+      top: calc(693.35 * var(--m));
+    }
   }
 </style>

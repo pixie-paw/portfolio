@@ -78,6 +78,7 @@ Both are one layer the size of the screen, fixed in place (`position: fixed` in 
 
 - **Grid paper** (`body::before`): fixed behind everything, rotated -2.22deg, 100px bigger than the screen on every side so the rotation never shows its corners.
 - **Texture** (`body::after`): fixed on top of everything (z-index 100, `mix-blend-mode: lighten`, no pointer events). In Figma the texture is only on the hero. That's a mistake in the Figma file, so don't copy it.
+- **On phones (under 768px):** both are sized with `--m` instead, so the grid squares stay about 19px and the grain matches the desktop at 1440. The phone frames in Figma have no texture and a different grid. That's on purpose, so don't copy them.
 - **Use `position: fixed`, not `background-attachment: fixed`**, which iPhones ignore. Heights use `100lvh`, so no gap shows when the phone's toolbar slides away.
 - **Never put a background colour on `body`**, because it paints over the grid paper. The paper colour sits on `html`.
 

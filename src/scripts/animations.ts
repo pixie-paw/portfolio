@@ -2,10 +2,11 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
+import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
-gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin);
+gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin, DrawSVGPlugin);
 
 /**
  * Site animations, written from the official docs:
@@ -15,6 +16,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin);
  * - GSAP quickTo: https://gsap.com/docs/v3/GSAP/gsap.quickTo()
  * - SplitText: https://gsap.com/docs/v3/Plugins/SplitText/
  * - ScrambleText: https://gsap.com/docs/v3/Plugins/ScrambleTextPlugin/
+ * - DrawSVG (the About me stems; it draws the same in Safari): https://gsap.com/docs/v3/Plugins/DrawSVGPlugin/
  * - ScrollTrigger: https://gsap.com/docs/v3/Plugins/ScrollTrigger/
  * - Lenis with ScrollTrigger: https://github.com/darkroomengineering/lenis#gsap-scrolltrigger
  *
@@ -215,6 +217,14 @@ const getLayers = <T extends Element = HTMLElement>(names: string[]) =>
 
 const getAll = <T extends Element = HTMLElement>(selector: string, $root: ParentNode = document) =>
   Array.from($root.querySelectorAll<T>(selector));
+
+/*
+  About me stems: an undrawn stem is an empty piece at the end it grows from (data-grow), and
+  it's drawn until it covers the whole path. DrawSVG instead of a negative stroke-dashoffset,
+  which Safari draws differently.
+*/
+const STEM_DRAWN = '0% 100%';
+const stemStart = ($wrap: HTMLElement) => ($wrap.dataset.grow === 'end' ? '100% 100%' : '0% 0%');
 
 const waitForFonts = () =>
   Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, FONT_WAIT_MS))]);
@@ -1030,7 +1040,10 @@ const createWorkAnimations = (context: gsap.Context): Cleanup[] => {
   const $work = document.querySelector<HTMLElement>('[data-section="work"]');
   if (!$work) return [];
   createWorkEntrance(context, $work);
-  const preview = createWorkPreview($work);
+  // The preview card follows the mouse, so it's only for screens with one. On a touch screen a
+  // tap plays the letter roll and opens the project straight away.
+  const hasMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const preview = hasMouse ? createWorkPreview($work) : undefined;
   return [...createWorkRows($work, preview), ...(preview ? [preview.cleanup] : [])];
 };
 
@@ -1359,9 +1372,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
   const flowers = $flowers.map(($flower) => {
     const $stem = $flower.querySelector<SVGPathElement>('[data-layer="flower-stem"]');
     const $head = $flower.querySelector<SVGGElement>('[data-layer="flower-head"]');
-    const length = $stem?.getTotalLength() ?? 0;
-    const fromEnd = $flower.dataset.grow === 'end';
-    if ($stem) gsap.set($stem, { strokeDasharray: length, strokeDashoffset: fromEnd ? -length : length });
+    if ($stem) gsap.set($stem, { drawSVG: stemStart($flower) });
     if ($head) gsap.set($head, { scale: 0, transformOrigin: '50% 50%' });
     return { $flower, $stem, $head };
   });
@@ -1589,7 +1600,7 @@ const createAboutIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup)
       // The stems grow slowly out from behind the photo, one after another, and each flower opens
       flowers.forEach(({ $stem, $head }, i) => {
         const at = INTRO_FLOWER_AT_S + i * INTRO_FLOWER_GAP_S;
-        if ($stem) load.to($stem, { strokeDashoffset: 0, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
+        if ($stem) load.to($stem, { drawSVG: STEM_DRAWN, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
         if ($head) load.to($head, { scale: 1, duration: 0.9, ease: 'back.out(1.6)' }, at + INTRO_STEM_S * 0.85);
       });
 
@@ -1628,9 +1639,7 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
 
   // ---------- After section 1's text, the stem grows down on its own; then its flower opens ----------
   if ($flower && $stem) {
-    const length = $stem.getTotalLength();
-    const fromEnd = $flower.dataset.grow === 'end';
-    gsap.set($stem, { strokeDasharray: length, strokeDashoffset: fromEnd ? -length : length });
+    gsap.set($stem, { drawSVG: stemStart($flower) });
     if ($head) gsap.set($head, { scale: 0, transformOrigin: '50% 50%' });
 
     // The stem and its flower float together, once the flower is open
@@ -1649,7 +1658,7 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
       context.add(() => {
         gsap
           .timeline({ delay: HOW_STEM_AFTER_S, onComplete: () => float.play() })
-          .to($stem, { strokeDashoffset: 0, duration: HOW_STEM_S, ease: 'sine.inOut' })
+          .to($stem, { drawSVG: STEM_DRAWN, duration: HOW_STEM_S, ease: 'sine.inOut' })
           .to($head ?? [], { scale: 1, duration: 0.9, ease: 'back.out(1.6)' }, HOW_STEM_S * 0.9);
       }),
     );
@@ -1767,10 +1776,7 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
   // A stem starts hidden, drawn from the end data-grow names; its flower starts closed
   const prepStem = ($wrap: HTMLElement | null) => {
     const $stem = $wrap?.querySelector<SVGPathElement>('[data-layer="flower-stem"]') ?? null;
-    if ($wrap && $stem) {
-      const length = $stem.getTotalLength();
-      gsap.set($stem, { strokeDasharray: length, strokeDashoffset: $wrap.dataset.grow === 'end' ? -length : length });
-    }
+    if ($wrap && $stem) gsap.set($stem, { drawSVG: stemStart($wrap) });
     return $stem;
   };
   const prepHead = ($wrap: HTMLElement | null) => {
@@ -1793,10 +1799,10 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
 
     howTextShown.then(() => context.add(() => {
       const grow = gsap.timeline({ delay: HOW_STEM_AFTER_S, onComplete: () => float.play() });
-      grow.to($longPath, { strokeDashoffset: 0, duration: HOW_STEM_S, ease: 'sine.inOut' });
+      grow.to($longPath, { drawSVG: STEM_DRAWN, duration: HOW_STEM_S, ease: 'sine.inOut' });
       if ($redHead) grow.to($redHead, openHead, HOW_STEM_S * 0.9);
       // The branch leaves the long stem just before it reaches the card
-      if ($branchPath) grow.to($branchPath, { strokeDashoffset: 0, duration: GOING_BRANCH_S, ease: 'sine.inOut' }, HOW_STEM_S * 0.8);
+      if ($branchPath) grow.to($branchPath, { drawSVG: STEM_DRAWN, duration: GOING_BRANCH_S, ease: 'sine.inOut' }, HOW_STEM_S * 0.8);
       if ($blueHead) grow.to($blueHead, openHead, HOW_STEM_S * 0.8 + GOING_BRANCH_S * 0.85);
     }));
   }
@@ -1899,7 +1905,7 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
     // The statue's stems grow slowly out of it, one after the other, and their flowers open
     statueStems.forEach(({ $stem, $head }, i) => {
       const at = 0.9 + i * INTRO_FLOWER_GAP_S;
-      if ($stem) statueIn.to($stem, { strokeDashoffset: 0, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
+      if ($stem) statueIn.to($stem, { drawSVG: STEM_DRAWN, duration: INTRO_STEM_S, ease: 'sine.inOut' }, at);
       if ($head) statueIn.to($head, openHead, at + INTRO_STEM_S * 0.85);
     });
   };
@@ -2603,6 +2609,9 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   Left alone: links within the same page, downloads, email links, links to other sites or that
   open a new tab, and clicks with a modifier key (to open in a new tab).
 */
+// Set by createPageTransitions: covers the screen, then goes to the page
+let leavePage: ((href: string) => void) | null = null;
+
 const TRANSITION_COLOURS = ['--c-pink', '--c-yellow', '--c-green', '--c-blue', '--c-marker'];
 const TRANSITION_IN = { duration: 0.8, ease: 'power4.inOut', stagger: 0.04 };
 const TRANSITION_OUT = { duration: 0.5, ease: 'power4.inOut', stagger: 0.03, delay: 0.08 };
@@ -2702,6 +2711,9 @@ const createPageTransitions = (reduceMotion: boolean) => {
     event.preventDefault();
     leave(url.href);
   });
+
+  // The phone menu leaves through here too, once its tapped link has shown
+  leavePage = leave;
 };
 
 /*
@@ -2770,6 +2782,189 @@ const createStickyHeader = (reduceMotion: boolean) => {
 };
 
 /*
+  ---------- Phone menu ----------
+  The menu button (in the header and in its copy that comes back on scroll) opens a modal
+  <dialog>. Its pink sheet slides in from the right, with the close button and the dividers on it.
+  Then the links and Get in touch fade in, as the header's do on the desktop. Closing slides the
+  whole sheet back out to the right. While it's open, the page under it doesn't scroll.
+  A tapped link turns Medium and its blue line grows, as a desktop nav link does on hover. Then a
+  link to another page leaves through the page transition, and a link to a part of this page
+  (Projects on the home page) slides the menu out and scrolls there.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog
+*/
+const MENU_IN_S = 0.6;
+const MENU_OUT_S = 0.45;
+const MENU_ITEMS_IN_S = 0.3; // the desktop header's fade on page load
+
+const createMobileMenu = (reduceMotion: boolean) => {
+  const $menu = document.querySelector<HTMLDialogElement>('[data-menu]');
+  const $sheet = $menu && getLayer('menu-sheet', $menu);
+  const $close = $menu?.querySelector<HTMLElement>('[data-menu-close]');
+  if (!$menu || !$sheet || !$close) return;
+  const $links = getAll<HTMLAnchorElement>('[data-menu-link]', $menu);
+  const $items = [...$links, ...getLayers(['menu-cta']).filter(($el) => $menu.contains($el))];
+
+  let $opener: HTMLElement | null = null;
+  let timeline: gsap.core.Timeline | null = null;
+  let isLeaving = false;
+  const setExpanded = (isOpen: boolean) =>
+    getAll('[data-menu-open]').forEach(($button) => $button.setAttribute('aria-expanded', String(isOpen)));
+
+  // Back to the resting look: grey, Regular, no line
+  const resetLinks = () => {
+    $links.forEach(($link) => {
+      $link.classList.remove('site-menu__link--tapped');
+      const $line = getLayer('menu-underline', $link);
+      if ($line) gsap.set($line, { scaleX: 0, transformOrigin: 'left center' });
+    });
+  };
+
+  const open = ($from: HTMLElement) => {
+    if ($menu.open) return;
+    $opener = $from;
+    isLeaving = false;
+    timeline?.kill();
+    resetLinks();
+    $menu.showModal();
+    $close.focus({ preventScroll: true });
+    setExpanded(true);
+    document.documentElement.dataset.menu = 'open';
+    smoothScroll?.stop();
+    if (reduceMotion) {
+      gsap.set($sheet, { xPercent: 0 });
+      gsap.set($items, { autoAlpha: 1 });
+      return;
+    }
+    timeline = gsap
+      .timeline()
+      .set($items, { autoAlpha: 0 })
+      .fromTo($sheet, { xPercent: 100 }, { xPercent: 0, duration: MENU_IN_S, ease: 'power4.out' })
+      .to($items, { autoAlpha: 1, duration: MENU_ITEMS_IN_S, ease: 'power1.out' });
+  };
+
+  const close = (then?: () => void) => {
+    if (!$menu.open) return;
+    timeline?.kill();
+    setExpanded(false);
+    const finish = () => {
+      $menu.close();
+      delete document.documentElement.dataset.menu;
+      smoothScroll?.start();
+      if (then) then();
+      else $opener?.focus({ preventScroll: true });
+    };
+    if (reduceMotion) {
+      finish();
+      return;
+    }
+    timeline = gsap
+      .timeline({ onComplete: finish })
+      .to($sheet, { xPercent: 100, duration: MENU_OUT_S, ease: 'power3.in' });
+  };
+
+  document.addEventListener('click', (event) => {
+    const $button = (event.target as Element | null)?.closest<HTMLElement>('[data-menu-open]');
+    if ($button) open($button);
+  });
+  $close.addEventListener('click', () => close());
+  // Escape: slide out instead of the dialog's instant close
+  $menu.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    close();
+  });
+
+  $links.forEach(($link) => {
+    $link.addEventListener('click', (event) => {
+      // Let Cmd / Ctrl-click open a new tab as usual
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      if (isLeaving) return;
+      isLeaving = true;
+
+      const url = new URL($link.href, window.location.href);
+      const $target = url.pathname === window.location.pathname && url.hash ? document.querySelector(url.hash) : null;
+      const go = () => {
+        if ($target) {
+          // Same page: slide the menu out, then scroll there
+          close(() => {
+            if (smoothScroll) smoothScroll.scrollTo($target as HTMLElement);
+            else $target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+          });
+        } else if (leavePage) {
+          // Another page: the tape strips cover the screen, so the menu just goes
+          close();
+          leavePage(url.href);
+        } else {
+          window.location.href = url.href;
+        }
+      };
+
+      $link.classList.add('site-menu__link--tapped');
+      const $line = getLayer('menu-underline', $link);
+      if (reduceMotion || !$line) {
+        go();
+        return;
+      }
+      gsap.to($line, { scaleX: 1, duration: NAV_DURATION_S, ease: 'power3.out', overwrite: true, onComplete: go });
+    });
+  });
+
+  // Turning a phone or widening the window past the phone layout closes it
+  window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => {
+    if (event.matches && $menu.open) {
+      timeline?.kill();
+      setExpanded(false);
+      $menu.close();
+      delete document.documentElement.dataset.menu;
+      smoothScroll?.start();
+    }
+  });
+};
+
+/*
+  ---------- Tablets: the typewriter sits lower, so its paper clears the hero ----------
+  From 768 to 1023px the skills text has a minimum size, so the paper is taller than in the
+  design and, fully out, it would cover the hero's subtitle and internship sign. This measures the
+  paper and moves the typewriter and its paper down (--typewriter-drop on the About section) just
+  enough to keep the paper 16px under the sign. Desktop and phones keep their Figma position.
+  It runs with and without motion, once the fonts are in and again when the window changes size.
+*/
+const TYPEWRITER_GAP_PX = 16;
+
+const createTypewriterDrop = () => {
+  const $about = document.querySelector<HTMLElement>('[data-section="about"]');
+  const $paper = $about && getLayer('skills-paper', $about);
+  const $sheet = $about && getLayer('skills-sheet', $about);
+  const $window = $paper?.parentElement;
+  const $sign = getLayer('tag-internship');
+  if (!$about || !$sheet || !$window || !$sign) return;
+  const tablet = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
+  const $drift = $sign.closest<HTMLElement>('[data-drift]');
+
+  const update = () => {
+    const current = parseFloat($about.style.getPropertyValue('--typewriter-drop')) || 0;
+    let drop = 0;
+    if (tablet.matches) {
+      // Where the paper's top would be without any drop, and the sign's bottom without its scroll drift
+      const paperTop = $window.getBoundingClientRect().bottom - current - $sheet.offsetHeight;
+      const signBottom = $sign.getBoundingClientRect().bottom - Number($drift ? gsap.getProperty($drift, 'y') : 0);
+      drop = Math.max(0, Math.ceil(signBottom + TYPEWRITER_GAP_PX - paperTop));
+    }
+    if (drop === current) return;
+    $about.style.setProperty('--typewriter-drop', `${drop}px`);
+    ScrollTrigger.refresh();
+  };
+
+  waitForFonts().then(update);
+  document.fonts.addEventListener('loadingdone', update);
+  let frame = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(update);
+  });
+};
+
+/*
   The skip link jumps to the page's main title and moves the keyboard focus there too, so the
   next Tab goes on from the content, not from the header (smooth scrolling would skip that).
 */
@@ -2785,6 +2980,8 @@ export const initAnimations = () => {
   createSkipLink();
   createPageTransitions(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   createStickyHeader(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  createMobileMenu(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  createTypewriterDrop();
   const mm = gsap.matchMedia();
 
   mm.add(

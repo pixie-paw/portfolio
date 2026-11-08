@@ -2,6 +2,7 @@
 import Logo from '../assets/home/svg/logo-flower.svg';
 import BackArrow from '../assets/projects/svg/back-arrow.svg';
 import NavUnderline from '../assets/home/svg/nav-underline.svg';
+import MenuClose from '../assets/home/svg/menu-close.svg';
 import Button from './Button.astro';
 
 /**
@@ -31,6 +32,15 @@ const NAV = links ?? [
   { label: 'About me', href: `${base}/about/`, name: 'about' as const },
 ];
 const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name === active;
+
+/*
+  The phone menu always has the two main pages. A link only gets the Medium weight and the
+  blue line when it's tapped (the script does that).
+*/
+const MENU = [
+  { label: 'Projects', href: `${base}/#work`, name: 'projects' },
+  { label: 'About me', href: `${base}/about/`, name: 'about' },
+];
 ---
 
 <!--
@@ -77,7 +87,61 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
 
   <!-- Opens a new email to Irina, from every page -->
   <Button href="mailto:irinammoldovan@gmail.com" text="Get in touch" w={216} name="cta" intro class="site-header__cta" />
+
+  <!-- Phones only: opens the menu below. The copy of the header that comes back on scroll has one too. -->
+  <button
+    class="site-header__menu"
+    type="button"
+    aria-label="Open the menu"
+    aria-expanded="false"
+    aria-controls="site-menu"
+    data-menu-open
+    data-layer="menu-open"
+  >
+    <span class="site-header__menu-line"></span>
+    <span class="site-header__menu-line"></span>
+    <span class="site-header__menu-line"></span>
+  </button>
 </header>
+
+<!--
+  Phone menu (Figma 523:1336): a light pink screen with the two pages and Get in touch.
+  A modal <dialog>, so the page under it can't be reached with the keyboard while it's open,
+  and Escape closes it. The script slides it in and out.
+-->
+<dialog class="site-menu" id="site-menu" aria-label="Menu" data-menu>
+  <!-- The pink sheet slides in and out as one, with the close button and the dividers on it -->
+  <div class="site-menu__sheet" data-layer="menu-sheet">
+    <div class="site-menu__frame">
+      <button class="site-menu__close" type="button" aria-label="Close the menu" data-menu-close data-layer="menu-close">
+        <MenuClose class="site-menu__close-icon" aria-hidden="true" />
+      </button>
+
+      <nav class="site-menu__nav" aria-label="Main">
+        <ul class="site-menu__list">
+          {
+            MENU.map((link) => (
+              <li class="site-menu__item">
+                <a
+                  class="site-menu__link"
+                  href={link.href}
+                  aria-current={link.name === active ? 'page' : undefined}
+                  data-menu-link
+                  data-layer={`menu-${link.name}`}
+                >
+                  <span class="site-menu__label" data-text={link.label}>{link.label}</span>
+                  <span class="site-menu__underline" aria-hidden="true" data-layer="menu-underline"></span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <Button href="mailto:irinammoldovan@gmail.com" text="Get in touch" w={216} name="menu-cta" class="site-menu__cta" />
+    </div>
+  </div>
+</dialog>
 
 <style>
   /*
@@ -220,38 +284,210 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
     margin-top: calc(33 * var(--u));
   }
 
-  /* Mobile first try (< 768px, rejected): replaced once the mobile header is built. */
+  /* ---------- Menu button: phones only ---------- */
+  /* Figma: 47 x 40, green with a 2px ink border, three 24px lines */
+  .site-header__menu {
+    grid-area: menu;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(5.5 * var(--m));
+    width: calc(47 * var(--m));
+    height: calc(40 * var(--m));
+    padding: 0;
+    background: var(--c-green);
+    border: 2px solid var(--c-ink);
+    cursor: pointer;
+  }
+
+  .site-header__menu-line {
+    display: block;
+    width: calc(24 * var(--m));
+    height: 2px;
+    background: var(--c-ink);
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 518:676 (393px frame) ----------
+    The flower on the left and the menu button on the right. The nav links and Get in touch
+    move into the menu.
+  */
   @media (max-width: 767px) {
     .site-header {
-      grid-template-columns: var(--gutter) auto 1fr auto var(--gutter);
-      grid-template-areas:
-        '. logo . cta .'
-        '. nav nav nav .';
-      row-gap: 12px;
-      padding-top: 12px;
+      grid-template-columns: auto 1fr calc(47 * var(--m)) calc(8 * var(--m));
+      grid-template-areas: 'logo . menu .';
+      padding-top: 0;
     }
 
+    /* Figma: 92.93px wide, at x -4, y 13 */
     .site-header__logo {
-      width: 64px;
+      width: calc(92.93 * var(--m));
+      margin: calc(13 * var(--m)) 0 0 calc(-4 * var(--m));
     }
 
-    .site-header__nav {
-      margin-top: 0;
-      gap: 24px;
+    /* Project pages aren't designed for phones yet: the back arrow keeps the logo's scale (0.62) */
+    .site-header__back {
+      width: calc(52 * var(--m));
+      margin: calc(36 * var(--m)) 0 0 calc(16 * var(--m));
     }
 
-    .site-header__link {
-      font-size: 18px;
+    .site-header__nav,
+    .site-header :global(.site-header__cta),
+    .site-header :global(.site-header__download) {
+      display: none;
     }
 
-    .site-header__underline {
-      left: -6px;
-      top: 24px;
-      width: 76px;
+    /* Figma: x 338, y 37 */
+    .site-header__menu {
+      display: flex;
+      margin-top: calc(37 * var(--m));
     }
+  }
 
-    .site-header :global(.site-header__cta) {
-      margin-top: 12px;
-    }
+  /* ---------- Phone menu ---------- */
+  .site-menu {
+    /* the buttons inside are sized in Figma pixels of the phone frame */
+    --u: var(--m);
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--c-ink);
+    overflow: hidden;
+  }
+
+  .site-menu::backdrop {
+    background: transparent;
+  }
+
+  /* Figma: #fcf4f6, the whole screen. It scrolls on its own if a phone is too short for it. */
+  .site-menu__sheet {
+    position: absolute;
+    inset: 0;
+    overflow: hidden auto;
+    background: var(--c-tag);
+  }
+
+  /*
+    The 393px frame sits in the middle, the dividers run edge to edge.
+    Figma: close at y 36, Projects at y 259, dividers at y 321 and 432, Get in touch at y 479.
+  */
+  .site-menu__frame {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr calc(393 * var(--m)) 1fr;
+    grid-template-areas:
+      '.   close .'
+      'nav nav   nav'
+      '.   cta   .';
+    padding-bottom: calc(48 * var(--m));
+  }
+
+  /* Figma: 47 x 40 at x 9, y 36, the same green as the menu button */
+  .site-menu__close {
+    grid-area: close;
+    justify-self: start;
+    display: grid;
+    place-items: center;
+    width: calc(47 * var(--m));
+    height: calc(40 * var(--m));
+    margin: calc(36 * var(--m)) 0 0 calc(9 * var(--m));
+    padding: 0;
+    background: var(--c-green);
+    border: 2px solid var(--c-ink);
+    cursor: pointer;
+  }
+
+  .site-menu__close-icon {
+    display: block;
+    width: calc(20.85 * var(--m));
+    height: auto;
+  }
+
+  .site-menu__nav {
+    grid-area: nav;
+    margin-top: calc((259 - 76) * var(--m));
+  }
+
+  .site-menu__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: center;
+  }
+
+  /* The dividers: 1.5px ink lines across the whole screen */
+  .site-menu__item {
+    border-bottom: calc(1.5 * var(--m)) solid var(--c-ink);
+  }
+
+  .site-menu__item:first-child {
+    padding-bottom: calc(32.25 * var(--m));
+  }
+
+  .site-menu__item + .site-menu__item {
+    padding: calc(41.25 * var(--m)) 0 calc(39.25 * var(--m));
+  }
+
+  /*
+    Figma: Akzidenz 24px, --c-ink-soft. Tapped, it turns Medium and ink, and the blue line grows
+    under it, like the desktop nav links on hover.
+  */
+  .site-menu__link {
+    position: relative;
+    display: inline-block;
+    font-family: var(--f-sans);
+    font-size: calc(24 * var(--m));
+    line-height: calc(29 / 24);
+    color: var(--c-ink-soft);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* A hidden Medium copy (::after) keeps the label as wide as its Medium text, so it never shifts */
+  .site-menu__label {
+    display: inline-grid;
+  }
+
+  .site-menu__label::after {
+    content: attr(data-text);
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-weight: 500;
+  }
+
+  .site-menu__link--tapped {
+    font-weight: 500;
+    color: var(--c-ink);
+  }
+
+  /* Figma: 2.5px blue, 7px wider than the text on each side. Hidden until tapped. */
+  .site-menu__underline {
+    position: absolute;
+    left: calc(-7 * var(--m));
+    right: calc(-7 * var(--m));
+    top: calc(30.75 * var(--m));
+    height: calc(2.5 * var(--m));
+    background: var(--c-blue);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .site-menu__link--tapped .site-menu__underline {
+    transform: none;
+  }
+
+  /* Figma: 216 x 52, centred, 46px under the last divider */
+  .site-menu :global(.site-menu__cta) {
+    grid-area: cta;
+    justify-self: center;
+    margin-top: calc(46.25 * var(--m));
   }
 </style>
