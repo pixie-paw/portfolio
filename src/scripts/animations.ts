@@ -228,6 +228,21 @@ let markAboutShown: () => void = () => {};
 const aboutShown = new Promise<void>((resolve) => {
   markAboutShown = resolve;
 });
+// marqueeShown resolves once the marquee's words are in: the footer's CV block waits for it
+let markMarqueeShown: () => void = () => {};
+const marqueeShown = new Promise<void>((resolve) => {
+  markMarqueeShown = resolve;
+});
+// filmShown resolves once the film strip has slid in: the marquee below waits for it
+let markFilmShown: () => void = () => {};
+const filmShown = new Promise<void>((resolve) => {
+  markFilmShown = resolve;
+});
+// workShown resolves once the project rows are in: the film strip below waits for it
+let markWorkShown: () => void = () => {};
+const workShown = new Promise<void>((resolve) => {
+  markWorkShown = resolve;
+});
 let markWorkTitleShown: () => void = () => {};
 const workTitleShown = new Promise<void>((resolve) => {
   markWorkTitleShown = resolve;
@@ -1127,7 +1142,10 @@ const createWorkEntrance = (context: gsap.Context, $work: Element) => {
   // once the title's bar is drawn
   const $list = $work.querySelector('ul');
   const $items = getAll('[data-layer="work-item"]', $work);
-  if (!$list || !$items.length) return;
+  if (!$list || !$items.length) {
+    markWorkShown();
+    return;
+  }
 
   const rows = $items.map(($item) => ({
     $line: getLayer('work-line', $item),
@@ -1146,7 +1164,7 @@ const createWorkEntrance = (context: gsap.Context, $work: Element) => {
     once: true,
     onEnter: () =>
       workTitleShown.then(() => context.add(() => {
-        const list = gsap.timeline();
+        const list = gsap.timeline({ onComplete: () => markWorkShown() });
         rows.forEach(({ $line, $parts }, i) => {
           if ($line) list.to($line, { scaleX: 1, duration: 0.7, ease: 'power2.inOut' }, i * 0.15);
           list.to($parts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.06 }, i * 0.15 + 0.1);
@@ -1158,7 +1176,10 @@ const createWorkEntrance = (context: gsap.Context, $work: Element) => {
 
 const createWorkAnimations = (context: gsap.Context): Cleanup[] => {
   const $work = document.querySelector<HTMLElement>('[data-section="work"]');
-  if (!$work) return [];
+  if (!$work) {
+    markWorkShown();
+    return [];
+  }
   createWorkEntrance(context, $work);
   // The preview card follows the mouse, so it's only for screens with one. On a touch screen a
   // tap plays the letter roll and opens the project straight away.
@@ -1173,7 +1194,10 @@ const createFilmStrip = (context: gsap.Context) => {
   const $strip = $film && getLayer('film-strip', $film);
   const $track = $film && getLayer('film-track', $film);
   const $rounds = $film ? getAll('[data-layer="film-round"]', $film) : [];
-  if (!$film || !$strip || !$track || $rounds.length < 2) return;
+  if (!$film || !$strip || !$track || $rounds.length < 2) {
+    markFilmShown();
+    return;
+  }
 
   // The strip starts just past the right edge of the screen (the section clips it sideways)
   gsap.set($strip, { xPercent: 100 });
@@ -1223,8 +1247,9 @@ const createFilmStrip = (context: gsap.Context) => {
     trigger: $film,
     start: 'top 85%',
     once: true,
+    // After the project rows above it
     onEnter: () =>
-      context.add(() => {
+      workShown.then(() => context.add(() => {
         entrance(
           gsap.to($strip, {
             xPercent: 0,
@@ -1233,11 +1258,12 @@ const createFilmStrip = (context: gsap.Context) => {
             onComplete: () => {
               hasArrived = true;
               updateFlow();
+              markFilmShown();
             },
           }),
           $film,
         );
-      }),
+      })),
   });
 };
 
@@ -1252,13 +1278,19 @@ const drawDoubleLine = ($lines: SVGPathElement[]) =>
 const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $marquee = document.querySelector('[data-section="marquee"]');
   const $track = $marquee && getLayer('marquee-track', $marquee);
-  if (!$marquee || !$track) return;
+  if (!$marquee || !$track) {
+    markMarqueeShown();
+    return;
+  }
 
   const $rounds = getAll('[data-layer="marquee-round"]', $marquee);
   const $texts = getAll('[data-layer="marquee-text"]', $marquee);
   const $pinks = getAll('[data-layer="marquee-star-pink"]', $marquee);
   const $outlines = getAll('[data-layer="marquee-star-outline"]', $marquee);
-  const $lines = getAll<SVGPathElement>('[data-layer="marquee-line"]', $marquee);
+  // Phones have their own double line, in its own wrapper
+  const isPhone = window.matchMedia('(max-width: 767px)').matches;
+  const $linesRoot = (isPhone && getLayer('marquee-phone', $marquee)) || $marquee.querySelector('[data-layer="marquee-lines"]') || $marquee;
+  const $lines = getAll<SVGPathElement>('[data-layer="marquee-line"]', $linesRoot);
   if ($rounds.length < 2) return;
 
   // Start states: words just below their line, stars at nothing, lines not drawn yet
@@ -1311,8 +1343,8 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     start: 'top 80%',
     once: true,
     onEnter: () =>
-      // The text is Boldonse: measure the rounds once the font is in
-      waitForFonts().then(() =>
+      // The text is Boldonse: measure the rounds once the font is in. After the film strip above it.
+      Promise.all([waitForFonts(), filmShown]).then(() =>
         context.add(() => {
           measure();
           const arrive = gsap
@@ -1328,7 +1360,9 @@ const createMarquee = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
             .to($pinks, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2.2)', stagger: 0.1 }, 0.3)
             .to($outlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out', stagger: 0.1 }, 0.4)
             // The double line draws itself in from left to right
-            .add(drawDoubleLine($lines), 0);
+            .add(drawDoubleLine($lines), 0)
+            // Once the words are in, the footer below may come in
+            .call(() => markMarqueeShown(), [], 1);
           entrance(arrive, $marquee);
         }),
       ),
@@ -1349,8 +1383,9 @@ const createFooter = (context: gsap.Context) => {
       trigger: $sticker,
       start: 'top 90%',
       once: true,
+      // With the marquee they sit on, after the film strip above
       onEnter: () =>
-        context.add(() => {
+        filmShown.then(() => context.add(() => {
           entrance(
             gsap.to($body, {
               scale: 1,
@@ -1361,8 +1396,14 @@ const createFooter = (context: gsap.Context) => {
             }),
             $sticker,
           );
-        }),
+        })),
     });
+  });
+
+  // Resolves once the CV block and the buttons are in: the pink band below waits for it
+  let markCvShown: () => void = () => {};
+  const cvShown = new Promise<void>((resolve) => {
+    markCvShown = resolve;
   });
 
   // DOWNLOAD CV, the arrows and the buttons come in together, one after another
@@ -1372,6 +1413,7 @@ const createFooter = (context: gsap.Context) => {
   const $marker = getLayer('footer-cv-marker', $footer);
   const $arrows = getAll<SVGElement>('[data-layer="footer-arrow-svg"]', $footer);
   const $buttons = getAll('[data-roll-button]', getLayer('footer-links', $footer) ?? $footer);
+  if (!$cv || !$download || !$letters || !$marker) markCvShown();
   if ($cv && $download && $letters && $marker) {
     gsap.set($download, { y: 20, autoAlpha: 0 });
     gsap.set($letters, { autoAlpha: 0 });
@@ -1386,8 +1428,9 @@ const createFooter = (context: gsap.Context) => {
       trigger: $cv,
       start: 'top 85%',
       once: true,
+      // After the marquee above it
       onEnter: () =>
-        waitForFonts().then(() =>
+        Promise.all([waitForFonts(), marqueeShown]).then(() =>
           context.add(() => {
             const letters = SplitText.create($letters, { type: 'chars' }).chars;
             gsap.set($letters, { autoAlpha: 1 });
@@ -1422,6 +1465,7 @@ const createFooter = (context: gsap.Context) => {
               .to($arrows, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.6)', stagger: 0.08 }, 0.9)
               // The buttons rise in one after another
               .to($buttons, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.1 }, 1.2);
+            cvIn.call(() => markCvShown(), [], 1.2);
             entrance(cvIn, $buttons[$buttons.length - 1] ?? $cv);
           }),
         ),
@@ -1437,10 +1481,11 @@ const createFooter = (context: gsap.Context) => {
       trigger: $band,
       start: 'top 95%',
       once: true,
+      // After the CV block and the buttons above it
       onEnter: () =>
-        context.add(() => {
+        cvShown.then(() => context.add(() => {
           entrance(gsap.to($bandTexts, { y: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', stagger: 0.08 }), $band);
-        }),
+        })),
     });
   }
 };

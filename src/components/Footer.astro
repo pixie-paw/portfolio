@@ -239,4 +239,86 @@ const LINKS = [
     grid-area: end;
     justify-self: end;
   }
+
+  /*
+    ---------- Phone (< 768px), Figma 518:676 ----------
+    Phone frame px, from where this section starts (y 3090, under the marquee). The CV block is the
+    desktop one at the same type sizes, the buttons are the desktop ones at 0.7556 of their size,
+    and the one sticker is the desktop sticker at 0.7762. There are no arrows on phones.
+  */
+  @media (max-width: 767px) {
+    .footer {
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      /*
+        The band is taller than Figma's 54px (72px, plus the phone's own bottom safe area), so the
+        browser's bottom bar never cuts its text (Irina's choice)
+      */
+      grid-template-rows: [content-start] calc(353 * var(--m)) [band-start] calc(72 * var(--m) + env(safe-area-inset-bottom, 0px)) [band-end];
+    }
+
+    .footer__arrow {
+      display: none;
+    }
+
+    /* One sticker, over the marquee: centred at x 100.6, y 2984.9, tilted -10.48deg */
+    .footer__stickers > :global(.tag:not(:first-child)) {
+      display: none;
+    }
+
+    .footer__stickers > :global(.tag:first-child) {
+      --k: calc(0.7762 * var(--m));
+      left: calc(100.6 * var(--m));
+      top: calc((2984.9 - 3090) * var(--m));
+    }
+
+    /* Figma: DOWNLOAD at y 3110, CV 20px under it, the bar 159px wide, centred on x 191.5 */
+    .footer__cv {
+      left: calc((191.5 - 79.5) * var(--m));
+      top: calc(20 * var(--m));
+      width: calc(159 * var(--m));
+      height: calc((3247 + 11.5 - 3110) * var(--m));
+    }
+
+    .footer__cv-download {
+      font-size: calc(18 * var(--m));
+      line-height: calc(35 * var(--m));
+    }
+
+    .footer__cv-letters {
+      top: calc(20 * var(--m));
+      font-size: calc(78 * var(--m));
+      line-height: calc(150 * var(--m));
+    }
+
+    .footer__cv-marker {
+      top: calc((3247 - 11.5 - 3110) * var(--m));
+      height: calc(23 * var(--m));
+    }
+
+    /* Figma: from x 10 at y 3299, 19.65px apart (the desktop's 26px at this size) */
+    .footer__links {
+      --u: calc(0.7556 * var(--m));
+      left: calc(10 * var(--m));
+      top: calc((3299 - 3090) * var(--m));
+    }
+
+    /* Figma's 12.09px text and 1.51px border, not the tablet minimum */
+    .footer__links :global(.footer__button) {
+      font-size: calc(16 * var(--u));
+      border-width: calc(2 * var(--u));
+    }
+
+    /* Figma: Boldonse 10px, evenly spaced from x 8 to x 386. 16px from the band's top, higher than in Figma. */
+    .footer__band-frame {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: calc(16 * var(--m)) calc(7 * var(--m)) 0 calc(8 * var(--m));
+    }
+
+    .footer__band-text {
+      font-size: calc(10 * var(--m));
+      line-height: calc(19 * var(--m));
+    }
+  }
 </style>
