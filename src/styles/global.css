@@ -30,7 +30,25 @@
   --f-inter: 'Inter', 'Helvetica Neue', Arial, sans-serif; /* the text along the blue wave */
 
   --u: calc(min(100vw, 1440px) / 1440);
+  /* One Figma pixel of the phone design (393px frame). It stops growing at 480px. */
+  --m: calc(min(100vw, 480px) / 393);
   --gutter: 16px;
+
+  /*
+    Smallest text sizes, used as max(var(--fs-min), calc(N * var(--u))).
+    0 from 1024px up, so the desktop stays exactly as in Figma.
+    In rem, so they follow the visitor's own text size setting.
+  */
+  --fs-min: 0px;
+  --fs-min-small: 0px;
+}
+
+/* Tablet (768 to 1023px): the desktop layout, but the text never gets too small to read */
+@media (max-width: 1023px) {
+  :root {
+    --fs-min: 0.875rem; /* 14px: body text, links, card text */
+    --fs-min-small: 0.75rem; /* 12px: buttons, notes, footer small print */
+  }
 }
 
 *,

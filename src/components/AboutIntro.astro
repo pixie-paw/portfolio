@@ -249,7 +249,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   .about-intro__text {
     margin: 0;
     font-family: var(--f-sans);
-    font-size: calc(20 * var(--u));
+    font-size: max(var(--fs-min), calc(20 * var(--u)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -302,5 +302,22 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     right: 0;
     border-bottom-width: var(--stroke);
     border-right-width: var(--stroke);
+  }
+
+  /*
+    Tablet: the text is bigger than the design here, so the card grows with it.
+    The button keeps its Figma spacing: 17px under the text, 33px above the card's bottom.
+  */
+  @media (max-width: 1023px) {
+    .about-intro__card {
+      height: auto;
+      min-height: calc(235 * var(--u));
+      padding-bottom: calc((33 + 52 + 17) * var(--u));
+    }
+
+    .about-intro__card :global(.about-intro__cv) {
+      top: auto;
+      bottom: calc(33 * var(--u));
+    }
   }
 </style>

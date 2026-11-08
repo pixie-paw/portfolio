@@ -195,7 +195,7 @@ const { chapters } = Astro.props;
     margin: 0 0 calc(6 * var(--u));
     font-family: var(--f-display);
     font-weight: 400;
-    font-size: calc(20 * var(--u));
+    font-size: max(var(--fs-min), calc(20 * var(--u)));
     line-height: calc(38 / 20);
     color: var(--c-ink);
   }
@@ -204,7 +204,7 @@ const { chapters } = Astro.props;
   .story-part__text {
     width: calc(508 * var(--u));
     font-family: var(--f-sans);
-    font-size: calc(20 * var(--u));
+    font-size: max(var(--fs-min), calc(20 * var(--u)));
     line-height: 1.2;
     color: var(--c-ink);
   }

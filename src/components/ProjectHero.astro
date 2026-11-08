@@ -57,11 +57,14 @@ const LINKS = [
       {tags.map(({ text, w }) => <Tag name="project-tag" text={`{ ${text} }`} x={0} y={0} w={w} h={32} flow />)}
     </div>
 
-    <p class="project-hero__summary" data-layer="project-summary" data-intro>{summary}</p>
+    <!-- The summary and the buttons share a box, so on tablets the buttons can move down when the text grows -->
+    <div class="project-hero__intro">
+      <p class="project-hero__summary" data-layer="project-summary" data-intro>{summary}</p>
 
-    <div class="project-hero__buttons" data-layer="project-buttons" data-intro>
-      <Button href={resultUrl} text="See the result" w={209} name="project-see-result" newTab />
-      <Button href="#process" text="Read the process" w={250} name="project-read-process" tone="dark" />
+      <div class="project-hero__buttons" data-layer="project-buttons" data-intro>
+        <Button href={resultUrl} text="See the result" w={209} name="project-see-result" newTab />
+        <Button href="#process" text="Read the process" w={250} name="project-read-process" tone="dark" />
+      </div>
     </div>
   </div>
 </section>
@@ -143,15 +146,19 @@ const LINKS = [
     --k: calc(1.1703 * var(--u));
   }
 
-  /* Figma: x 66, y 526, 508px wide, Akzidenz 20px */
-  .project-hero__summary {
+  /* Figma: the summary at x 66, y 526, 508px wide */
+  .project-hero__intro {
     position: absolute;
     left: calc(66 * var(--u));
     top: calc(526 * var(--u));
     width: calc(508 * var(--u));
+  }
+
+  /* Figma: Akzidenz 20px */
+  .project-hero__summary {
     margin: 0;
     font-family: var(--f-sans);
-    font-size: calc(20 * var(--u));
+    font-size: max(var(--fs-min), calc(20 * var(--u)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -159,11 +166,19 @@ const LINKS = [
   /* Figma: x 66, y 614 and y 679 */
   .project-hero__buttons {
     position: absolute;
-    left: calc(66 * var(--u));
-    top: calc(614 * var(--u));
+    left: 0;
+    top: calc((614 - 526) * var(--u));
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: calc(13 * var(--u));
+  }
+
+  /* Tablet: the text is bigger than the design here, so the buttons follow it, 20px under it */
+  @media (max-width: 1023px) {
+    .project-hero__buttons {
+      position: static;
+      margin-top: calc(20 * var(--u));
+    }
   }
 </style>

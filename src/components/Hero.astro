@@ -278,8 +278,8 @@ const layer = (x: number, y: number, w: number, r = 0, mx = x, my = y) =>
     pointer-events: auto;
   }
 
-  /* ---------- Mobile suggestion (< 900px): stacked, same collage pieces ---------- */
-  @media (max-width: 899px) {
+  /* ---------- Mobile first try (< 768px, rejected): replaced once the mobile hero is built ---------- */
+  @media (max-width: 767px) {
     .hero {
       /* 690 Figma px fit the screen between 16px gutters */
       --u: calc((100vw - 2 * var(--gutter)) / 690);
