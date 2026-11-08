@@ -63,7 +63,7 @@ const { href, text, w, name, class: className, intro = false, newTab = false, to
     background: var(--c-green);
     border: 2px solid var(--c-ink);
     font-family: var(--f-display);
-    font-size: calc(16 * var(--u));
+    font-size: max(var(--fs-min-small), calc(16 * var(--u)));
     text-transform: uppercase;
     color: var(--c-ink);
   }
@@ -112,8 +112,17 @@ const { href, text, w, name, class: className, intro = false, newTab = false, to
     bottom: 0.2em;
   }
 
+  /* Tablet: the text has a minimum size, so the button grows with it instead of cutting it */
+  @media (max-width: 1023px) {
+    .button {
+      width: max-content;
+      min-width: calc(var(--w) * var(--u));
+      padding-inline: 12px;
+    }
+  }
+
   /* Mobile first try (rejected, to be replaced once the mobile design is agreed) */
-  @media (max-width: 899px) {
+  @media (max-width: 767px) {
     .button {
       height: 44px;
       width: auto;

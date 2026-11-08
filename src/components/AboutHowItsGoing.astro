@@ -249,7 +249,7 @@ const place = (x: number, y: number, w: number, h = 0, r = 0) =>
 
   .how-going__text {
     font-family: var(--f-sans);
-    font-size: calc(20 * var(--u));
+    font-size: max(var(--fs-min), calc(20 * var(--u)));
     line-height: 1.2;
     color: var(--c-ink);
   }
@@ -301,5 +301,14 @@ const place = (x: number, y: number, w: number, h = 0, r = 0) =>
     right: 0;
     border-bottom-width: var(--stroke);
     border-right-width: var(--stroke);
+  }
+
+  /* Tablet: the text is bigger than the design here, so the card grows with it */
+  @media (max-width: 1023px) {
+    .how-going__card {
+      height: auto;
+      min-height: calc(353 * var(--u));
+      padding-bottom: calc(37 * var(--u));
+    }
   }
 </style>

@@ -165,7 +165,7 @@ const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
     margin: 0;
     font-family: var(--f-sans);
     font-weight: 400;
-    font-size: calc(18 * var(--u));
+    font-size: max(var(--fs-min), calc(18 * var(--u)));
     line-height: calc(22 / 18);
     color: var(--c-ink-soft);
   }
@@ -174,7 +174,7 @@ const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
   .project-facts__value {
     margin: 0;
     font-family: var(--f-display);
-    font-size: calc(16 * var(--u));
+    font-size: max(var(--fs-min-small), calc(16 * var(--u)));
     line-height: calc(31 / 16);
     text-transform: uppercase;
     color: var(--c-ink);
@@ -235,5 +235,20 @@ const LINE_BOX = { x: -870, y: -100, w: 3040, h: 560 };
     right: 0;
     border-bottom-width: var(--stroke);
     border-right-width: var(--stroke);
+  }
+
+  /* Tablet: the text is bigger than the design here, so both cards grow with it */
+  @media (max-width: 1023px) {
+    .project-facts__card--facts {
+      height: auto;
+      min-height: calc(251 * var(--u));
+      padding-bottom: calc(14 * var(--u));
+    }
+
+    .project-facts__card--tools {
+      height: auto;
+      min-height: calc(138 * var(--u));
+      padding-bottom: calc(14 * var(--u));
+    }
   }
 </style>

@@ -10,6 +10,25 @@ These are the project rules. Follow them on every task in this repo. When Irina 
 - **Animations, element by element.** For every element in the section (every `data-layer`), ask Irina what animation she wants. Don't suggest directions or choose for her. Write her answers up as a short motion list, and code it only after her yes.
 - **Desktop first.** Finish the desktop version of every section first. Mobile and responsive come after that, designed together with Irina section by section. Never invent a mobile layout.
 - **Old mobile styles:** the `@media (max-width: 899px)` blocks in `Header.astro` and `Hero.astro` are a first try that Irina rejected. Don't build on them. Replace them once the mobile design is agreed.
+
+## Responsive
+
+| Width | Layout | Unit |
+| --- | --- | --- |
+| **1024px and up** | Desktop, exactly as built | `--u` |
+| **768 to 1023px (tablet)** | The desktop layout, with a minimum text size | `--u`, text through `--fs-min` |
+| **Under 768px (phone)** | The mobile design, Figma frame `518:676` (393px wide) | `--m`, one Figma pixel at 393px, stops growing at 480px |
+
+- **Tablet text:** every font size is `max(var(--fs-min), calc(N * var(--u)))` or a bigger floor where the text is a heading. Text cards with a fixed Figma height use `min-height`, so they grow with their text.
+- **Phone:** built section by section from Figma with Irina. Above 480px the phone layout stays at its 480px size, centred, like the desktop above 1440px.
+
+### Motion on phones
+
+The same as on desktop, with three differences Irina asked for:
+
+- **Cursor flower:** none, as there's no mouse.
+- **Typewriter:** decoration only. It shows the skills text from the site (not the old text in the mobile Figma frame), and the paper doesn't grow.
+- **Project rows:** a tap plays the letter roll only, with no preview card.
 - **Copy:** use Irina's approved copy word for word. Don't write new copy without asking.
 
 ## Git and GitHub

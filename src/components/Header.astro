@@ -156,7 +156,7 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
 
   .site-header__link {
     position: relative;
-    font-size: calc(24 * var(--u));
+    font-size: max(var(--fs-min), calc(24 * var(--u)));
     color: var(--c-ink);
     line-height: 1.2;
   }
@@ -220,8 +220,8 @@ const isActive = (link: (typeof NAV)[number]) => 'name' in link && link.name ===
     margin-top: calc(33 * var(--u));
   }
 
-  /* Mobile suggestion: small logo left, button right, nav links under them. */
-  @media (max-width: 899px) {
+  /* Mobile first try (< 768px, rejected): replaced once the mobile header is built. */
+  @media (max-width: 767px) {
     .site-header {
       grid-template-columns: var(--gutter) auto 1fr auto var(--gutter);
       grid-template-areas:

@@ -168,7 +168,7 @@ const LINKS = [
   .footer__cv-download {
     top: 0;
     font-family: var(--f-display);
-    font-size: calc(18 * var(--u));
+    font-size: max(var(--fs-min), calc(18 * var(--u)));
     line-height: calc(35 * var(--u));
     white-space: nowrap;
   }
@@ -225,7 +225,7 @@ const LINKS = [
     grid-area: start;
     margin: 0;
     font-family: var(--f-display);
-    font-size: calc(14 * var(--u));
+    font-size: max(var(--fs-min-small), calc(14 * var(--u)));
     line-height: calc(27 * var(--u));
     white-space: nowrap;
     color: var(--c-ink);
