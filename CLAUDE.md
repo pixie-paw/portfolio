@@ -141,7 +141,7 @@ Irina's brand: the same kind of element always moves the same way, on every page
 | **Stems and flowers** | The stem grows slowly (2.2s, or 3.2s for long guiding stems), then its flower opens | Every stem |
 | **Hovers** | Green buttons and project names: the letters roll. Links and kinds: a blue line grows under them. Logo, arrows, CV and icons: grow to 110%. | Everywhere |
 
-- **One-offs on purpose:** hero intros (choreographed), the hat drop, Kiki running in, the internship sign hanging, the typewriter typing, the camera's pictures opening from the middle, and DOWNLOAD rising above the footer CV.
+- **One-offs on purpose:** the loading screen (Figma `269:857` and `269:37`, on every fresh page load but not the site's own links, handing over with the tape strips), hero intros (choreographed), the hat drop, Kiki running in, the internship sign hanging, the typewriter typing, the camera's pictures opening from the middle, and DOWNLOAD rising above the footer CV.
 - **Reloading below the fold:** an entrance whose element is already above the screen when its turn comes is finished at once (`entrance()` in `animations.ts`), so the section on screen never waits for the ones above it. Every new entrance goes through `entrance()`.
 
 ## Fonts

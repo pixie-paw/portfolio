@@ -117,6 +117,11 @@ const MENU = [
         <MenuClose class="site-menu__close-icon" aria-hidden="true" />
       </button>
 
+      <!-- The flower from the header: it takes you home, like the header's (Figma 523:1336) -->
+      <a class="site-menu__home" href={`${base}/`} aria-label="Irina Moldovan, home" data-menu-home data-layer="logo">
+        <Logo class="site-menu__flower" aria-hidden="true" data-layer="logo-flower" />
+      </a>
+
       <nav class="site-menu__nav" aria-label="Main">
         <ul class="site-menu__list">
           {
@@ -403,7 +408,8 @@ const MENU = [
 
   /*
     The 393px frame sits in the middle, the dividers run edge to edge.
-    Figma: close at y 36, Projects at y 259, dividers at y 321 and 432, Get in touch at y 479.
+    Figma: close at y 36, the flower at y 150, dividers at y 270, 367 and 478, Projects at y 305,
+    Get in touch at y 525.
   */
   .site-menu__frame {
     position: relative;
@@ -411,6 +417,7 @@ const MENU = [
     grid-template-columns: 1fr calc(393 * var(--m)) 1fr;
     grid-template-areas:
       '.   close .'
+      '.   home  .'
       'nav nav   nav'
       '.   cta   .';
     padding-bottom: calc(48 * var(--m));
@@ -437,9 +444,29 @@ const MENU = [
     height: auto;
   }
 
+  /* Figma: the logo flower, 92.9px, centred at y 150 */
+  .site-menu__home {
+    grid-area: home;
+    justify-self: center;
+    display: block;
+    width: calc(92.9 * var(--m));
+    margin-top: calc((150 - 76) * var(--m));
+  }
+
+  .site-menu__flower {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* the centre of the flower's heart, so it spins in place (like the header's) */
+    transform-origin: 48.5% 50%;
+  }
+
+  /* Figma: the first divider at y 270, Projects 34px under it */
   .site-menu__nav {
     grid-area: nav;
-    margin-top: calc((259 - 76) * var(--m));
+    margin-top: calc((270 - 150 - 92.9) * var(--m));
+    border-top: calc(1.5 * var(--m)) solid var(--c-ink);
+    padding-top: calc(34.25 * var(--m));
   }
 
   .site-menu__list {

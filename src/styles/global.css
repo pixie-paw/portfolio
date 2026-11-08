@@ -63,6 +63,11 @@ html {
   background-color: var(--c-paper);
 }
 
+/* The loading screen is showing: the page under it doesn't scroll */
+html[data-loader='on'] {
+  overflow: hidden;
+}
+
 /* The phone menu is open: the page under it doesn't scroll */
 html[data-menu='open'] {
   overflow: hidden;
