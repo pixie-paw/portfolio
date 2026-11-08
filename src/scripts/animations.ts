@@ -572,14 +572,17 @@ const startWaveFlow = ($section: Element, waveLayer = 'wave'): Cleanup | undefin
 const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) => void) => {
   const $about = document.querySelector('[data-section="about"]');
   if (!$about) return;
+  // Phones have their own wave (in its own wrapper), and their typewriter is only decoration
+  const isPhone = window.matchMedia('(max-width: 767px)').matches;
+  const $waveRoot = (isPhone && getLayer('wave-phone', $about)) || $about;
 
   const getSvgs = (names: string[]) =>
     getLayers(names)
       .map(($layer) => $layer.querySelector<SVGElement>('svg'))
       .filter(($svg): $svg is SVGElement => $svg !== null);
 
-  // Title: the text itself is left alone here. On the first scroll the yellow bars are drawn
-  // in from left to right like a highlighter, and the stars pop in.
+  // Title: the text itself is left alone here. Once the title is typed and the bars are on screen,
+  // they're drawn in from left to right like a highlighter, and the stars pop in.
   const $markers = getAll('[data-layer="title-marker"]', $about);
   const starNames = ['about-sparkle-big', 'about-sparkle-small', 'about-star-low', 'about-star-high'];
   const $stars = getSvgs(starNames);
@@ -595,8 +598,15 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
     .to($stars, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(2.2)', stagger: 0.1 }, 0.2)
     .to($starOutlines, { x: 0, y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out', stagger: 0.1 }, 0.3);
 
-  // start: 1 = as soon as the page has scrolled 1px
-  ScrollTrigger.create({ start: 1, once: true, onEnter: () => aboutTitleTyped.then(() => firstScroll.play()) });
+  // Once they're on screen, right after the title is typed (load order: top to bottom)
+  if ($markers[0]) {
+    ScrollTrigger.create({
+      trigger: $markers[0],
+      start: 'top 85%',
+      once: true,
+      onEnter: () => aboutTitleTyped.then(() => firstScroll.play()),
+    });
+  }
 
   // Text card: the white card wipes in from left to right (like the hero's plate), the corners
   // clamp in, the text appears line by line, then the About me button pops in like a sticker
@@ -606,6 +616,12 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   const $aboutButton = getLayer('about-button', $about);
   // A little wider than the card, so the corners aren't cut while they clamp in from outside
   const CARD_SHOWN = 'inset(-5% -5% -5% -5%)';
+  // Resolves once the text and the button are in, so what's below them can wait its turn
+  let markCardShown: () => void = () => {};
+  const cardShown = new Promise<void>((resolve) => {
+    markCardShown = resolve;
+  });
+  if (!$card || !$cardText) markCardShown();
   if ($card && $cardText) {
     gsap.set($card, { clipPath: 'inset(-5% 105% -5% -5%)' });
     gsap.set($cardText, { autoAlpha: 0 });
@@ -623,7 +639,7 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
           const lines = SplitText.create($cardText, { type: 'lines' }).lines;
           gsap.set($cardText, { autoAlpha: 1 });
           const card = gsap
-            .timeline()
+            .timeline({ onComplete: () => markCardShown() })
             .to($card, { clipPath: CARD_SHOWN, duration: 0.8, ease: 'power3.inOut', clearProps: 'clipPath' })
             .to($corners, { x: 0, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)', stagger: 0.05 }, '-=0.1')
             .fromTo(
@@ -641,8 +657,8 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   }
 
   // Wave line: draws itself in from left to right, once
-  const $wave = getLayer('wave', $about);
-  const $waveLine = getLayer<SVGPathElement>('wave-line', $about);
+  const $wave = getLayer('wave', $waveRoot);
+  const $waveLine = getLayer<SVGPathElement>('wave-line', $waveRoot);
   if ($wave && $waveLine) {
     const length = $waveLine.getTotalLength();
     gsap.set($waveLine, { strokeDasharray: length, strokeDashoffset: length });
@@ -651,7 +667,8 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
       trigger: $wave,
       start: 'top 75%',
       once: true,
-      onEnter: () => aboutTitleTyped.then(() => draw.play()),
+      // On phones the wave comes before the title, so it doesn't wait for it
+      onEnter: () => (isPhone ? draw.play() : aboutTitleTyped.then(() => draw.play())),
     });
   }
 
@@ -659,7 +676,24 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   const $paper = getLayer('skills-paper', $about);
   const $sheet = getLayer('skills-sheet', $about);
   const $typewriter = getLayer('typewriter', $about);
-  if ($paper && $sheet && $typewriter) {
+  // On phones the typewriter is only decoration: the whole list is already typed, and the machine
+  // with its paper is set down on the desk like on desktop, once it scrolls into view and the text
+  // and the button above it are in
+  if ($paper && $typewriter && isPhone) {
+    const $machine = [$typewriter, $paper];
+    gsap.set($machine, { y: 40, autoAlpha: 0 });
+    ScrollTrigger.create({
+      trigger: $typewriter,
+      start: 'top 80%',
+      once: true,
+      onEnter: () =>
+        cardShown.then(() =>
+          context.add(() => gsap.to($machine, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'back.out(1.4)' })),
+        ),
+    });
+  }
+
+  if ($paper && $sheet && $typewriter && !isPhone) {
     const $rows = getAll('[data-layer="skills-heading"], [data-layer="skills-line"]', $sheet);
     const rowChars = $rows.map(($row) => SplitText.create($row, { type: 'chars', charsClass: 'about__char' }).chars);
     const $marks = getAll('[data-layer="skills-mark"]', $sheet);
@@ -717,7 +751,7 @@ const createAboutAnimations = (context: gsap.Context, addCleanup: (cleanup?: Cle
   }
 
   // The wave text needs Inter loaded before it can be measured
-  waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($about))));
+  waitForFonts().then(() => context.add(() => addCleanup(startWaveFlow($waveRoot))));
 };
 
 /*
@@ -1675,8 +1709,9 @@ const createAboutHowItStarted = (context: gsap.Context, addCleanup: (cleanup?: C
       trigger: $title,
       start: 'top 85%',
       once: true,
+      // After section 1's text, even when both are on screen at once (tablets, big screens)
       onEnter: () =>
-        waitForFonts().then(() =>
+        Promise.all([waitForFonts(), introTextShown]).then(() =>
           context.add(() => {
             const chars = SplitText.create($title, { type: 'words,chars' }).chars;
             gsap.set(chars, { autoAlpha: 0 });
@@ -1818,8 +1853,9 @@ const createAboutHowItsGoing = (context: gsap.Context) => {
       trigger: $title,
       start: 'top 85%',
       once: true,
+      // After section 2's text, even when both are on screen at once (tablets, big screens)
       onEnter: () =>
-        waitForFonts().then(() => context.add(() => {
+        Promise.all([waitForFonts(), howTextShown]).then(() => context.add(() => {
           const chars = SplitText.create($title, { type: 'words,chars' }).chars;
           gsap.set(chars, { autoAlpha: 0 });
           gsap.set($title, { autoAlpha: 1 });
@@ -2404,6 +2440,9 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
   // Words too, so the title still breaks between words, never inside one
   const $aboutTitle = getLayer('about-title');
   const aboutTitleChars = $aboutTitle ? SplitText.create($aboutTitle, { type: 'words,chars' }).chars : [];
+  // On desktop and tablets the About title peeks in under the hero, so it's typed at the end of
+  // the intro. On phones it's further down, so it's typed when it scrolls into view (see below).
+  const typesAboutTitle = !window.matchMedia('(max-width: 767px)').matches;
 
   // Where each title tag starts: the centre of the plate, hidden under it.
   // GSAP's x/y move the tag along its own tilt (the CSS `rotate`), so the
@@ -2497,12 +2536,12 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
     )
     // 2.6s: the About title below the hero is typed, letter by letter
     .fromTo(
-      aboutTitleChars,
+      typesAboutTitle ? aboutTitleChars : [],
       { autoAlpha: 0 },
       { autoAlpha: 1, duration: 0.01, ease: 'none', stagger: ABOUT_TITLE_TYPE_S },
       ABOUT_TITLE_AT_S,
     )
-    .call(() => markAboutTitleTyped(), [], ABOUT_TITLE_AT_S + aboutTitleChars.length * ABOUT_TITLE_TYPE_S)
+    .call(() => typesAboutTitle && markAboutTitleTyped(), [], ABOUT_TITLE_AT_S + aboutTitleChars.length * ABOUT_TITLE_TYPE_S)
 
     // 0.7s: the photo is pressed down like a sticker, and its fill and outlines
     // slide in from out of place until the print is in register
@@ -2578,6 +2617,26 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
       signHangsAt,
     )
     .call(() => context.add(() => addCleanup(createInternshipSwing($internshipBody))), [], signHangsAt + SIGN_DECODE_S);
+
+  // Phones: the About title is typed, at the same pace, once it scrolls into view
+  if (!typesAboutTitle && $aboutTitle) {
+    gsap.set(aboutTitleChars, { autoAlpha: 0 });
+    ScrollTrigger.create({
+      trigger: $aboutTitle,
+      start: 'top 85%',
+      once: true,
+      onEnter: () =>
+        context.add(() =>
+          gsap.to(aboutTitleChars, {
+            autoAlpha: 1,
+            duration: 0.01,
+            ease: 'none',
+            stagger: ABOUT_TITLE_TYPE_S,
+            onComplete: () => markAboutTitleTyped(),
+          }),
+        ),
+    });
+  }
 
   // Every layer now has its start state, so the CSS that hid them can go
   gsap.set($travelBodies, { autoAlpha: 0 });

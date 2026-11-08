@@ -69,6 +69,7 @@ For PR descriptions, commit messages, docs and code comments:
 - **Check every section** against Figma at 1440px, then at 1920px and 2560px. Irina does this in her own browser. Claude compares the values in the code with Figma.
 - **Layout:** each section is a CSS grid with named areas (`grid-template-areas`). Overlapping collage layers sit in the same grid area and are positioned inside it.
 - **Placement by area, never by number:** place every element by its named area (`grid-area: title`). When an element has to overlap another area, use that area's lines (`grid-row: title-start / tag-end`). Never use column or row numbers like `grid-column: 2 / 3`, because they break as soon as a column or row is added.
+- **Layer order:** stack the elements in the same order as their layers in Figma (bottom to top), on every breakpoint. Ask before changing anything in the design.
 - **Layers:** every visual element (tags, stars, outlines, photo, camera) is its own element with a `data-layer` name, so it can be animated on its own.
 - **Project pages share one template:** `ProjectHero`, `ProjectFacts`, `ProjectStory` and `ProjectLive`, built from the MemoMe frame (`412:1070`). Every project page uses the same sizes, spacing and motion. Only the content changes: the text, tools, chapter and part names, images and links. Spacing differences between the project frames in Figma aren't intended (no auto layout there), so don't copy them.
 
@@ -116,6 +117,8 @@ When a version in `package.json` goes up, update this table too.
 - Lenis is the only smooth-scroll library. It drives ScrollTrigger and is off for reduced motion. Never add a second one.
 - **Animate whatever the effect needs:** SVG strokes, clip paths, colours, text on a path. Irina wants Awwwards-level motion, so the property list isn't limited. Transform and opacity are the cheapest, so use them when they give the same result. Never use `transition: all`.
 - **Layers placed with the CSS `translate` / `rotate` properties are never animated themselves.** GSAP folds those into its own transform and loses the Figma position. Animate an inner layer instead, as `Tag.astro` (`tag__body`) and `Hero.astro` (plate paper, camera image, star SVGs) do.
+- **Load order:** what's on screen when the page opens appears first, from top to bottom. Everything below appears when it scrolls into view, also from top to bottom. On every breakpoint: a section that's lower on a phone than on desktop waits for its scroll there. A section waits for the text of the one above it, even when both are on screen at once (tall tablets, big screens).
+- **Hero sections are the exception:** their load intro is choreographed, so it doesn't have to go top to bottom. The load order applies to everything below the hero.
 - Everything goes inside the `gsap.matchMedia` reduced motion check, so visitors who ask for less motion get the content without the movement.
 
 ## Fonts

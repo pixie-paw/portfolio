@@ -35,6 +35,18 @@ const textStartOffset = lengthUpTo(WAVE_POINTS, TEXT_START_X);
 // The SVG's own box, in Figma px relative to the frame (wide enough for 2560px screens)
 const WAVE_BOX = { x: -800, y: 380, w: 3040, h: 1000 };
 
+/*
+  Phones: the phone frame (518:676) has its own, simpler wave. Its path and transform are copied
+  from Figma (in phone frame px), and the words run along the same curve, 65.09px lower.
+  The box is in phone frame px too. The text starts where Figma has it, 409px along the curve.
+*/
+const PHONE_WAVE_PATH =
+  'M0 176.77C45.7 126.75 73.28 93.88 83.4 81.76C96.86 65.63 117.45 42.71 144.71 37.49C189.65 28.89 212.47 90.07 267.75 84.3C323.02 78.54 327.02 7.91 405.44 0.39C445.3 -3.44 462.82 21.75 487.31 53.99C524.18 102.53 636.79 157.81 756.41 75.26';
+const PHONE_WAVE_TEXT_PATH =
+  'M0 176.85C45.7 126.83 73.28 93.97 83.4 81.85C96.86 65.71 117.45 42.79 144.71 37.57C189.65 28.97 212.47 90.15 267.75 84.38C323.02 78.62 327.02 8 405.44 0.47C445.3 -3.36 472.34 16.46 487.31 54.07C505.94 100.9 636.79 157.89 756.41 75.35';
+const PHONE_WAVE_MATRIX = (y: number) => `matrix(0.99177 -0.128 0.128 0.99177 -148.99 ${y})`;
+const PHONE_WAVE_BOX = { x: -160, y: 880, w: 800, h: 480 };
+
 
 const SKILLS = [
   { heading: 'Design tools', lines: ['Photoshop · Illustrator · Figma', 'After Effects · Blender'] },
@@ -66,6 +78,28 @@ const SKILLS = [
       <textPath href="#about-wave-text-path" data-layer="wave-text-path" startOffset={textStartOffset.toFixed(1)}>{WAVE_TEXT}</textPath>
     </text>
   </svg>
+
+  <!-- Phones only: the phone wave, wrapped so the script can find its own parts -->
+  <div class="about__wave-phone" data-layer="wave-phone">
+    <svg
+      class="about__wave-phone-svg"
+      data-layer="wave"
+      viewBox={`${PHONE_WAVE_BOX.x} ${PHONE_WAVE_BOX.y} ${PHONE_WAVE_BOX.w} ${PHONE_WAVE_BOX.h}`}
+      style={`--wx:${PHONE_WAVE_BOX.x};--wy:${PHONE_WAVE_BOX.y};--ww:${PHONE_WAVE_BOX.w};--wh:${PHONE_WAVE_BOX.h}`}
+      aria-hidden="true"
+    >
+      <!-- Each group carries Figma's transform, so the curves and the words keep their own coordinates -->
+      <g transform={PHONE_WAVE_MATRIX(1002.91)}>
+        <path class="about__wave-line about__wave-line--phone" data-layer="wave-line" d={PHONE_WAVE_PATH} />
+      </g>
+      <g transform={PHONE_WAVE_MATRIX(1068)}>
+        <path id="about-wave-phone-text-path" d={PHONE_WAVE_TEXT_PATH} fill="none" />
+        <text class="about__wave-text about__wave-text--phone" data-layer="wave-text" xml:space="preserve">
+          <textPath href="#about-wave-phone-text-path" data-layer="wave-text-path" startOffset="409">{WAVE_TEXT}</textPath>
+        </text>
+      </g>
+    </svg>
+  </div>
 
   <div class="about__frame">
     <!-- Title with the yellow highlighter bars behind each line -->
@@ -130,7 +164,7 @@ const SKILLS = [
         src={typewriter}
         alt="A pink typewriter typing out Irina’s skills"
         widths={[466, 932]}
-        sizes="(max-width: 1023px) 350px, 466px"
+        sizes="(max-width: 767px) min(108vw, 517px), (max-width: 1023px) 350px, 466px"
       />
     </div>
   </div>
@@ -187,6 +221,11 @@ const SKILLS = [
     font-family: var(--f-inter);
     font-size: 24px;
     white-space: pre;
+  }
+
+  /* The phone wave only shows on phones */
+  .about__wave-phone {
+    display: none;
   }
 
   /* ---------- Positioned collage pieces (Figma px from the frame's top-left) ---------- */
@@ -446,6 +485,151 @@ const SKILLS = [
     .about__card :global(.about__button) {
       top: auto;
       bottom: calc(62 * var(--u));
+    }
+  }
+
+  /*
+    ---------- Phone (< 768px), Figma 518:676 ----------
+    Coordinates are phone frame px from where this section starts (y 1000, where the hero ends).
+    The title, its bars, the text and the button are placed as in Figma. There's no card behind the
+    text and no stars. The typewriter and its paper are the desktop pair at 0.908 of its size
+    (--pu). They follow the text in the page's flow, so the paper keeps its Figma top and the
+    typewriter sits under the whole skills list (the site's list is longer than the one in Figma).
+  */
+  @media (max-width: 767px) {
+    .about {
+      --pu: calc(0.908 * var(--m));
+      grid-template-columns: [full-start] 1fr [frame-start] calc(393 * var(--m)) [frame-end] 1fr [full-end];
+      grid-template-rows: [content-start] auto [content-end];
+    }
+
+    .about__wave {
+      display: none;
+    }
+
+    /*
+      Figma: 26.68px line, Inter 16px words, starting at y 906. It's the lowest layer in the phone
+      frame, so it runs under the hero's collage (z-index 0, the hero's photo is 1).
+    */
+    .about__wave-phone {
+      display: block;
+      grid-column: full;
+      grid-row: content;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .about__wave-phone-svg {
+      position: absolute;
+      left: calc(50% + (var(--wx) - 196.5) * var(--m));
+      top: calc((var(--wy) - 1000) * var(--m));
+      width: calc(var(--ww) * var(--m));
+      height: calc(var(--wh) * var(--m));
+      overflow: visible;
+    }
+
+    .about__wave-line--phone {
+      stroke-width: 26.68;
+    }
+
+    .about__wave-text--phone {
+      font-size: 16px;
+    }
+
+    .about__frame {
+      padding-bottom: calc(40 * var(--m));
+    }
+
+    .about__star,
+    .about__corner {
+      display: none;
+    }
+
+    /* Figma: Boldonse 24px at x 15, y 1174, 299px wide (two lines) */
+    .about__title {
+      left: calc(15 * var(--m));
+      top: calc(174 * var(--m));
+      width: calc(299 * var(--m));
+      font-size: calc(24 * var(--m));
+    }
+
+    /* Figma: 13.37px bars from x 7, centred on y 1205 (251px) and y 1236 (288px) */
+    .about__marker {
+      left: calc(7 * var(--m));
+      height: calc(13.37 * var(--m));
+    }
+
+    .about__marker--first {
+      top: calc((205 - 6.69) * var(--m));
+      width: calc(251 * var(--m));
+    }
+
+    .about__marker--second {
+      top: calc((236 - 6.69) * var(--m));
+      width: calc(288 * var(--m));
+    }
+
+    /* Figma: Akzidenz 15.6px at x 15, y 1250, 363px wide, with no card behind it */
+    .about__card {
+      left: calc(15 * var(--m));
+      top: calc(250 * var(--m));
+      width: calc(363 * var(--m));
+      height: auto;
+      min-height: 0;
+      padding: 0;
+      background: none;
+    }
+
+    .about__text {
+      font-size: calc(15.6 * var(--m));
+    }
+
+    /* Figma: the desktop button at 0.69 of its size (122.54 x 36), at y 1378, 14px under the text */
+    .about__card :global(.about__button) {
+      --u: calc(0.6923 * var(--m));
+      position: relative;
+      left: auto;
+      top: auto;
+      bottom: auto;
+      margin-top: calc(14 * var(--m));
+      /* exactly Figma's 11.08px text and 1.38px border, not the tablet minimum */
+      font-size: calc(16 * var(--u));
+      border-width: calc(2 * var(--u));
+    }
+
+    /*
+      Figma: the paper's top at y 1445, its left edge at x 137.57. In the phone frame the paper is
+      layered over the typewriter (on desktop it's tucked under the roller).
+    */
+    .about__paper-window {
+      position: relative;
+      z-index: 7;
+      left: auto;
+      bottom: auto;
+      width: auto;
+      height: auto;
+      margin: calc(445 * var(--m)) 0 0 calc(137.57 * var(--m));
+      overflow: visible;
+    }
+
+    .about__paper {
+      position: relative;
+      left: 0;
+    }
+
+    /* The paper isn't typed here, so its headings keep their whole underline */
+    :global(html[data-motion]) .about__skills-name {
+      text-decoration: underline;
+    }
+
+    /* Figma: x 23.17, 26px of the paper tucked into the roller (in --pu, like the desktop) */
+    .about__typewriter {
+      position: relative;
+      left: calc(23.17 * var(--m));
+      top: auto;
+      margin-top: calc(-26 * var(--pu));
     }
   }
 </style>
