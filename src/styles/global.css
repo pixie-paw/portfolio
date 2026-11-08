@@ -119,6 +119,35 @@ a {
 }
 
 /*
+  Page transitions: five horizontal tape strips, one colour per transition. Hidden until the
+  script uses them. A page reached through a transition starts covered (html[data-transition='in'],
+  set before the first paint in Base.astro) and the script slides them away.
+  Above the CV sheet (101) and the cursor flower (102), below the skip link (200).
+*/
+.page-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.page-transition__strip {
+  position: absolute;
+  left: 0;
+  top: calc(var(--i) * 20%);
+  width: 100%;
+  /* 1px more, so no line shows between two strips */
+  height: calc(20% + 1px);
+  background: var(--transition-colour, var(--c-pink));
+}
+
+html[data-transition='in'] .page-transition {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/*
   Keyboard focus: one ring for the whole site, in the blue, with a gap around the element.
   Only for the keyboard (:focus-visible), so mouse clicks don't show it. The skip link's
   target is focused by the script only to move the Tab position, so it gets no ring.

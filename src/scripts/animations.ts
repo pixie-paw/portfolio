@@ -2586,6 +2586,118 @@ const playHeroIntro = (context: gsap.Context, addCleanup: (cleanup?: Cleanup) =>
 };
 
 /*
+  ---------- Page transitions: tape strips ----------
+  Clicking a link to another page of the site covers the screen with five horizontal strips of
+  one colour, sliding in from alternate sides. Then the new page loads behind them (Base.astro
+  starts it covered) and they slide away the other way. The pace is the example Irina picked
+  (smllns-portfolio): a 0.8s cover and a 0.5s reveal on power4.inOut.
+  The colour moves on through the palette with every transition, also across pages (it's kept in
+  sessionStorage). With Reduce motion the strips just fade in and out.
+  Left alone: links within the same page, downloads, email links, links to other sites or that
+  open a new tab, and clicks with a modifier key (to open in a new tab).
+*/
+const TRANSITION_COLOURS = ['--c-pink', '--c-yellow', '--c-green', '--c-blue', '--c-marker'];
+const TRANSITION_IN = { duration: 0.8, ease: 'power4.inOut', stagger: 0.04 };
+const TRANSITION_OUT = { duration: 0.5, ease: 'power4.inOut', stagger: 0.03, delay: 0.08 };
+
+const createPageTransitions = (reduceMotion: boolean) => {
+  const $html = document.documentElement;
+  const $layer = document.querySelector<HTMLElement>('[data-page-transition]');
+  if (!$layer) return;
+  const $strips = getAll('[data-transition-strip]', $layer);
+  // The even strips come from the left, the odd ones from the right, and leave on the other side
+  const fromSide = (i: number) => (i % 2 ? 101 : -101);
+  const toSide = (i: number) => (i % 2 ? -101 : 101);
+  let isLeaving = false;
+
+  const storage = {
+    get: (key: string) => {
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set: (key: string, value: string) => {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {
+        // no sessionStorage: the next page simply shows without the reveal
+      }
+    },
+    remove: (key: string) => {
+      try {
+        sessionStorage.removeItem(key);
+      } catch {
+        // nothing to clean up
+      }
+    },
+  };
+
+  const hide = () => {
+    delete $html.dataset.transition;
+    gsap.set($layer, { clearProps: 'visibility,pointerEvents,opacity' });
+    gsap.set($strips, { clearProps: 'transform' });
+  };
+
+  // ---------- Arriving: the page starts covered, the strips slide away ----------
+  const reveal = () => {
+    storage.remove('page-transition');
+    gsap.set($layer, { visibility: 'visible' });
+    if (reduceMotion) {
+      gsap.to($layer, { opacity: 0, duration: 0.25, ease: 'power1.out', onComplete: hide });
+    } else {
+      gsap.to($strips, { xPercent: toSide, ...TRANSITION_OUT, onComplete: hide });
+    }
+  };
+  if ($html.dataset.transition === 'in') reveal();
+
+  // Back to a page kept in the browser's memory (the back button): it was left covered, so reveal it
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    isLeaving = false;
+    reveal();
+  });
+
+  // ---------- Leaving: cover the screen, then go ----------
+  const leave = (href: string) => {
+    isLeaving = true;
+    const index = Number(storage.get('page-transition-index') ?? 0) % TRANSITION_COLOURS.length;
+    const colour = `var(${TRANSITION_COLOURS[index]})`;
+    storage.set('page-transition-index', String(index + 1));
+    $html.style.setProperty('--transition-colour', colour);
+
+    const go = () => {
+      storage.set('page-transition', colour);
+      window.location.href = href;
+    };
+    gsap.set($layer, { visibility: 'visible', pointerEvents: 'auto' });
+    if (reduceMotion) {
+      gsap.set($strips, { xPercent: 0 });
+      gsap.fromTo($layer, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'power1.in', onComplete: go });
+    } else {
+      gsap.fromTo($strips, { xPercent: fromSide }, { xPercent: 0, ...TRANSITION_IN, onComplete: go });
+    }
+  };
+
+  document.addEventListener('click', (event) => {
+    if (isLeaving || event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const $link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href]');
+    if (!$link || $link.hasAttribute('download')) return;
+    if ($link.target && $link.target !== '_self') return;
+    const url = new URL($link.href, window.location.href);
+    if (url.origin !== window.location.origin || !/^https?:$/.test(url.protocol)) return;
+    // Same page (a link to a section on it): the smooth scroll handles it
+    if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+    // Files, like the CV PDF
+    if (/\.[a-z0-9]+$/i.test(url.pathname) && !url.pathname.endsWith('.html')) return;
+    event.preventDefault();
+    leave(url.href);
+  });
+};
+
+/*
   The skip link jumps to the page's main title and moves the keyboard focus there too, so the
   next Tab goes on from the content, not from the header (smooth scrolling would skip that).
 */
@@ -2599,6 +2711,7 @@ const createSkipLink = () => {
 
 export const initAnimations = () => {
   createSkipLink();
+  createPageTransitions(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const mm = gsap.matchMedia();
 
   mm.add(
